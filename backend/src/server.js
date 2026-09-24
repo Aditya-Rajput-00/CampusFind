@@ -1,3 +1,5 @@
+const connectDB = require("./config/database");
+
 const express = require("express");
 
 const app = express();
@@ -9,6 +11,8 @@ app.get("/", (req, res) => {
         message: "CampusFind backend is running",
     });
 });
+
+connectDB();
 
 app.listen(PORT, () => {
     console.log(`CampusFind backend running on http://localhost:${PORT}`);
