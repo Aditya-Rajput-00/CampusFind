@@ -1,11 +1,8 @@
 const express = require("express");
+const { getItems } = require("../controllers/itemController");
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
-    res.json({
-        message: "Item route is working",
-    });
-});
+router.get("/", getItems);
 
 module.exports = router;

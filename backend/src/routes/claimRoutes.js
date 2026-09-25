@@ -1,11 +1,8 @@
 const express = require("express");
+const { getClaims } = require("../controllers/claimController");
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
-    res.json({
-        message: "Claim route is working",
-    });
-});
+router.get("/", getClaims);
 
 module.exports = router;

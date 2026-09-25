@@ -1,11 +1,8 @@
 const express = require("express");
+const { getMatches } = require("../controllers/matchController");
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
-    res.json({
-        message: "Match route is working",
-    });
-});
+router.get("/", getMatches);
 
 module.exports = router;
