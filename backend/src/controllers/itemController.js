@@ -1,4 +1,5 @@
 const Item = require("../models/Item");
+const Notification = require("../models/Notification");
 
 const getItems = async (req, res) => {
     try {
@@ -83,6 +84,14 @@ const updateItemStatus = async (req, res) => {
                 message: "Item not found",
             });
         }
+
+        // Create notification for the person who reported the item
+        await Notification.create({
+            userId: item.reportedBy,
+            type: "STATUS_UPDATE",
+            title: "Item Status Updated",
+            message: `Your ${item.title} status has been updated to ${status}.`,
+        });
 
         res.json({
             message: `Item status updated to ${status}`,
