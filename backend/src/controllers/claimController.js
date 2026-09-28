@@ -94,6 +94,17 @@ const updateClaimStatus = async (req, res) => {
             });
         }
 
+        // Create notification for the claimant
+        await Notification.create({
+            userId: claim.claimantId,
+            type: "CLAIM",
+            title: `Claim ${status === "APPROVED" ? "Approved" : "Rejected"}`,
+            message:
+                status === "APPROVED"
+                    ? "Your claim has been approved."
+                    : "Your claim has been rejected.",
+        });
+
         res.json({
             message: `Claim ${status.toLowerCase()} successfully`,
             claim,
@@ -106,7 +117,6 @@ const updateClaimStatus = async (req, res) => {
         });
     }
 };
-
 module.exports = {
     getClaims,
     createClaim,
