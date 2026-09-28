@@ -52,7 +52,52 @@ const createItem = async (req, res) => {
     }
 };
 
+const updateItemStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+
+        const allowedStatuses = [
+            "ACTIVE",
+            "MATCHED",
+            "CLAIMED",
+            "UNDER_VERIFICATION",
+            "VERIFIED",
+            "RETURNED",
+            "CLOSED",
+        ];
+
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                message: "Invalid item status",
+            });
+        }
+
+        const item = await Item.findByIdAndUpdate(
+            req.params.id,
+            { status },
+            { new: true, runValidators: true }
+        );
+
+        if (!item) {
+            return res.status(404).json({
+                message: "Item not found",
+            });
+        }
+
+        res.json({
+            message: `Item status updated to ${status}`,
+            item,
+        });
+    } catch (error) {
+        console.error("Update item status error:", error);
+
+        res.status(500).json({
+            message: "Failed to update item status",
+        });
+    }
+};
 module.exports = {
     getItems,
     createItem,
+    updateItemStatus,
 };
