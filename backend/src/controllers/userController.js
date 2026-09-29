@@ -1,3 +1,4 @@
+const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
 const getUsers = async (req, res) => {
@@ -12,6 +13,126 @@ const getUsers = async (req, res) => {
     }
 };
 
+const getMyProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId).select("-passwordHash");
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error("Get my profile error:", error);
+
+        res.status(500).json({
+            message: "Failed to fetch profile",
+        });
+    }
+};
+
+const updateMyProfile = async (req, res) => {
+    try {
+        const { name, department, phone } = req.body;
+
+        const user = await User.findById(req.user.userId);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        if (name !== undefined) {
+            user.name = name;
+        }
+
+        if (department !== undefined) {
+            user.department = department;
+        }
+
+        if (phone !== undefined) {
+            user.phone = phone;
+        }
+
+        await user.save();
+
+        res.json({
+            message: "Profile updated successfully",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                department: user.department,
+                phone: user.phone,
+            },
+        });
+    } catch (error) {
+        console.error("Update my profile error:", error);
+
+        res.status(500).json({
+            message: "Failed to update profile",
+        });
+    }
+};
+
+const changeMyPassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({
+                message: "Current password and new password are required",
+            });
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({
+                message: "New password must be at least 8 characters",
+            });
+        }
+
+        const user = await User.findById(req.user.userId);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        const passwordMatch = await bcrypt.compare(
+            currentPassword,
+            user.passwordHash
+        );
+
+        if (!passwordMatch) {
+            return res.status(401).json({
+                message: "Current password is incorrect",
+            });
+        }
+
+        user.passwordHash = await bcrypt.hash(newPassword, 10);
+
+        await user.save();
+
+        res.json({
+            message: "Password changed successfully",
+        });
+    } catch (error) {
+        console.error("Change password error:", error);
+
+        res.status(500).json({
+            message: "Failed to change password",
+        });
+    }
+};
+
 module.exports = {
     getUsers,
+    getMyProfile,
+    updateMyProfile,
+    changeMyPassword,
 };
