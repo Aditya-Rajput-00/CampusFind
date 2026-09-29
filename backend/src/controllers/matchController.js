@@ -1,4 +1,6 @@
 const Match = require("../models/Match");
+const Item = require("../models/Item");
+const Notification = require("../models/Notification");
 
 const getMatches = async (req, res) => {
     try {
@@ -25,10 +27,37 @@ const createMatch = async (req, res) => {
             });
         }
 
+        // Find both items
+        const lostItem = await Item.findById(lostItemId);
+        const foundItem = await Item.findById(foundItemId);
+
+        if (!lostItem || !foundItem) {
+            return res.status(404).json({
+                message: "Lost or found item not found",
+            });
+        }
+
+        // Create the match
         const match = await Match.create({
             lostItemId,
             foundItemId,
             matchScore,
+        });
+
+        // Notify the person who reported the lost item
+        await Notification.create({
+            userId: lostItem.reportedBy,
+            type: "MATCH",
+            title: "Potential Match Found",
+            message: `A potential match was found for your lost item: ${lostItem.title}.`,
+        });
+
+        // Notify the person who reported the found item
+        await Notification.create({
+            userId: foundItem.reportedBy,
+            type: "MATCH",
+            title: "Potential Match Found",
+            message: `A potential match was found for your found item: ${foundItem.title}.`,
         });
 
         res.status(201).json({
