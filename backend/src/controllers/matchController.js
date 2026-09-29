@@ -95,6 +95,32 @@ const updateMatchStatus = async (req, res) => {
             });
         }
 
+        // Find both items
+        const lostItem = await Item.findById(match.lostItemId);
+        const foundItem = await Item.findById(match.foundItemId);
+
+        if (!lostItem || !foundItem) {
+            return res.status(404).json({
+                message: "Related item not found",
+            });
+        }
+
+        // Notify the person who reported the lost item
+        await Notification.create({
+            userId: lostItem.reportedBy,
+            type: "MATCH",
+            title: `Match ${status === "CONFIRMED" ? "Confirmed" : "Rejected"}`,
+            message: `The match for your lost item "${lostItem.title}" has been ${status.toLowerCase()}.`,
+        });
+
+        // Notify the person who reported the found item
+        await Notification.create({
+            userId: foundItem.reportedBy,
+            type: "MATCH",
+            title: `Match ${status === "CONFIRMED" ? "Confirmed" : "Rejected"}`,
+            message: `The match for your found item "${foundItem.title}" has been ${status.toLowerCase()}.`,
+        });
+
         res.json({
             message: `Match ${status.toLowerCase()} successfully`,
             match,
