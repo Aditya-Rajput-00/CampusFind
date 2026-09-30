@@ -104,6 +104,13 @@ const updateMatchStatus = async (req, res) => {
                 message: "Related item not found",
             });
         }
+        if (status === "CONFIRMED") {
+            lostItem.status = "MATCHED";
+            foundItem.status = "MATCHED";
+
+            await lostItem.save();
+            await foundItem.save();
+        }
 
         // Notify the person who reported the lost item
         await Notification.create({
