@@ -26,9 +26,9 @@ const createItem = async (req, res) => {
             date,
         } = req.body;
 
-        if (!title || !description || !category || !type) {
+        if (!title || !description || !category || !type || !date) {
             return res.status(400).json({
-                message: "Title, description, category, and type are required",
+                message: "Title, description, category, type, and date are required",
             });
         }
 
