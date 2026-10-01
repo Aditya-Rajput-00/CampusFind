@@ -93,6 +93,18 @@ const updateClaimStatus = async (req, res) => {
                 message: "Claim not found",
             });
         }
+        if (status === "APPROVED") {
+            const item = await Item.findById(claim.itemId);
+
+            if (!item) {
+                return res.status(404).json({
+                    message: "Related item not found",
+                });
+            }
+
+            item.status = "UNDER_VERIFICATION";
+            await item.save();
+        }
 
         // Create notification for the claimant
         await Notification.create({
