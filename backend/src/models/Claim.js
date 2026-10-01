@@ -32,6 +32,21 @@ const claimSchema = new mongoose.Schema(
             enum: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
             default: "PENDING",
         },
+        verification: {
+            verifiedBy: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User",
+            },
+
+            verifiedAt: {
+                type: Date,
+            },
+
+            notes: {
+                type: String,
+                trim: true,
+            },
+        },
     },
     {
         timestamps: true,
