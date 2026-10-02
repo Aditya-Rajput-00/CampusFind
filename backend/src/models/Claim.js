@@ -33,6 +33,10 @@ const claimSchema = new mongoose.Schema(
             default: "PENDING",
         },
         verification: {
+            result: {
+                type: String,
+                enum: ["SUCCESS", "FAILURE"],
+            },
             verifiedBy: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "User",

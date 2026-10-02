@@ -129,8 +129,48 @@ const updateClaimStatus = async (req, res) => {
         });
     }
 };
+const verifyClaim = async (req, res) => {
+    try {
+        const { result, notes } = req.body;
+
+        if (!["SUCCESS", "FAILURE"].includes(result)) {
+            return res.status(400).json({
+                message: "Result must be SUCCESS or FAILURE",
+            });
+        }
+
+        const claim = await Claim.findById(req.params.id);
+
+        if (!claim) {
+            return res.status(404).json({
+                message: "Claim not found",
+            });
+        }
+
+        claim.verification = {
+            result,
+            verifiedBy: req.user.userId,
+            verifiedAt: new Date(),
+            notes,
+        };
+
+        await claim.save();
+
+        res.json({
+            message: `Verification ${result.toLowerCase()} recorded successfully`,
+            claim,
+        });
+    } catch (error) {
+        console.error("Verify claim error:", error);
+
+        res.status(500).json({
+            message: "Failed to verify claim",
+        });
+    }
+};
 module.exports = {
     getClaims,
     createClaim,
     updateClaimStatus,
+    verifyClaim,
 };

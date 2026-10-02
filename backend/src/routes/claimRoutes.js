@@ -3,6 +3,7 @@ const {
     getClaims,
     createClaim,
     updateClaimStatus,
+    verifyClaim,
 } = require("../controllers/claimController");
 
 const protect = require("../middleware/authMiddleware");
@@ -19,6 +20,12 @@ router.patch(
     protect,
     authorize("staff", "admin"),
     updateClaimStatus
+);
+router.patch(
+    "/:id/verify",
+    protect,
+    authorize("staff", "admin"),
+    verifyClaim
 );
 
 module.exports = router;
