@@ -3,8 +3,7 @@ const Notification = require("../models/Notification");
 
 const getItems = async (req, res) => {
     try {
-        const { search, category, type } = req.query;
-
+        const { search, category, type, building } = req.query;
         const filter = {};
 
         if (search) {
@@ -19,6 +18,13 @@ const getItems = async (req, res) => {
 
         if (type) {
             filter.type = type;
+        }
+
+        if (building) {
+            filter["location.building"] = {
+                $regex: building,
+                $options: "i",
+            };
         }
 
         const items = await Item.find(filter)
