@@ -3,7 +3,7 @@ const Notification = require("../models/Notification");
 
 const getItems = async (req, res) => {
     try {
-        const { search, category, type, building } = req.query;
+        const { search, category, type, building, date } = req.query;
         const filter = {};
 
         if (search) {
@@ -24,6 +24,18 @@ const getItems = async (req, res) => {
             filter["location.building"] = {
                 $regex: building,
                 $options: "i",
+            };
+        }
+
+        if (date) {
+            const startDate = new Date(date);
+            const endDate = new Date(date);
+
+            endDate.setDate(endDate.getDate() + 1);
+
+            filter.date = {
+                $gte: startDate,
+                $lt: endDate,
             };
         }
 
