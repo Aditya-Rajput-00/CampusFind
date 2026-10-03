@@ -143,9 +143,41 @@ const returnItem = async (req, res) => {
         });
     }
 };
+const closeItem = async (req, res) => {
+    try {
+        const item = await Item.findById(req.params.id);
+
+        if (!item) {
+            return res.status(404).json({
+                message: "Item not found",
+            });
+        }
+
+        if (item.status !== "RETURNED") {
+            return res.status(400).json({
+                message: "Item must be returned before it can be closed",
+            });
+        }
+
+        item.status = "CLOSED";
+        await item.save();
+
+        res.json({
+            message: "Item closed successfully",
+            item,
+        });
+    } catch (error) {
+        console.error("Close item error:", error);
+
+        res.status(500).json({
+            message: "Failed to close item",
+        });
+    }
+};
 module.exports = {
     getItems,
     createItem,
     updateItemStatus,
     returnItem,
+    closeItem,
 };
