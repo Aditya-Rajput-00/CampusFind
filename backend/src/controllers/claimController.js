@@ -156,6 +156,16 @@ const verifyClaim = async (req, res) => {
 
         await claim.save();
 
+        await Notification.create({
+            userId: claim.claimantId,
+            type: "STATUS_UPDATE",
+            title: `Verification ${result === "SUCCESS" ? "Successful" : "Failed"}`,
+            message:
+                result === "SUCCESS"
+                    ? "Your ownership verification was successful."
+                    : "Your ownership verification has failed.",
+        });
+
         res.json({
             message: `Verification ${result.toLowerCase()} recorded successfully`,
             claim,
