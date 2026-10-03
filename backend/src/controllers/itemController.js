@@ -3,7 +3,7 @@ const Notification = require("../models/Notification");
 
 const getItems = async (req, res) => {
     try {
-        const { search } = req.query;
+        const { search, category } = req.query;
 
         const filter = {};
 
@@ -12,6 +12,9 @@ const getItems = async (req, res) => {
                 { title: { $regex: search, $options: "i" } },
                 { description: { $regex: search, $options: "i" } },
             ];
+        }
+        if (category) {
+            filter.category = category;
         }
 
         const items = await Item.find(filter)
