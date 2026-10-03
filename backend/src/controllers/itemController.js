@@ -3,12 +3,25 @@ const Notification = require("../models/Notification");
 
 const getItems = async (req, res) => {
     try {
-        const items = await Item.find()
+        const { search } = req.query;
+
+        const filter = {};
+
+        if (search) {
+            filter.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { description: { $regex: search, $options: "i" } },
+            ];
+        }
+
+        const items = await Item.find(filter)
             .populate("reportedBy", "name email")
             .sort({ createdAt: -1 });
 
         res.json(items);
     } catch (error) {
+        console.error("Get items error:", error);
+
         res.status(500).json({
             message: "Failed to fetch items",
         });
