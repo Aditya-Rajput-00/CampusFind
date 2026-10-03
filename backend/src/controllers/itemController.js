@@ -105,8 +105,47 @@ const updateItemStatus = async (req, res) => {
         });
     }
 };
+const returnItem = async (req, res) => {
+    try {
+        const item = await Item.findById(req.params.id);
+
+        if (!item) {
+            return res.status(404).json({
+                message: "Item not found",
+            });
+        }
+
+        if (item.status !== "VERIFIED") {
+            return res.status(400).json({
+                message: "Item must be verified before it can be returned",
+            });
+        }
+
+        item.status = "RETURNED";
+        await item.save();
+
+        await Notification.create({
+            userId: item.reportedBy,
+            type: "STATUS_UPDATE",
+            title: "Item Returned",
+            message: `Your ${item.title} has been marked as returned.`,
+        });
+
+        res.json({
+            message: "Item returned successfully",
+            item,
+        });
+    } catch (error) {
+        console.error("Return item error:", error);
+
+        res.status(500).json({
+            message: "Failed to return item",
+        });
+    }
+};
 module.exports = {
     getItems,
     createItem,
     updateItemStatus,
+    returnItem,
 };

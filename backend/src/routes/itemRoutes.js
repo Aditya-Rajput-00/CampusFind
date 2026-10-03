@@ -3,6 +3,7 @@ const {
     getItems,
     createItem,
     updateItemStatus,
+    returnItem,
 } = require("../controllers/itemController");
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
@@ -16,6 +17,12 @@ router.patch(
     protect,
     authorize("staff", "admin"),
     updateItemStatus
+);
+router.patch(
+    "/:id/return",
+    protect,
+    authorize("staff", "admin"),
+    returnItem
 );
 
 module.exports = router;
