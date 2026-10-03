@@ -3,9 +3,21 @@ const Notification = require("../models/Notification");
 
 const getItems = async (req, res) => {
     try {
-        const { search, category, type, building, date, page = 1, limit = 10 } = req.query;
+        const {
+            search,
+            category,
+            type,
+            building,
+            date,
+            page = 1,
+            limit = 10,
+            sortBy = "createdAt",
+            order = "desc",
+        } = req.query;
+
         const filter = {};
         const skip = (Number(page) - 1) * Number(limit);
+        const sortOrder = order === "asc" ? 1 : -1;
 
         if (search) {
             filter.$or = [
@@ -44,7 +56,7 @@ const getItems = async (req, res) => {
 
         const items = await Item.find(filter)
             .populate("reportedBy", "name email")
-            .sort({ createdAt: -1 })
+            .sort({ [sortBy]: sortOrder })
             .skip(skip)
             .limit(Number(limit));
 
@@ -57,7 +69,7 @@ const getItems = async (req, res) => {
                 totalPages: Math.ceil(totalItems / Number(limit)),
             },
         });
-        
+
     } catch (error) {
         console.error("Get items error:", error);
 
