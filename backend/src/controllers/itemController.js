@@ -105,6 +105,7 @@ const createItem = async (req, res) => {
             location,
             date,
             reportedBy: req.user.userId,
+            images: req.file ? [`/uploads/${req.file.filename}`] : [],
         });
 
         res.status(201).json({
