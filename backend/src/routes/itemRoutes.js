@@ -8,11 +8,12 @@ const {
 } = require("../controllers/itemController");
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
+const upload = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 
 router.get("/", getItems);
-router.post("/", protect, createItem);
+router.post("/", protect, upload.single("image"), createItem);
 router.patch(
     "/:id/status",
     protect,
