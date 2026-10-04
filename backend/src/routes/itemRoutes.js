@@ -1,4 +1,5 @@
 const express = require("express");
+const multer = require("multer");
 const {
     getItems,
     createItem,
@@ -13,7 +14,24 @@ const upload = require("../middleware/uploadMiddleware");
 const router = express.Router();
 
 router.get("/", getItems);
-router.post("/", protect, upload.single("image"), createItem);
+router.post("/", protect, (req, res, next) => {
+    upload.single("image")(req, res, (error) => {
+        if (error instanceof multer.MulterError) {
+            return res.status(400).json({
+                message: error.message,
+            });
+        }
+
+        if (error) {
+            return res.status(400).json({
+                message: error.message,
+            });
+        }
+
+        next();
+    });
+}, createItem);
+
 router.patch(
     "/:id/status",
     protect,
