@@ -2,6 +2,7 @@ const express = require("express");
 const {
     getClaims,
     getPendingClaims,
+    getVerificationQueue,
     createClaim,
     updateClaimStatus,
     verifyClaim,
@@ -19,6 +20,13 @@ router.get(
     protect,
     authorize("staff", "admin"),
     getPendingClaims
+);
+
+router.get(
+    "/verification-queue",
+    protect,
+    authorize("staff", "admin"),
+    getVerificationQueue
 );
 
 router.post("/", protect, createClaim);
