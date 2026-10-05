@@ -17,6 +17,23 @@ const getClaims = async (req, res) => {
     }
 };
 
+const getPendingClaims = async (req, res) => {
+    try {
+        const claims = await Claim.find({ status: "PENDING" })
+            .populate("itemId")
+            .populate("claimantId", "name email")
+            .sort({ createdAt: -1 });
+
+        res.json(claims);
+    } catch (error) {
+        console.error("Get pending claims error:", error);
+
+        res.status(500).json({
+            message: "Failed to fetch pending claims",
+        });
+    }
+};
+
 const createClaim = async (req, res) => {
     try {
         const { itemId, proof } = req.body;
@@ -180,6 +197,7 @@ const verifyClaim = async (req, res) => {
 };
 module.exports = {
     getClaims,
+    getPendingClaims,
     createClaim,
     updateClaimStatus,
     verifyClaim,

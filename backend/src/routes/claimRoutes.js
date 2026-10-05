@@ -1,6 +1,7 @@
 const express = require("express");
 const {
     getClaims,
+    getPendingClaims,
     createClaim,
     updateClaimStatus,
     verifyClaim,
@@ -12,6 +13,13 @@ const authorize = require("../middleware/roleMiddleware");
 const router = express.Router();
 
 router.get("/", protect, getClaims);
+
+router.get(
+    "/pending",
+    protect,
+    authorize("staff", "admin"),
+    getPendingClaims
+);
 
 router.post("/", protect, createClaim);
 
