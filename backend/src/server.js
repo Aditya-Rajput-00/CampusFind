@@ -4,6 +4,7 @@ const itemRoutes = require("./routes/itemRoutes");
 const claimRoutes = require("./routes/claimRoutes");
 const matchRoutes = require("./routes/matchRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const connectDB = require("./config/database");
 
@@ -21,6 +22,7 @@ app.use("/api/items", itemRoutes);
 app.use("/api/claims", claimRoutes);
 app.use("/api/matches", matchRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.get("/", (req, res) => {
     res.json({
