@@ -17,6 +17,23 @@ const getMatches = async (req, res) => {
     }
 };
 
+const getPendingMatches = async (req, res) => {
+    try {
+        const matches = await Match.find({ status: "PENDING" })
+            .populate("lostItemId")
+            .populate("foundItemId")
+            .sort({ createdAt: -1 });
+
+        res.json(matches);
+    } catch (error) {
+        console.error("Get pending matches error:", error);
+
+        res.status(500).json({
+            message: "Failed to fetch pending matches",
+        });
+    }
+};
+
 const createMatch = async (req, res) => {
     try {
         const { lostItemId, foundItemId, matchScore } = req.body;
@@ -143,6 +160,7 @@ const updateMatchStatus = async (req, res) => {
 
 module.exports = {
     getMatches,
+    getPendingMatches,
     createMatch,
     updateMatchStatus,
 };

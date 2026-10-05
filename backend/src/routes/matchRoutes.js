@@ -1,6 +1,7 @@
 const express = require("express");
 const {
     getMatches,
+    getPendingMatches,
     createMatch,
     updateMatchStatus,
 } = require("../controllers/matchController");
@@ -11,6 +12,13 @@ const authorize = require("../middleware/roleMiddleware");
 const router = express.Router();
 
 router.get("/", protect, getMatches);
+
+router.get(
+    "/pending",
+    protect,
+    authorize("staff", "admin"),
+    getPendingMatches
+);
 
 router.post("/", protect, createMatch);
 
