@@ -12,6 +12,7 @@ const authorize = require("../middleware/roleMiddleware");
 const { createItemValidator } = require("../validators/itemValidator");
 const { validationResult } = require("express-validator");
 const upload = require("../middleware/uploadMiddleware");
+const { itemIdValidator } = require("../validators/objectIdValidator");
 
 const router = express.Router();
 
@@ -53,6 +54,19 @@ router.patch(
     "/:id/status",
     protect,
     authorize("staff", "admin"),
+    itemIdValidator,
+    (req, res, next) => {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: errors.array(),
+            });
+        }
+
+        next();
+    },
     updateItemStatus
 );
 router.patch(
