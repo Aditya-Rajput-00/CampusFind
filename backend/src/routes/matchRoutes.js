@@ -8,6 +8,8 @@ const {
 
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
+const { createMatchValidator } = require("../validators/matchValidator");
+const { validationResult } = require("express-validator");
 
 const router = express.Router();
 
@@ -20,7 +22,24 @@ router.get(
     getPendingMatches
 );
 
-router.post("/", protect, createMatch);
+router.post(
+    "/",
+    protect,
+    createMatchValidator,
+    (req, res, next) => {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: errors.array(),
+            });
+        }
+
+        next();
+    },
+    createMatch
+);
 
 router.patch(
     "/:id/status",
