@@ -2,6 +2,7 @@ const express = require("express");
 const {
     getUsers,
     updateUser,
+    updateUserRole,
     getMyProfile,
     updateMyProfile,
     changeMyPassword,
@@ -21,6 +22,13 @@ router.patch(
     protect,
     authorize("admin"),
     updateUser
+);
+
+router.patch(
+    "/:id/role",
+    protect,
+    authorize("admin"),
+    updateUserRole
 );
 
 router.patch("/me", protect, updateMyProfile);
