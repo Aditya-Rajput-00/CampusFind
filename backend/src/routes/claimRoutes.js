@@ -10,7 +10,8 @@ const {
 
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
-
+const { objectIdValidator } = require("../validators/objectIdValidator");
+const { validationResult } = require("express-validator");
 const router = express.Router();
 
 router.get("/", protect, getClaims);
@@ -35,12 +36,39 @@ router.patch(
     "/:id/status",
     protect,
     authorize("staff", "admin"),
+    objectIdValidator,
+    (req, res, next) => {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: errors.array(),
+            });
+        }
+
+        next();
+    },
     updateClaimStatus
 );
+
 router.patch(
     "/:id/verify",
     protect,
     authorize("staff", "admin"),
+    objectIdValidator,
+    (req, res, next) => {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: errors.array(),
+            });
+        }
+
+        next();
+    },
     verifyClaim
 );
 

@@ -1,11 +1,11 @@
 const { param } = require("express-validator");
 
-const itemIdValidator = [
+const objectIdValidator = [
     param("id")
         .isMongoId()
-        .withMessage("Invalid item ID"),
+        .withMessage("Invalid ID"),
 ];
 
 module.exports = {
-    itemIdValidator,
+    objectIdValidator,
 };

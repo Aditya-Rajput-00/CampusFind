@@ -12,8 +12,7 @@ const authorize = require("../middleware/roleMiddleware");
 const { createItemValidator } = require("../validators/itemValidator");
 const { validationResult } = require("express-validator");
 const upload = require("../middleware/uploadMiddleware");
-const { itemIdValidator } = require("../validators/objectIdValidator");
-
+const { objectIdValidator } = require("../validators/objectIdValidator");
 const router = express.Router();
 
 router.get("/", getItems);
@@ -54,7 +53,7 @@ router.patch(
     "/:id/status",
     protect,
     authorize("staff", "admin"),
-    itemIdValidator,
+    objectIdValidator,
     (req, res, next) => {
         const errors = validationResult(req);
 
@@ -73,12 +72,38 @@ router.patch(
     "/:id/return",
     protect,
     authorize("staff", "admin"),
+    objectIdValidator,
+    (req, res, next) => {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: errors.array(),
+            });
+        }
+
+        next();
+    },
     returnItem
 );
 router.patch(
     "/:id/close",
     protect,
     authorize("staff", "admin"),
+    objectIdValidator,
+    (req, res, next) => {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: errors.array(),
+            });
+        }
+
+        next();
+    },
     closeItem
 );
 module.exports = router;
