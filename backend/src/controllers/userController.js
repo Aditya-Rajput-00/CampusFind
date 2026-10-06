@@ -13,6 +13,52 @@ const getUsers = async (req, res) => {
     }
 };
 
+const updateUser = async (req, res) => {
+    try {
+        const { name, department, phone } = req.body;
+
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        if (name !== undefined) {
+            user.name = name;
+        }
+
+        if (department !== undefined) {
+            user.department = department;
+        }
+
+        if (phone !== undefined) {
+            user.phone = phone;
+        }
+
+        await user.save();
+
+        res.json({
+            message: "User updated successfully",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                department: user.department,
+                phone: user.phone,
+            },
+        });
+    } catch (error) {
+        console.error("Update user error:", error);
+
+        res.status(500).json({
+            message: "Failed to update user",
+        });
+    }
+};
+
 const getMyProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user.userId).select("-passwordHash");
@@ -132,6 +178,7 @@ const changeMyPassword = async (req, res) => {
 
 module.exports = {
     getUsers,
+    updateUser,
     getMyProfile,
     updateMyProfile,
     changeMyPassword,

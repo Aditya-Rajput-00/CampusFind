@@ -1,6 +1,7 @@
 const express = require("express");
 const {
     getUsers,
+    updateUser,
     getMyProfile,
     updateMyProfile,
     changeMyPassword,
@@ -15,7 +16,14 @@ router.get("/me", protect, getMyProfile);
 
 router.get("/", protect, authorize("admin"), getUsers);
 
-router.patch("/me", protect, updateMyProfile); 
+router.patch(
+    "/:id",
+    protect,
+    authorize("admin"),
+    updateUser
+);
+
+router.patch("/me", protect, updateMyProfile);
 
 router.patch("/me/password", protect, changeMyPassword);
 
