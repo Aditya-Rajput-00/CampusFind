@@ -9,28 +9,45 @@ const {
 } = require("../controllers/itemController");
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
+const { createItemValidator } = require("../validators/itemValidator");
+const { validationResult } = require("express-validator");
 const upload = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 
 router.get("/", getItems);
-router.post("/", protect, (req, res, next) => {
-    upload.single("image")(req, res, (error) => {
-        if (error instanceof multer.MulterError) {
+router.post(
+    "/",
+    protect,
+    createItemValidator,
+    (req, res, next) => {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
             return res.status(400).json({
-                message: error.message,
+                message: "Validation failed",
+                errors: errors.array(),
             });
         }
 
-        if (error) {
-            return res.status(400).json({
-                message: error.message,
-            });
-        }
+        upload.single("image")(req, res, (error) => {
+            if (error instanceof multer.MulterError) {
+                return res.status(400).json({
+                    message: error.message,
+                });
+            }
 
-        next();
-    });
-}, createItem);
+            if (error) {
+                return res.status(400).json({
+                    message: error.message,
+                });
+            }
+
+            next();
+        });
+    },
+    createItem
+);
 
 router.patch(
     "/:id/status",
