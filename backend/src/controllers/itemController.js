@@ -8,6 +8,7 @@ const getItems = async (req, res) => {
             category,
             type,
             building,
+            status,
             date,
             page = 1,
             limit = 10,
@@ -38,6 +39,10 @@ const getItems = async (req, res) => {
                 $regex: building,
                 $options: "i",
             };
+        }
+
+        if (status) {
+            filter.status = status;
         }
 
         if (date) {
