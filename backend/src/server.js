@@ -11,12 +11,16 @@ const apiLimiter = require("./middleware/rateLimitMiddleware");
 const connectDB = require("./config/database");
 
 const express = require("express");
+const helmet = require("helmet");
 
 const app = express();
 
 const PORT = 5000;
 
 app.use(express.json());
+
+app.use(helmet());
+
 app.use("/api", apiLimiter);
 
 app.use("/api/auth", authRoutes);
