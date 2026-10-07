@@ -6,6 +6,7 @@ const matchRoutes = require("./routes/matchRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const errorHandler = require("./middleware/errorMiddleware");
+const apiLimiter = require("./middleware/rateLimitMiddleware");
 
 const connectDB = require("./config/database");
 
@@ -16,6 +17,7 @@ const app = express();
 const PORT = 5000;
 
 app.use(express.json());
+app.use("/api", apiLimiter);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
