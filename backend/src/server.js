@@ -5,6 +5,7 @@ const claimRoutes = require("./routes/claimRoutes");
 const matchRoutes = require("./routes/matchRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const errorHandler = require("./middleware/errorMiddleware");
 
 const connectDB = require("./config/database");
 
@@ -29,6 +30,14 @@ app.get("/", (req, res) => {
         message: "CampusFind backend is running",
     });
 });
+
+app.use((req, res, next) => {
+    const error = new Error("Route not found");
+    error.statusCode = 404;
+    next(error);
+});
+
+app.use(errorHandler);
 
 connectDB();
 
