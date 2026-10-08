@@ -1,4 +1,5 @@
 const Notification = require("../models/Notification");
+const { successResponse } = require("../utils/apiResponse");
 
 const getNotifications = async (req, res) => {
     try {
@@ -6,7 +7,12 @@ const getNotifications = async (req, res) => {
             userId: req.user.userId,
         }).sort({ createdAt: -1 });
 
-        res.json(notifications);
+        return successResponse(
+            res,
+            200,
+            "Notifications fetched successfully",
+            notifications
+        );
     } catch (error) {
         res.status(500).json({
             message: "Failed to fetch notifications",
@@ -31,10 +37,12 @@ const createNotification = async (req, res) => {
             message,
         });
 
-        res.status(201).json({
-            message: "Notification created successfully",
-            notification,
-        });
+        return successResponse(
+            res,
+            201,
+            "Notification created successfully",
+            { notification }
+        );
     } catch (error) {
         console.error("Create notification error:", error);
 
@@ -65,10 +73,12 @@ const markAsRead = async (req, res) => {
             });
         }
 
-        res.json({
-            message: "Notification marked as read",
-            notification,
-        });
+        return successResponse(
+            res,
+            200,
+            "Notification marked as read successfully",
+            { notification }
+        );
     } catch (error) {
         console.error("Mark notification as read error:", error);
 
@@ -90,9 +100,11 @@ const markAllAsRead = async (req, res) => {
             }
         );
 
-        res.json({
-            message: "All notifications marked as read",
-        });
+        return successResponse(
+            res,
+            200,
+            "All notifications marked as read successfully"
+        );
     } catch (error) {
         console.error("Mark all notifications as read error:", error);
 
