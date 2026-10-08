@@ -1,4 +1,5 @@
 const Item = require("../models/Item");
+const { successResponse } = require("../utils/apiResponse");
 const Notification = require("../models/Notification");
 
 const getItems = async (req, res) => {
@@ -65,7 +66,7 @@ const getItems = async (req, res) => {
             .skip(skip)
             .limit(Number(limit));
 
-        res.json({
+        return successResponse(res, 200, "Items fetched successfully", {
             items,
             pagination: {
                 page: Number(page),
@@ -113,8 +114,7 @@ const createItem = async (req, res) => {
             images: req.file ? [`/uploads/${req.file.filename}`] : [],
         });
 
-        res.status(201).json({
-            message: "Item created successfully",
+        return successResponse(res, 201, "Item created successfully", {
             item,
         });
     } catch (error) {
@@ -164,8 +164,7 @@ const updateItemStatus = async (req, res) => {
             message: `Your ${item.title} status has been updated to ${status}.`,
         });
 
-        res.json({
-            message: `Item status updated to ${status}`,
+        return successResponse(res, 200, `Item status updated to ${status}`, {
             item,
         });
     } catch (error) {
@@ -202,8 +201,7 @@ const returnItem = async (req, res) => {
             message: `Your ${item.title} has been marked as returned.`,
         });
 
-        res.json({
-            message: "Item returned successfully",
+        return successResponse(res, 200, "Item returned successfully", {
             item,
         });
     } catch (error) {
@@ -233,8 +231,7 @@ const closeItem = async (req, res) => {
         item.status = "CLOSED";
         await item.save();
 
-        res.json({
-            message: "Item closed successfully",
+        return successResponse(res, 200, "Item closed successfully", {
             item,
         });
     } catch (error) {
