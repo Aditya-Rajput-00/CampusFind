@@ -1,6 +1,7 @@
 const Claim = require("../models/Claim");
 const Item = require("../models/Item");
 const Notification = require("../models/Notification");
+const { successResponse } = require("../utils/apiResponse");
 
 const getClaims = async (req, res) => {
     try {
@@ -9,7 +10,7 @@ const getClaims = async (req, res) => {
             .populate("claimantId", "name email")
             .sort({ createdAt: -1 });
 
-        res.json(claims);
+        return successResponse(res, 200, "Claims fetched successfully", claims);
     } catch (error) {
         res.status(500).json({
             message: "Failed to fetch claims",
@@ -24,7 +25,7 @@ const getPendingClaims = async (req, res) => {
             .populate("claimantId", "name email")
             .sort({ createdAt: -1 });
 
-        res.json(claims);
+        return successResponse(res, 200, "Pending claims fetched successfully", claims);
     } catch (error) {
         console.error("Get pending claims error:", error);
 
@@ -45,7 +46,12 @@ const getVerificationQueue = async (req, res) => {
             .populate("claimantId", "name email")
             .sort({ createdAt: -1 });
 
-        res.json(claims);
+        return successResponse(
+            res,
+            200,
+            "Verification queue fetched successfully",
+            claims
+        );
     } catch (error) {
         console.error("Get verification queue error:", error);
 
@@ -98,8 +104,7 @@ const createClaim = async (req, res) => {
             message: `Someone has submitted a claim for your ${item.title}.`,
         });
 
-        res.status(201).json({
-            message: "Claim created successfully",
+        return successResponse(res, 201, "Claim created successfully", {
             claim,
         });
     } catch (error) {
@@ -155,10 +160,14 @@ const updateClaimStatus = async (req, res) => {
                     : "Your claim has been rejected.",
         });
 
-        res.json({
-            message: `Claim ${status.toLowerCase()} successfully`,
-            claim,
-        });
+        return successResponse(
+            res,
+            200,
+            `Claim ${status.toLowerCase()} successfully`,
+            {
+                claim,
+            }
+        );
     } catch (error) {
         console.error("Update claim status error:", error);
 
@@ -204,10 +213,14 @@ const verifyClaim = async (req, res) => {
                     : "Your ownership verification has failed.",
         });
 
-        res.json({
-            message: `Verification ${result.toLowerCase()} recorded successfully`,
-            claim,
-        });
+        return successResponse(
+            res,
+            200,
+            `Verification ${result.toLowerCase()} recorded successfully`,
+            {
+                claim,
+            }
+        );
     } catch (error) {
         console.error("Verify claim error:", error);
 
