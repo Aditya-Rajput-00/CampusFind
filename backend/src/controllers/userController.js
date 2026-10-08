@@ -1,11 +1,12 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const { successResponse } = require("../utils/apiResponse");
 
 const getUsers = async (req, res) => {
     try {
         const users = await User.find().select("-passwordHash");
 
-        res.json(users);
+        return successResponse(res, 200, "Users fetched successfully", users);
     } catch (error) {
         res.status(500).json({
             message: "Failed to fetch users",
@@ -39,8 +40,7 @@ const updateUser = async (req, res) => {
 
         await user.save();
 
-        res.json({
-            message: "User updated successfully",
+        return successResponse(res, 200, "User updated successfully", {
             user: {
                 id: user._id,
                 name: user.name,
@@ -81,8 +81,7 @@ const updateUserRole = async (req, res) => {
 
         await user.save();
 
-        res.json({
-            message: "User role updated successfully",
+        return successResponse(res, 200, "User role updated successfully", {
             user: {
                 id: user._id,
                 name: user.name,
@@ -111,7 +110,7 @@ const getMyProfile = async (req, res) => {
             });
         }
 
-        res.json(user);
+        return successResponse(res, 200, "Profile fetched successfully", user);
     } catch (error) {
         console.error("Get my profile error:", error);
 
@@ -147,8 +146,7 @@ const updateMyProfile = async (req, res) => {
 
         await user.save();
 
-        res.json({
-            message: "Profile updated successfully",
+        return successResponse(res, 200, "Profile updated successfully", {
             user: {
                 id: user._id,
                 name: user.name,
@@ -206,9 +204,11 @@ const changeMyPassword = async (req, res) => {
 
         await user.save();
 
-        res.json({
-            message: "Password changed successfully",
-        });
+        return successResponse(
+            res,
+            200,
+            "Password changed successfully"
+        );
     } catch (error) {
         console.error("Change password error:", error);
 
