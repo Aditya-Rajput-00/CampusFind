@@ -1,6 +1,7 @@
 const Match = require("../models/Match");
 const Item = require("../models/Item");
 const Notification = require("../models/Notification");
+const { successResponse } = require("../utils/apiResponse");
 
 const getMatches = async (req, res) => {
     try {
@@ -9,7 +10,7 @@ const getMatches = async (req, res) => {
             .populate("foundItemId")
             .sort({ createdAt: -1 });
 
-        res.json(matches);
+        return successResponse(res, 200, "Matches fetched successfully", matches);
     } catch (error) {
         res.status(500).json({
             message: "Failed to fetch matches",
@@ -24,7 +25,12 @@ const getPendingMatches = async (req, res) => {
             .populate("foundItemId")
             .sort({ createdAt: -1 });
 
-        res.json(matches);
+        return successResponse(
+            res,
+            200,
+            "Pending matches fetched successfully",
+            matches
+        );
     } catch (error) {
         console.error("Get pending matches error:", error);
 
@@ -77,8 +83,7 @@ const createMatch = async (req, res) => {
             message: `A potential match was found for your found item: ${foundItem.title}.`,
         });
 
-        res.status(201).json({
-            message: "Match created successfully",
+        return successResponse(res, 201, "Match created successfully", {
             match,
         });
     } catch (error) {
@@ -145,10 +150,14 @@ const updateMatchStatus = async (req, res) => {
             message: `The match for your found item "${foundItem.title}" has been ${status.toLowerCase()}.`,
         });
 
-        res.json({
-            message: `Match ${status.toLowerCase()} successfully`,
-            match,
-        });
+        return successResponse(
+            res,
+            200,
+            `Match ${status.toLowerCase()} successfully`,
+            {
+                match,
+            }
+        );
     } catch (error) {
         console.error("Update match status error:", error);
 
