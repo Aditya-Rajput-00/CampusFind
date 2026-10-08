@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const { successResponse } = require("../utils/apiResponse");
 
 const register = async (req, res) => {
     try {
@@ -31,8 +32,7 @@ const register = async (req, res) => {
             phone,
         });
 
-        res.status(201).json({
-            message: "User registered successfully",
+        return successResponse(res, 201, "User registered successfully", {
             user: {
                 id: user._id,
                 name: user.name,
@@ -86,8 +86,7 @@ const login = async (req, res) => {
             }
         );
 
-        res.json({
-            message: "Login successful",
+        return successResponse(res, 200, "Login successful", {
             token,
             user: {
                 id: user._id,
