@@ -58,11 +58,12 @@ router.get("/", getItems);
 router.post(
     "/",
     protect,
+    handleUpload,
     createItemValidator,
     validateRequest,
-    handleUpload,
     createItem
 );
+
 
 router.patch(
     "/:id/status",
