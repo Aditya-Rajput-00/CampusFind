@@ -8,8 +8,10 @@ const getUsers = async (req, res) => {
 
         return successResponse(res, 200, "Users fetched successfully", users);
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to fetch users",
+            errors: [],
         });
     }
 };
@@ -22,7 +24,9 @@ const updateUser = async (req, res) => {
 
         if (!user) {
             return res.status(404).json({
+                success: false,
                 message: "User not found",
+                errors: [],
             });
         }
 
@@ -53,8 +57,10 @@ const updateUser = async (req, res) => {
     } catch (error) {
         console.error("Update user error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to update user",
+            errors: [],
         });
     }
 };
@@ -65,7 +71,9 @@ const updateUserRole = async (req, res) => {
 
         if (!["student", "staff", "admin"].includes(role)) {
             return res.status(400).json({
+                success: false,
                 message: "Role must be student, staff, or admin",
+                errors: [],
             });
         }
 
@@ -73,7 +81,9 @@ const updateUserRole = async (req, res) => {
 
         if (!user) {
             return res.status(404).json({
+                success: false,
                 message: "User not found",
+                errors: [],
             });
         }
 
@@ -94,8 +104,10 @@ const updateUserRole = async (req, res) => {
     } catch (error) {
         console.error("Update user role error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to update user role",
+            errors: [],
         });
     }
 };
@@ -106,7 +118,9 @@ const getMyProfile = async (req, res) => {
 
         if (!user) {
             return res.status(404).json({
+                success: false,
                 message: "User not found",
+                errors: [],
             });
         }
 
@@ -114,8 +128,10 @@ const getMyProfile = async (req, res) => {
     } catch (error) {
         console.error("Get my profile error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to fetch profile",
+            errors: [],
         });
     }
 };
@@ -128,7 +144,9 @@ const updateMyProfile = async (req, res) => {
 
         if (!user) {
             return res.status(404).json({
+                success: false,
                 message: "User not found",
+                errors: [],
             });
         }
 
@@ -159,8 +177,10 @@ const updateMyProfile = async (req, res) => {
     } catch (error) {
         console.error("Update my profile error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to update profile",
+            errors: [],
         });
     }
 };
@@ -171,13 +191,17 @@ const changeMyPassword = async (req, res) => {
 
         if (!currentPassword || !newPassword) {
             return res.status(400).json({
+                success: false,
                 message: "Current password and new password are required",
+                errors: [],
             });
         }
 
         if (newPassword.length < 8) {
             return res.status(400).json({
+                success: false,
                 message: "New password must be at least 8 characters",
+                errors: [],
             });
         }
 
@@ -185,7 +209,9 @@ const changeMyPassword = async (req, res) => {
 
         if (!user) {
             return res.status(404).json({
+                success: false,
                 message: "User not found",
+                errors: [],
             });
         }
 
@@ -196,7 +222,9 @@ const changeMyPassword = async (req, res) => {
 
         if (!passwordMatch) {
             return res.status(401).json({
+                success: false,
                 message: "Current password is incorrect",
+                errors: [],
             });
         }
 
@@ -212,8 +240,10 @@ const changeMyPassword = async (req, res) => {
     } catch (error) {
         console.error("Change password error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to change password",
+            errors: [],
         });
     }
 };

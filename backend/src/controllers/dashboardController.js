@@ -1,7 +1,9 @@
+
 const User = require("../models/User");
 const Item = require("../models/Item");
 const Claim = require("../models/Claim");
 const Match = require("../models/Match");
+const { successResponse } = require("../utils/apiResponse");
 
 const getDashboardStats = async (req, res) => {
     try {
@@ -25,7 +27,7 @@ const getDashboardStats = async (req, res) => {
             Match.countDocuments({ status: "PENDING" }),
         ]);
 
-        res.status(200).json({
+        return successResponse(res, 200, "Dashboard statistics fetched successfully", {
             totalUsers,
             totalItems,
             lostItems,
@@ -36,9 +38,12 @@ const getDashboardStats = async (req, res) => {
             pendingMatches,
         });
     } catch (error) {
-        res.status(500).json({
+        console.error("Get dashboard statistics error:", error);
+
+        return res.status(500).json({
+            success: false,
             message: "Failed to fetch dashboard statistics",
-            error: error.message,
+            errors: [],
         });
     }
 };

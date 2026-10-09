@@ -1,3 +1,4 @@
+
 const Claim = require("../models/Claim");
 const Item = require("../models/Item");
 const Notification = require("../models/Notification");
@@ -12,8 +13,12 @@ const getClaims = async (req, res) => {
 
         return successResponse(res, 200, "Claims fetched successfully", claims);
     } catch (error) {
-        res.status(500).json({
+        console.error("Get claims error:", error);
+
+        return res.status(500).json({
+            success: false,
             message: "Failed to fetch claims",
+            errors: [],
         });
     }
 };
@@ -25,16 +30,22 @@ const getPendingClaims = async (req, res) => {
             .populate("claimantId", "name email")
             .sort({ createdAt: -1 });
 
-        return successResponse(res, 200, "Pending claims fetched successfully", claims);
+        return successResponse(
+            res,
+            200,
+            "Pending claims fetched successfully",
+            claims
+        );
     } catch (error) {
         console.error("Get pending claims error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to fetch pending claims",
+            errors: [],
         });
     }
 };
-
 
 const getVerificationQueue = async (req, res) => {
     try {
@@ -55,8 +66,10 @@ const getVerificationQueue = async (req, res) => {
     } catch (error) {
         console.error("Get verification queue error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to fetch verification queue",
+            errors: [],
         });
     }
 };
@@ -67,26 +80,30 @@ const createClaim = async (req, res) => {
 
         if (!itemId) {
             return res.status(400).json({
+                success: false,
                 message: "Item ID is required",
+                errors: [],
             });
         }
 
         if (!proof || !proof.description) {
             return res.status(400).json({
+                success: false,
                 message: "Proof description is required",
+                errors: [],
             });
         }
 
-        // Find the item being claimed
         const item = await Item.findById(itemId);
 
         if (!item) {
             return res.status(404).json({
+                success: false,
                 message: "Item not found",
+                errors: [],
             });
         }
 
-        // Create the claim
         const claim = await Claim.create({
             itemId,
             claimantId: req.user.userId,
@@ -96,7 +113,6 @@ const createClaim = async (req, res) => {
             },
         });
 
-        // Create notification for the person who reported the item
         await Notification.create({
             userId: item.reportedBy,
             type: "CLAIM",
@@ -110,18 +126,23 @@ const createClaim = async (req, res) => {
     } catch (error) {
         console.error("Create claim error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to create claim",
+            errors: [],
         });
     }
 };
+
 const updateClaimStatus = async (req, res) => {
     try {
         const { status } = req.body;
 
         if (!["APPROVED", "REJECTED"].includes(status)) {
             return res.status(400).json({
+                success: false,
                 message: "Status must be APPROVED or REJECTED",
+                errors: [],
             });
         }
 
@@ -133,15 +154,20 @@ const updateClaimStatus = async (req, res) => {
 
         if (!claim) {
             return res.status(404).json({
+                success: false,
                 message: "Claim not found",
+                errors: [],
             });
         }
+
         if (status === "APPROVED") {
             const item = await Item.findById(claim.itemId);
 
             if (!item) {
                 return res.status(404).json({
+                    success: false,
                     message: "Related item not found",
+                    errors: [],
                 });
             }
 
@@ -149,7 +175,6 @@ const updateClaimStatus = async (req, res) => {
             await item.save();
         }
 
-        // Create notification for the claimant
         await Notification.create({
             userId: claim.claimantId,
             type: "CLAIM",
@@ -164,25 +189,28 @@ const updateClaimStatus = async (req, res) => {
             res,
             200,
             `Claim ${status.toLowerCase()} successfully`,
-            {
-                claim,
-            }
+            { claim }
         );
     } catch (error) {
         console.error("Update claim status error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to update claim status",
+            errors: [],
         });
     }
 };
+
 const verifyClaim = async (req, res) => {
     try {
         const { result, notes } = req.body;
 
         if (!["SUCCESS", "FAILURE"].includes(result)) {
             return res.status(400).json({
+                success: false,
                 message: "Result must be SUCCESS or FAILURE",
+                errors: [],
             });
         }
 
@@ -190,7 +218,9 @@ const verifyClaim = async (req, res) => {
 
         if (!claim) {
             return res.status(404).json({
+                success: false,
                 message: "Claim not found",
+                errors: [],
             });
         }
 
@@ -217,18 +247,19 @@ const verifyClaim = async (req, res) => {
             res,
             200,
             `Verification ${result.toLowerCase()} recorded successfully`,
-            {
-                claim,
-            }
+            { claim }
         );
     } catch (error) {
         console.error("Verify claim error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to verify claim",
+            errors: [],
         });
     }
 };
+
 module.exports = {
     getClaims,
     getPendingClaims,

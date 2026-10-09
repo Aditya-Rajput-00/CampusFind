@@ -1,3 +1,4 @@
+
 const Item = require("../models/Item");
 const { successResponse } = require("../utils/apiResponse");
 const Notification = require("../models/Notification");
@@ -27,13 +28,9 @@ const getItems = async (req, res) => {
                 { description: { $regex: search, $options: "i" } },
             ];
         }
-        if (category) {
-            filter.category = category;
-        }
 
-        if (type) {
-            filter.type = type;
-        }
+        if (category) filter.category = category;
+        if (type) filter.type = type;
 
         if (building) {
             filter["location.building"] = {
@@ -42,14 +39,11 @@ const getItems = async (req, res) => {
             };
         }
 
-        if (status) {
-            filter.status = status;
-        }
+        if (status) filter.status = status;
 
         if (date) {
             const startDate = new Date(date);
             const endDate = new Date(date);
-
             endDate.setDate(endDate.getDate() + 1);
 
             filter.date = {
@@ -75,19 +69,19 @@ const getItems = async (req, res) => {
                 totalPages: Math.ceil(totalItems / Number(limit)),
             },
         });
-
     } catch (error) {
         console.error("Get items error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to fetch items",
+            errors: [],
         });
     }
 };
 
 const createItem = async (req, res) => {
     try {
-
         const {
             title,
             description,
@@ -99,7 +93,9 @@ const createItem = async (req, res) => {
 
         if (!title || !description || !category || !type || !date) {
             return res.status(400).json({
+                success: false,
                 message: "Title, description, category, type, and date are required",
+                errors: [],
             });
         }
 
@@ -118,8 +114,12 @@ const createItem = async (req, res) => {
             item,
         });
     } catch (error) {
-        res.status(500).json({
+        console.error("Create item error:", error);
+
+        return res.status(500).json({
+            success: false,
             message: "Failed to create item",
+            errors: [],
         });
     }
 };
@@ -140,7 +140,9 @@ const updateItemStatus = async (req, res) => {
 
         if (!allowedStatuses.includes(status)) {
             return res.status(400).json({
+                success: false,
                 message: "Invalid item status",
+                errors: [],
             });
         }
 
@@ -152,11 +154,12 @@ const updateItemStatus = async (req, res) => {
 
         if (!item) {
             return res.status(404).json({
+                success: false,
                 message: "Item not found",
+                errors: [],
             });
         }
 
-        // Create notification for the person who reported the item
         await Notification.create({
             userId: item.reportedBy,
             type: "STATUS_UPDATE",
@@ -170,24 +173,31 @@ const updateItemStatus = async (req, res) => {
     } catch (error) {
         console.error("Update item status error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to update item status",
+            errors: [],
         });
     }
 };
+
 const returnItem = async (req, res) => {
     try {
         const item = await Item.findById(req.params.id);
 
         if (!item) {
             return res.status(404).json({
+                success: false,
                 message: "Item not found",
+                errors: [],
             });
         }
 
         if (item.status !== "VERIFIED") {
             return res.status(400).json({
+                success: false,
                 message: "Item must be verified before it can be returned",
+                errors: [],
             });
         }
 
@@ -207,24 +217,31 @@ const returnItem = async (req, res) => {
     } catch (error) {
         console.error("Return item error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to return item",
+            errors: [],
         });
     }
 };
+
 const closeItem = async (req, res) => {
     try {
         const item = await Item.findById(req.params.id);
 
         if (!item) {
             return res.status(404).json({
+                success: false,
                 message: "Item not found",
+                errors: [],
             });
         }
 
         if (item.status !== "RETURNED") {
             return res.status(400).json({
+                success: false,
                 message: "Item must be returned before it can be closed",
+                errors: [],
             });
         }
 
@@ -237,11 +254,14 @@ const closeItem = async (req, res) => {
     } catch (error) {
         console.error("Close item error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to close item",
+            errors: [],
         });
     }
 };
+
 module.exports = {
     getItems,
     createItem,

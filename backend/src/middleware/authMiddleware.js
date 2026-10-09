@@ -1,3 +1,4 @@
+
 const jwt = require("jsonwebtoken");
 
 const protect = (req, res, next) => {
@@ -6,7 +7,9 @@ const protect = (req, res, next) => {
 
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             return res.status(401).json({
+                success: false,
                 message: "Authentication required",
+                errors: [],
             });
         }
 
@@ -19,7 +22,9 @@ const protect = (req, res, next) => {
         next();
     } catch (error) {
         return res.status(401).json({
+            success: false,
             message: "Invalid or expired token",
+            errors: [],
         });
     }
 };

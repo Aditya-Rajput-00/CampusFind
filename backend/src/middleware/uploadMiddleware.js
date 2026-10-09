@@ -1,3 +1,4 @@
+
 const multer = require("multer");
 
 const storage = multer.diskStorage({
@@ -13,7 +14,11 @@ const upload = multer({
         if (file.mimetype.startsWith("image/")) {
             cb(null, true);
         } else {
-            cb(new Error("Only image files are allowed"));
+            const error = new Error("Only image files are allowed");
+            error.statusCode = 400;
+            error.errors = [];
+
+            cb(error);
         }
     },
 });

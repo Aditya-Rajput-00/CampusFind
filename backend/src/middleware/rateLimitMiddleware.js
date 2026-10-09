@@ -1,3 +1,4 @@
+
 const rateLimit = require("express-rate-limit");
 
 const apiLimiter = rateLimit({
@@ -6,7 +7,9 @@ const apiLimiter = rateLimit({
     standardHeaders: "draft-7",
     legacyHeaders: false,
     message: {
+        success: false,
         message: "Too many requests, please try again later.",
+        errors: [],
     },
 });
 

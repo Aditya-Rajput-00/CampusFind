@@ -1,3 +1,4 @@
+
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
@@ -9,7 +10,9 @@ const register = async (req, res) => {
 
         if (!name || !email || !password) {
             return res.status(400).json({
+                success: false,
                 message: "Name, email, and password are required",
+                errors: [],
             });
         }
 
@@ -17,7 +20,9 @@ const register = async (req, res) => {
 
         if (existingUser) {
             return res.status(409).json({
+                success: false,
                 message: "User already exists",
+                errors: [],
             });
         }
 
@@ -43,8 +48,10 @@ const register = async (req, res) => {
             },
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Registration failed",
+            errors: [],
         });
     }
 };
@@ -55,7 +62,9 @@ const login = async (req, res) => {
 
         if (!email || !password) {
             return res.status(400).json({
+                success: false,
                 message: "Email and password are required",
+                errors: [],
             });
         }
 
@@ -63,7 +72,9 @@ const login = async (req, res) => {
 
         if (!user) {
             return res.status(401).json({
+                success: false,
                 message: "Invalid email or password",
+                errors: [],
             });
         }
 
@@ -71,7 +82,9 @@ const login = async (req, res) => {
 
         if (!passwordMatch) {
             return res.status(401).json({
+                success: false,
                 message: "Invalid email or password",
+                errors: [],
             });
         }
 
@@ -98,8 +111,10 @@ const login = async (req, res) => {
             },
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Login failed",
+            errors: [],
         });
     }
 };

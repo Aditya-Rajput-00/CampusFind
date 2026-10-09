@@ -1,3 +1,4 @@
+
 const Match = require("../models/Match");
 const Item = require("../models/Item");
 const Notification = require("../models/Notification");
@@ -10,10 +11,19 @@ const getMatches = async (req, res) => {
             .populate("foundItemId")
             .sort({ createdAt: -1 });
 
-        return successResponse(res, 200, "Matches fetched successfully", matches);
+        return successResponse(
+            res,
+            200,
+            "Matches fetched successfully",
+            matches
+        );
     } catch (error) {
-        res.status(500).json({
+        console.error("Get matches error:", error);
+
+        return res.status(500).json({
+            success: false,
             message: "Failed to fetch matches",
+            errors: [],
         });
     }
 };
@@ -34,8 +44,10 @@ const getPendingMatches = async (req, res) => {
     } catch (error) {
         console.error("Get pending matches error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to fetch pending matches",
+            errors: [],
         });
     }
 };
@@ -46,7 +58,9 @@ const createMatch = async (req, res) => {
 
         if (!lostItemId || !foundItemId || matchScore === undefined) {
             return res.status(400).json({
+                success: false,
                 message: "Lost item, found item, and match score are required",
+                errors: [],
             });
         }
 
@@ -56,7 +70,9 @@ const createMatch = async (req, res) => {
 
         if (!lostItem || !foundItem) {
             return res.status(404).json({
+                success: false,
                 message: "Lost or found item not found",
+                errors: [],
             });
         }
 
@@ -89,8 +105,10 @@ const createMatch = async (req, res) => {
     } catch (error) {
         console.error("Create match error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to create match",
+            errors: [],
         });
     }
 };
@@ -101,7 +119,9 @@ const updateMatchStatus = async (req, res) => {
 
         if (!["CONFIRMED", "REJECTED"].includes(status)) {
             return res.status(400).json({
+                success: false,
                 message: "Status must be CONFIRMED or REJECTED",
+                errors: [],
             });
         }
 
@@ -113,7 +133,9 @@ const updateMatchStatus = async (req, res) => {
 
         if (!match) {
             return res.status(404).json({
+                success: false,
                 message: "Match not found",
+                errors: [],
             });
         }
 
@@ -123,9 +145,12 @@ const updateMatchStatus = async (req, res) => {
 
         if (!lostItem || !foundItem) {
             return res.status(404).json({
+                success: false,
                 message: "Related item not found",
+                errors: [],
             });
         }
+
         if (status === "CONFIRMED") {
             lostItem.status = "MATCHED";
             foundItem.status = "MATCHED";
@@ -154,15 +179,15 @@ const updateMatchStatus = async (req, res) => {
             res,
             200,
             `Match ${status.toLowerCase()} successfully`,
-            {
-                match,
-            }
+            { match }
         );
     } catch (error) {
         console.error("Update match status error:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
             message: "Failed to update match status",
+            errors: [],
         });
     }
 };
