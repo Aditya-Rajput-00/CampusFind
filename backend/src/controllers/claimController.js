@@ -4,7 +4,7 @@ const Item = require("../models/Item");
 const Notification = require("../models/Notification");
 const { successResponse } = require("../utils/apiResponse");
 
-const getClaims = async (req, res) => {
+const getClaims = async (req, res, next) => {
     try {
         const claims = await Claim.find()
             .populate("itemId")
@@ -14,16 +14,11 @@ const getClaims = async (req, res) => {
         return successResponse(res, 200, "Claims fetched successfully", claims);
     } catch (error) {
         console.error("Get claims error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch claims",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const getPendingClaims = async (req, res) => {
+const getPendingClaims = async (req, res, next) => {
     try {
         const claims = await Claim.find({ status: "PENDING" })
             .populate("itemId")
@@ -38,16 +33,11 @@ const getPendingClaims = async (req, res) => {
         );
     } catch (error) {
         console.error("Get pending claims error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch pending claims",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const getVerificationQueue = async (req, res) => {
+const getVerificationQueue = async (req, res, next) => {
     try {
         const claims = await Claim.find({
             status: "APPROVED",
@@ -65,16 +55,11 @@ const getVerificationQueue = async (req, res) => {
         );
     } catch (error) {
         console.error("Get verification queue error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch verification queue",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const createClaim = async (req, res) => {
+const createClaim = async (req, res, next) => {
     try {
         const { itemId, proof } = req.body;
 
@@ -125,16 +110,11 @@ const createClaim = async (req, res) => {
         });
     } catch (error) {
         console.error("Create claim error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to create claim",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const updateClaimStatus = async (req, res) => {
+const updateClaimStatus = async (req, res, next) => {
     try {
         const { status } = req.body;
 
@@ -193,16 +173,11 @@ const updateClaimStatus = async (req, res) => {
         );
     } catch (error) {
         console.error("Update claim status error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to update claim status",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const verifyClaim = async (req, res) => {
+const verifyClaim = async (req, res, next) => {
     try {
         const { result, notes } = req.body;
 
@@ -251,12 +226,7 @@ const verifyClaim = async (req, res) => {
         );
     } catch (error) {
         console.error("Verify claim error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to verify claim",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
