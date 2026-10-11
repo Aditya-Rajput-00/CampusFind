@@ -5,7 +5,7 @@ const Claim = require("../models/Claim");
 const Match = require("../models/Match");
 const { successResponse } = require("../utils/apiResponse");
 
-const getDashboardStats = async (req, res) => {
+const getDashboardStats = async (req, res, next) => {
     try {
         const [
             totalUsers,
@@ -39,12 +39,7 @@ const getDashboardStats = async (req, res) => {
         });
     } catch (error) {
         console.error("Get dashboard statistics error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch dashboard statistics",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
