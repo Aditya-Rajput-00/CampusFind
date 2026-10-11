@@ -3,7 +3,7 @@ const Item = require("../models/Item");
 const { successResponse } = require("../utils/apiResponse");
 const Notification = require("../models/Notification");
 
-const getItems = async (req, res) => {
+const getItems = async (req, res, next) => {
     try {
         const {
             search,
@@ -71,16 +71,11 @@ const getItems = async (req, res) => {
         });
     } catch (error) {
         console.error("Get items error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch items",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const createItem = async (req, res) => {
+const createItem = async (req, res, next) => {
     try {
         const {
             title,
@@ -115,16 +110,11 @@ const createItem = async (req, res) => {
         });
     } catch (error) {
         console.error("Create item error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to create item",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const updateItemStatus = async (req, res) => {
+const updateItemStatus = async (req, res, next) => {
     try {
         const { status } = req.body;
 
@@ -172,16 +162,11 @@ const updateItemStatus = async (req, res) => {
         });
     } catch (error) {
         console.error("Update item status error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to update item status",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const returnItem = async (req, res) => {
+const returnItem = async (req, res, next) => {
     try {
         const item = await Item.findById(req.params.id);
 
@@ -216,16 +201,11 @@ const returnItem = async (req, res) => {
         });
     } catch (error) {
         console.error("Return item error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to return item",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const closeItem = async (req, res) => {
+const closeItem = async (req, res, next) => {
     try {
         const item = await Item.findById(req.params.id);
 
@@ -253,12 +233,7 @@ const closeItem = async (req, res) => {
         });
     } catch (error) {
         console.error("Close item error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to close item",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
