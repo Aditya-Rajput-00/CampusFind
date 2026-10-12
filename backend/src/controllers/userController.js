@@ -2,21 +2,18 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { successResponse } = require("../utils/apiResponse");
 
-const getUsers = async (req, res) => {
+const getUsers = async (req, res, next) => {
     try {
         const users = await User.find().select("-passwordHash");
 
         return successResponse(res, 200, "Users fetched successfully", users);
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch users",
-            errors: [],
-        });
+        console.error("Get users error:", error);
+        return next(error);
     }
 };
 
-const updateUser = async (req, res) => {
+const updateUser = async (req, res, next) => {
     try {
         const { name, department, phone } = req.body;
 
@@ -56,16 +53,11 @@ const updateUser = async (req, res) => {
         });
     } catch (error) {
         console.error("Update user error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to update user",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const updateUserRole = async (req, res) => {
+const updateUserRole = async (req, res, next) => {
     try {
         const { role } = req.body;
 
@@ -103,16 +95,11 @@ const updateUserRole = async (req, res) => {
         });
     } catch (error) {
         console.error("Update user role error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to update user role",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const getMyProfile = async (req, res) => {
+const getMyProfile = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.userId).select("-passwordHash");
 
@@ -127,16 +114,11 @@ const getMyProfile = async (req, res) => {
         return successResponse(res, 200, "Profile fetched successfully", user);
     } catch (error) {
         console.error("Get my profile error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch profile",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const updateMyProfile = async (req, res) => {
+const updateMyProfile = async (req, res, next) => {
     try {
         const { name, department, phone } = req.body;
 
@@ -176,16 +158,11 @@ const updateMyProfile = async (req, res) => {
         });
     } catch (error) {
         console.error("Update my profile error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to update profile",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const changeMyPassword = async (req, res) => {
+const changeMyPassword = async (req, res, next) => {
     try {
         const { currentPassword, newPassword } = req.body;
 
@@ -239,12 +216,7 @@ const changeMyPassword = async (req, res) => {
         );
     } catch (error) {
         console.error("Change password error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to change password",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
