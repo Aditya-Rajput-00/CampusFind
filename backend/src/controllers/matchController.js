@@ -4,7 +4,7 @@ const Item = require("../models/Item");
 const Notification = require("../models/Notification");
 const { successResponse } = require("../utils/apiResponse");
 
-const getMatches = async (req, res) => {
+const getMatches = async (req, res, next) => {
     try {
         const matches = await Match.find()
             .populate("lostItemId")
@@ -19,16 +19,11 @@ const getMatches = async (req, res) => {
         );
     } catch (error) {
         console.error("Get matches error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch matches",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const getPendingMatches = async (req, res) => {
+const getPendingMatches = async (req, res, next) => {
     try {
         const matches = await Match.find({ status: "PENDING" })
             .populate("lostItemId")
@@ -43,16 +38,11 @@ const getPendingMatches = async (req, res) => {
         );
     } catch (error) {
         console.error("Get pending matches error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch pending matches",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const createMatch = async (req, res) => {
+const createMatch = async (req, res, next) => {
     try {
         const { lostItemId, foundItemId, matchScore } = req.body;
 
@@ -104,16 +94,11 @@ const createMatch = async (req, res) => {
         });
     } catch (error) {
         console.error("Create match error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to create match",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
-const updateMatchStatus = async (req, res) => {
+const updateMatchStatus = async (req, res, next) => {
     try {
         const { status } = req.body;
 
@@ -183,12 +168,7 @@ const updateMatchStatus = async (req, res) => {
         );
     } catch (error) {
         console.error("Update match status error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Failed to update match status",
-            errors: [],
-        });
+        return next(error);
     }
 };
 
