@@ -6,7 +6,7 @@ const { successResponse } = require("../utils/apiResponse");
 
 const register = async (req, res, next) => {
     try {
-        const { name, email, password, role, department, phone } = req.body;
+        const { name, email, password, department, phone } = req.body;
 
         if (!name || !email || !password) {
             return res.status(400).json({
@@ -28,11 +28,12 @@ const register = async (req, res, next) => {
 
         const passwordHash = await bcrypt.hash(password, 10);
 
+        // Public registration must never grant staff or admin privileges.
         const user = await User.create({
             name,
             email,
             passwordHash,
-            role,
+            role: "student",
             department,
             phone,
         });
@@ -75,7 +76,10 @@ const login = async (req, res, next) => {
             });
         }
 
-        const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+        const passwordMatch = await bcrypt.compare(
+            password,
+            user.passwordHash
+        );
 
         if (!passwordMatch) {
             return res.status(401).json({

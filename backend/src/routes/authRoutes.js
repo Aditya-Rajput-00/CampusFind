@@ -1,8 +1,29 @@
 
 const express = require("express");
 const { register, login } = require("../controllers/authController");
+const { validationResult } = require("express-validator");
+
+const {
+    registerValidator,
+    loginValidator,
+} = require("../validators/authValidator");
 
 const router = express.Router();
+
+// Validate incoming request data
+const validateRequest = (req, res, next) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            success: false,
+            message: "Validation failed",
+            errors: errors.array(),
+        });
+    }
+
+    return next();
+};
 
 /**
  * @swagger
@@ -49,11 +70,16 @@ const router = express.Router();
  *       201:
  *         description: User registered successfully
  *       400:
- *         description: Required fields are missing
+ *         description: Invalid input or required fields are missing
  *       409:
  *         description: User already exists
  */
-router.post("/register", register);
+router.post(
+    "/register",
+    registerValidator,
+    validateRequest,
+    register
+);
 
 /**
  * @swagger
@@ -70,23 +96,19 @@ router.post("/register", register);
  *             required:
  *               - email
  *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: student@example.com
- *               password:
- *                 type: string
- *                 format: password
- *                 example: ExamplePassword123
  *     responses:
  *       200:
  *         description: Login successful; returns a JWT token and user details
  *       400:
- *         description: Email and password are required
+ *         description: Invalid input or email and password are missing
  *       401:
  *         description: Invalid email or password
  */
-router.post("/login", login);
+router.post(
+    "/login",
+    loginValidator,
+    validateRequest,
+    login
+);
 
 module.exports = router;
