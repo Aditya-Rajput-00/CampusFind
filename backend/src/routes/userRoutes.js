@@ -1,3 +1,4 @@
+
 const express = require("express");
 const {
     getUsers,
@@ -12,9 +13,25 @@ const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
 const { objectIdValidator } = require("../validators/objectIdValidator");
 const { validationResult } = require("express-validator");
+const {
+    changePasswordValidator,
+} = require("../validators/passwordValidator");
 
 const router = express.Router();
 
+const validateRequest = (req, res, next) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            success: false,
+            message: "Validation failed",
+            errors: errors.array(),
+        });
+    }
+
+    return next();
+};
 
 /**
  * @swagger
@@ -34,9 +51,7 @@ const router = express.Router();
  *       500:
  *         description: Failed to retrieve profile
  */
-
 router.get("/me", protect, getMyProfile);
-
 
 /**
  * @swagger
@@ -82,13 +97,10 @@ router.get("/", protect, authorize("admin"), getUsers);
  *             properties:
  *               name:
  *                 type: string
- *               email:
- *                 type: string
- *                 format: email
  *               department:
  *                 type: string
- *               year:
- *                 type: integer
+ *               phone:
+ *                 type: string
  *     responses:
  *       200:
  *         description: User updated successfully
@@ -106,19 +118,7 @@ router.patch(
     protect,
     authorize("admin"),
     objectIdValidator,
-    (req, res, next) => {
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-            return res.status(400).json({
-                success: false,
-                message: "Validation failed",
-                errors: errors.array(),
-            });
-        }
-
-        next();
-    },
+    validateRequest,
     updateUser
 );
 
@@ -166,19 +166,7 @@ router.patch(
     protect,
     authorize("admin"),
     objectIdValidator,
-    (req, res, next) => {
-        const errors = validationResult(req);
-
-        if (!errors.isEmpty()) {
-            return res.status(400).json({
-                success: false,
-                message: "Validation failed",
-                errors: errors.array(),
-            });
-        }
-
-        next();
-    },
+    validateRequest,
     updateUserRole
 );
 
@@ -201,8 +189,8 @@ router.patch(
  *                 type: string
  *               department:
  *                 type: string
- *               year:
- *                 type: integer
+ *               phone:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Profile updated successfully
@@ -214,7 +202,6 @@ router.patch(
  *         description: Failed to update profile
  */
 router.patch("/me", protect, updateMyProfile);
-
 
 /**
  * @swagger
@@ -245,12 +232,18 @@ router.patch("/me", protect, updateMyProfile);
  *       200:
  *         description: Password changed successfully
  *       400:
- *         description: Current password is incorrect or new password is invalid
+ *         description: Password validation failed
  *       401:
- *         description: Authentication required
- *       500:
- *         description: Failed to change password
+ *         description: Authentication required or current password is incorrect
+ *       404:
+ *         description: User not found
  */
-router.patch("/me/password", protect, changeMyPassword);
+router.patch(
+    "/me/password",
+    protect,
+    changePasswordValidator,
+    validateRequest,
+    changeMyPassword
+);
 
 module.exports = router;
