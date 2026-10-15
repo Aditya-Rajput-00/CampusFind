@@ -1,4 +1,3 @@
-
 const express = require("express");
 const {
     getUsers,
@@ -49,7 +48,7 @@ const validateRequest = (req, res, next) => {
  *       404:
  *         description: User profile not found
  *       500:
- *         description: Failed to retrieve profile
+ *         description: Internal server error
  */
 router.get("/me", protect, getMyProfile);
 
@@ -69,7 +68,7 @@ router.get("/me", protect, getMyProfile);
  *       403:
  *         description: Admin access required
  *       500:
- *         description: Failed to retrieve users
+ *         description: Internal server error
  */
 router.get("/", protect, authorize("admin"), getUsers);
 
@@ -112,6 +111,8 @@ router.get("/", protect, authorize("admin"), getUsers);
  *         description: Admin access required
  *       404:
  *         description: User not found
+ *       500:
+ *         description: Internal server error
  */
 router.patch(
     "/:id",
@@ -160,6 +161,8 @@ router.patch(
  *         description: Admin access required
  *       404:
  *         description: User not found
+ *       500:
+ *         description: Internal server error
  */
 router.patch(
     "/:id/role",
@@ -198,8 +201,10 @@ router.patch(
  *         description: Invalid profile data
  *       401:
  *         description: Authentication required
+ *       404:
+ *         description: User not found
  *       500:
- *         description: Failed to update profile
+ *         description: Internal server error
  */
 router.patch("/me", protect, updateMyProfile);
 
@@ -237,6 +242,8 @@ router.patch("/me", protect, updateMyProfile);
  *         description: Authentication required or current password is incorrect
  *       404:
  *         description: User not found
+ *       500:
+ *         description: Internal server error
  */
 router.patch(
     "/me/password",

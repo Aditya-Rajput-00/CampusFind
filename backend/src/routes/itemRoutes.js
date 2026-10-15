@@ -1,6 +1,7 @@
 
 const express = require("express");
 const multer = require("multer");
+
 const {
     getItems,
     createItem,
@@ -8,6 +9,7 @@ const {
     returnItem,
     closeItem,
 } = require("../controllers/itemController");
+
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
 const { createItemValidator } = require("../validators/itemValidator");
@@ -53,7 +55,6 @@ const handleUpload = (req, res, next) => {
     });
 };
 
-
 /**
  * @swagger
  * /api/items:
@@ -83,6 +84,7 @@ const handleUpload = (req, res, next) => {
  *         name: status
  *         schema:
  *           type: string
+ *           enum: [ACTIVE, MATCHED, CLAIMED, UNDER_VERIFICATION, VERIFIED, RETURNED, CLOSED]
  *       - in: query
  *         name: date
  *         schema:
@@ -112,12 +114,101 @@ const handleUpload = (req, res, next) => {
  *     responses:
  *       200:
  *         description: Items fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Items fetched successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           type:
+ *                             type: string
+ *                             enum: [lost, found]
+ *                           title:
+ *                             type: string
+ *                           category:
+ *                             type: string
+ *                           description:
+ *                             type: string
+ *                           location:
+ *                             type: object
+ *                             properties:
+ *                               building:
+ *                                 type: string
+ *                               floor:
+ *                                 type: number
+ *                               area:
+ *                                 type: string
+ *                           date:
+ *                             type: string
+ *                             format: date-time
+ *                           reportedBy:
+ *                             type: object
+ *                             description: Populated reporter name and email
+ *                             properties:
+ *                               _id:
+ *                                 type: string
+ *                               name:
+ *                                 type: string
+ *                               email:
+ *                                 type: string
+ *                           status:
+ *                             type: string
+ *                             enum: [ACTIVE, MATCHED, CLAIMED, UNDER_VERIFICATION, VERIFIED, RETURNED, CLOSED]
+ *                           images:
+ *                             type: array
+ *                             items:
+ *                               type: string
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                           updatedAt:
+ *                             type: string
+ *                             format: date-time
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         totalItems:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
  *       500:
  *         description: Failed to fetch items
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Internal server error
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
  */
 router.get("/", getItems);
-
-
 
 /**
  * @swagger
@@ -153,12 +244,9 @@ router.get("/", getItems);
  *                 type: string
  *                 enum: [lost, found]
  *               location:
- *                 type: object
- *                 description: Item location details
- *                 properties:
- *                   building:
- *                     type: string
- *                     example: Library
+ *                 type: string
+ *                 description: JSON-encoded location object containing building, floor, and area
+ *                 example: '{"building":"Library","floor":2,"area":"Reading room"}'
  *               date:
  *                 type: string
  *                 format: date
@@ -186,7 +274,6 @@ router.post(
     createItem
 );
 
-
 /**
  * @swagger
  * /api/items/{id}/status:
@@ -213,14 +300,7 @@ router.post(
  *             properties:
  *               status:
  *                 type: string
- *                 enum:
- *                   - ACTIVE
- *                   - MATCHED
- *                   - CLAIMED
- *                   - UNDER_VERIFICATION
- *                   - VERIFIED
- *                   - RETURNED
- *                   - CLOSED
+ *                 enum: [ACTIVE, MATCHED, CLAIMED, UNDER_VERIFICATION, VERIFIED, RETURNED, CLOSED]
  *     responses:
  *       200:
  *         description: Item status updated successfully
@@ -232,8 +312,9 @@ router.post(
  *         description: Staff or admin access required
  *       404:
  *         description: Item not found
+ *       500:
+ *         description: Failed to update item status
  */
-
 router.patch(
     "/:id/status",
     protect,
@@ -242,7 +323,6 @@ router.patch(
     validateRequest,
     updateItemStatus
 );
-
 
 /**
  * @swagger
@@ -270,8 +350,9 @@ router.patch(
  *         description: Staff or admin access required
  *       404:
  *         description: Item not found
+ *       500:
+ *         description: Failed to return item
  */
-
 router.patch(
     "/:id/return",
     protect,
@@ -280,7 +361,6 @@ router.patch(
     validateRequest,
     returnItem
 );
-
 
 /**
  * @swagger
@@ -308,8 +388,9 @@ router.patch(
  *         description: Staff or admin access required
  *       404:
  *         description: Item not found
+ *       500:
+ *         description: Failed to close item
  */
-
 router.patch(
     "/:id/close",
     protect,

@@ -1,4 +1,3 @@
-
 const express = require("express");
 const { register, login } = require("../controllers/authController");
 const { validationResult } = require("express-validator");
@@ -73,6 +72,8 @@ const validateRequest = (req, res, next) => {
  *         description: Invalid input or required fields are missing
  *       409:
  *         description: User already exists
+ *       500:
+ *         description: Internal server error
  */
 router.post(
     "/register",
@@ -96,6 +97,15 @@ router.post(
  *             required:
  *               - email
  *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: student@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: ExamplePassword123
  *     responses:
  *       200:
  *         description: Login successful; returns a JWT token and user details
@@ -103,6 +113,8 @@ router.post(
  *         description: Invalid input or email and password are missing
  *       401:
  *         description: Invalid email or password
+ *       500:
+ *         description: Internal server error
  */
 router.post(
     "/login",
