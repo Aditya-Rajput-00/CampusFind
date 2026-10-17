@@ -182,3 +182,37 @@ test("POST /api/auth/login rejects an invalid email", async () => {
         });
     }
 });
+
+
+test("POST /api/auth/login rejects missing credentials", async () => {
+    const server = app.listen(0);
+
+    try {
+        const address = server.address();
+
+        const response = await fetch(
+            `http://127.0.0.1:${address.port}/api/auth/login`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({}),
+            }
+        );
+
+        const body = await response.json();
+
+        assert.equal(response.status, 400);
+        assert.equal(body.success, false);
+        assert.equal(body.message, "Validation failed");
+        assert.ok(body.errors.length > 0);
+    } finally {
+        await new Promise((resolve, reject) => {
+            server.close((error) => {
+                if (error) reject(error);
+                else resolve();
+            });
+        });
+    }
+});
