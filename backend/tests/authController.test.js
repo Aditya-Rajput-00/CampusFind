@@ -255,3 +255,62 @@ test("login returns a JWT for valid credentials", async () => {
         User.findOne = originalFindOne;
     }
 });
+
+test("registration forwards database errors to next", async () => {
+    const originalFindOne = User.findOne;
+    const databaseError = new Error("Database error");
+
+    try {
+        User.findOne = async () => {
+            throw databaseError;
+        };
+
+        const req = {
+            body: {
+                name: "Test User",
+                email: "test@example.com",
+                password: "test-password",
+            },
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await register(req, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, databaseError);
+        assert.equal(res.statusCode, null);
+    } finally {
+        User.findOne = originalFindOne;
+    }
+});
+
+test("login forwards database errors to next", async () => {
+    const originalFindOne = User.findOne;
+    const databaseError = new Error("Database error");
+
+    try {
+        User.findOne = async () => {
+            throw databaseError;
+        };
+
+        const req = {
+            body: {
+                email: "test@example.com",
+                password: "test-password",
+            },
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await login(req, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, databaseError);
+        assert.equal(res.statusCode, null);
+    } finally {
+        User.findOne = originalFindOne;
+    }
+});
