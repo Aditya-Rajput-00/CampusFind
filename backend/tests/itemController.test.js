@@ -293,6 +293,26 @@ test("updateItemStatus updates the item and creates a notification", async () =>
     }
 });
 
+test("returnItem returns 404 when the item does not exist", async () => {
+    const originalFindById = Item.findById;
+
+    try {
+        Item.findById = async () => null;
+
+        const req = { params: { id: "missing-item" } };
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await returnItem(req, res, next);
+
+        assert.equal(res.statusCode, 404);
+        assert.equal(res.body.message, "Item not found");
+        assert.equal(state.called, false);
+    } finally {
+        restoreMethod(Item, "findById", originalFindById);
+    }
+});
+
 test("returnItem rejects an item that has not been verified", async () => {
     const originalFindById = Item.findById;
 
@@ -358,6 +378,26 @@ test("returnItem marks a verified item as returned and notifies its reporter", a
     } finally {
         restoreMethod(Item, "findById", originalFindById);
         restoreMethod(Notification, "create", originalNotificationCreate);
+    }
+});
+
+test("closeItem returns 404 when the item does not exist", async () => {
+    const originalFindById = Item.findById;
+
+    try {
+        Item.findById = async () => null;
+
+        const req = { params: { id: "missing-item" } };
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await closeItem(req, res, next);
+
+        assert.equal(res.statusCode, 404);
+        assert.equal(res.body.message, "Item not found");
+        assert.equal(state.called, false);
+    } finally {
+        restoreMethod(Item, "findById", originalFindById);
     }
 });
 
