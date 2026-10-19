@@ -29,10 +29,11 @@ const registerValidator = [
         .notEmpty()
         .withMessage("Password is required"),
 
+    // Public registration only permits the student role.
     body("role")
         .optional()
-        .isIn(["student", "staff", "admin"])
-        .withMessage("Role must be student, staff, or admin"),
+        .isIn(["student"])
+        .withMessage("Public registration only allows the student role"),
 
     body("department")
         .optional()
@@ -59,8 +60,7 @@ const loginValidator = [
         .withMessage("Email is required")
         .bail()
         .isEmail()
-        .withMessage("Enter a valid email address")
-    ,
+        .withMessage("Enter a valid email address"),
 
     body("password")
         .isString()

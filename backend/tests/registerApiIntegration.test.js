@@ -99,3 +99,20 @@ test("POST /api/auth/register returns 409 for an existing email", async (t) => {
     assert.equal(body.message, "User already exists");
     assert.deepEqual(body.errors, []);
 });
+
+test("POST /api/auth/register rejects an unsupported role", async () => {
+    const response = await makeRequest({
+        name: "Test Admin",
+        email: "testadmin@example.com",
+        password: "ExamplePassword123",
+        role: "admin"
+    });
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(body.success, false);
+    assert.equal(body.message, "Validation failed");
+    assert.ok(Array.isArray(body.errors));
+    assert.ok(body.errors.some((error) => error.path === "role"));
+});
