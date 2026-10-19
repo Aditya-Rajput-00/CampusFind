@@ -44,6 +44,8 @@ const restoreMethod = (object, method, original) => {
     object[method] = original;
 };
 
+// GET ITEMS TESTS
+
 test("getItems returns items and pagination details", async () => {
     const originals = {
         countDocuments: Item.countDocuments,
@@ -154,6 +156,33 @@ test("getItems passes search and category filters to the model", async () => {
     }
 });
 
+// NEW TEST: DATABASE ERROR HANDLING
+
+test("getItems forwards database errors to next", async () => {
+    const originalCountDocuments = Item.countDocuments;
+    const databaseError = new Error("Database error");
+
+    try {
+        Item.countDocuments = async () => {
+            throw databaseError;
+        };
+
+        const req = { query: {} };
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await getItems(req, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, databaseError);
+        assert.equal(res.statusCode, null);
+    } finally {
+        restoreMethod(Item, "countDocuments", originalCountDocuments);
+    }
+});
+
+// CREATE ITEM TESTS
+
 test("createItem rejects missing required fields", async () => {
     const req = { body: {}, user: { userId: "user-1" } };
     const res = createResponse();
@@ -205,6 +234,8 @@ test("createItem creates an item with the reporter and image", async () => {
         restoreMethod(Item, "create", originalCreate);
     }
 });
+
+// UPDATE ITEM STATUS TESTS
 
 test("updateItemStatus rejects an unsupported status", async () => {
     const req = {
@@ -293,6 +324,8 @@ test("updateItemStatus updates the item and creates a notification", async () =>
     }
 });
 
+// RETURN ITEM TESTS
+
 test("returnItem returns 404 when the item does not exist", async () => {
     const originalFindById = Item.findById;
 
@@ -358,6 +391,7 @@ test("returnItem marks a verified item as returned and notifies its reporter", a
         let notificationData;
 
         Item.findById = async () => item;
+
         Notification.create = async (data) => {
             notificationData = data;
             return data;
@@ -380,6 +414,8 @@ test("returnItem marks a verified item as returned and notifies its reporter", a
         restoreMethod(Notification, "create", originalNotificationCreate);
     }
 });
+
+// CLOSE ITEM TESTS
 
 test("closeItem returns 404 when the item does not exist", async () => {
     const originalFindById = Item.findById;
