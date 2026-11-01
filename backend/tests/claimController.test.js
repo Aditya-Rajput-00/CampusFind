@@ -582,3 +582,202 @@ test("verifyClaim records successful verification and notifies the claimant", as
         restoreMethod(Notification, "create", originalCreateNotification);
     }
 });
+
+test("getPendingClaims forwards database errors to next", async () => {
+    const originalFind = Claim.find;
+    const expectedError = new Error("Pending claims database error");
+
+    try {
+        Claim.find = () => ({
+            populate() {
+                return this;
+            },
+            sort() {
+                return Promise.reject(expectedError);
+            },
+        });
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await getPendingClaims({}, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(Claim, "find", originalFind);
+    }
+});
+
+test("getVerificationQueue forwards database errors to next", async () => {
+    const originalFind = Claim.find;
+    const expectedError = new Error("Verification queue database error");
+
+    try {
+        Claim.find = () => ({
+            populate() {
+                return this;
+            },
+            sort() {
+                return Promise.reject(expectedError);
+            },
+        });
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await getVerificationQueue({}, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(Claim, "find", originalFind);
+    }
+});
+
+test("createClaim forwards database errors to next", async () => {
+    const originalFindById = Item.findById;
+    const expectedError = new Error("Item database error");
+
+    try {
+        Item.findById = async () => {
+            throw expectedError;
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await createClaim(
+            {
+                body: {
+                    itemId: "item-1",
+                    proof: { description: "I own this item" },
+                },
+                user: { userId: "user-1" },
+            },
+            res,
+            next
+        );
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(Item, "findById", originalFindById);
+    }
+});
+
+test("updateClaimStatus forwards database errors to next", async () => {
+    const originalUpdate = Claim.findByIdAndUpdate;
+    const expectedError = new Error("Claim update database error");
+
+    try {
+        Claim.findByIdAndUpdate = async () => {
+            throw expectedError;
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await updateClaimStatus(
+            {
+                body: { status: "REJECTED" },
+                params: { id: "claim-1" },
+            },
+            res,
+            next
+        );
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(Claim, "findByIdAndUpdate", originalUpdate);
+    }
+});
+
+test("verifyClaim forwards database errors to next", async () => {
+    const originalFindById = Claim.findById;
+    const expectedError = new Error("Claim verification database error");
+
+    try {
+        Claim.findById = async () => {
+            throw expectedError;
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await verifyClaim(
+            {
+                body: { result: "SUCCESS" },
+                params: { id: "claim-1" },
+                user: { userId: "verifier-1" },
+            },
+            res,
+            next
+        );
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(Claim, "findById", originalFindById);
+    }
+});
+
+test("verifyClaim records failed verification and notifies the claimant", async () => {
+    const originalFindById = Claim.findById;
+    const originalCreateNotification = Notification.create;
+
+    try {
+        const claim = {
+            _id: "claim-1",
+            claimantId: "claimant-1",
+            verification: {},
+            async save() {
+                return this;
+            },
+        };
+
+        let notificationData;
+
+        Claim.findById = async () => claim;
+
+        Notification.create = async (data) => {
+            notificationData = data;
+            return data;
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await verifyClaim(
+            {
+                body: {
+                    result: "FAILURE",
+                    notes: "Ownership could not be confirmed",
+                },
+                params: { id: "claim-1" },
+                user: { userId: "verifier-1" },
+            },
+            res,
+            next
+        );
+
+        assert.equal(state.called, false);
+        assert.equal(res.statusCode, 200);
+        assert.equal(claim.verification.result, "FAILURE");
+        assert.equal(claim.verification.verifiedBy, "verifier-1");
+        assert.equal(
+            claim.verification.notes,
+            "Ownership could not be confirmed"
+        );
+        assert.equal(notificationData.userId, "claimant-1");
+        assert.equal(notificationData.title, "Verification Failed");
+        assert.equal(
+            notificationData.message,
+            "Your ownership verification has failed."
+        );
+    } finally {
+        restoreMethod(Claim, "findById", originalFindById);
+        restoreMethod(Notification, "create", originalCreateNotification);
+    }
+});
