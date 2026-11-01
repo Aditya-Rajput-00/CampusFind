@@ -13,9 +13,6 @@ const runValidators = async (validators, body) => {
         body: { ...body },
     };
 
-    const res = {};
-    let nextCalled = false;
-
     for (const validator of validators) {
         await validator.run(req);
     }
@@ -26,8 +23,6 @@ const runValidators = async (validators, body) => {
         req,
         errors: errors.array(),
         isValid: errors.isEmpty(),
-        res,
-        nextCalled,
     };
 };
 
