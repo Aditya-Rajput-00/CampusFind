@@ -49,6 +49,7 @@ test("getNotifications returns notifications for the logged-in user", async () =
         const expectedNotifications = [
             { _id: "notification-1", userId: "user-1" },
         ];
+
         let capturedFilter;
 
         Notification.find = (filter) => {
@@ -106,7 +107,13 @@ test("createNotification rejects missing required fields", async () => {
     const { next, state } = createNext();
 
     await createNotification(
-        { body: { userId: "user-1", type: "CLAIM", title: "Update" } },
+        {
+            body: {
+                userId: "user-1",
+                type: "CLAIM",
+                title: "Update",
+            },
+        },
         res,
         next
     );
@@ -147,16 +154,49 @@ test("createNotification creates a notification successfully", async () => {
         assert.equal(state.called, false);
         assert.equal(res.statusCode, 201);
         assert.equal(res.body.success, true);
+
         assert.deepEqual(savedData, {
             userId: "user-1",
             type: "CLAIM",
             title: "New Claim",
             message: "Someone submitted a claim.",
         });
+
         assert.equal(
             res.body.data.notification._id,
             "notification-1"
         );
+    } finally {
+        restoreMethod(Notification, "create", originalCreate);
+    }
+});
+
+test("createNotification forwards database errors to next", async () => {
+    const originalCreate = Notification.create;
+
+    try {
+        const expectedError = new Error("Notification database error");
+
+        Notification.create = async () => {
+            throw expectedError;
+        };
+
+        const req = {
+            body: {
+                userId: "user-1",
+                type: "CLAIM",
+                title: "New Claim",
+                message: "Someone submitted a claim.",
+            },
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await createNotification(req, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
     } finally {
         restoreMethod(Notification, "create", originalCreate);
     }
@@ -194,14 +234,17 @@ test("markAsRead updates only the logged-in user's notification", async () => {
         await markAsRead(req, res, next);
 
         assert.equal(state.called, false);
+
         assert.deepEqual(capturedFilter, {
             _id: "notification-1",
             userId: "user-1",
         });
+
         assert.deepEqual(capturedUpdate, { isRead: true });
         assert.deepEqual(capturedOptions, { new: true });
         assert.equal(res.statusCode, 200);
         assert.equal(res.body.success, true);
+
         assert.deepEqual(
             res.body.data.notification,
             expectedNotification
@@ -294,10 +337,12 @@ test("markAllAsRead updates unread notifications for the logged-in user", async 
         await markAllAsRead(req, res, next);
 
         assert.equal(state.called, false);
+
         assert.deepEqual(capturedFilter, {
             userId: "user-1",
             isRead: false,
         });
+
         assert.deepEqual(capturedUpdate, { isRead: true });
         assert.equal(res.statusCode, 200);
         assert.equal(res.body.success, true);
