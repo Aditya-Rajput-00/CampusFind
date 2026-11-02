@@ -494,3 +494,167 @@ test("closeItem closes a returned item", async () => {
         restoreMethod(Item, "findById", originalFindById);
     }
 });
+
+
+// ADDITIONAL DATABASE ERROR HANDLING TESTS
+
+test("getItems forwards errors from Item.find to next", async () => {
+    const originals = {
+        countDocuments: Item.countDocuments,
+        find: Item.find,
+    };
+    const databaseError = new Error("Find database error");
+
+    try {
+        Item.countDocuments = async () => 0;
+        Item.find = () => {
+            throw databaseError;
+        };
+
+        const req = { query: {} };
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await getItems(req, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, databaseError);
+        assert.equal(res.statusCode, null);
+    } finally {
+        restoreMethod(Item, "countDocuments", originals.countDocuments);
+        restoreMethod(Item, "find", originals.find);
+    }
+});
+
+test("createItem forwards database errors to next", async () => {
+    const originalCreate = Item.create;
+    const databaseError = new Error("Create database error");
+
+    try {
+        Item.create = async () => {
+            throw databaseError;
+        };
+
+        const req = {
+            body: {
+                title: "Lost Wallet",
+                description: "Black wallet",
+                category: "Accessories",
+                type: "LOST",
+                date: "2026-10-16",
+            },
+            user: { userId: "user-1" },
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await createItem(req, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, databaseError);
+        assert.equal(res.statusCode, null);
+    } finally {
+        restoreMethod(Item, "create", originalCreate);
+    }
+});
+
+test("updateItemStatus forwards database errors to next", async () => {
+    const originalUpdate = Item.findByIdAndUpdate;
+    const databaseError = new Error("Update database error");
+
+    try {
+        Item.findByIdAndUpdate = async () => {
+            throw databaseError;
+        };
+
+        const req = {
+            body: { status: "VERIFIED" },
+            params: { id: "item-1" },
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await updateItemStatus(req, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, databaseError);
+        assert.equal(res.statusCode, null);
+    } finally {
+        restoreMethod(Item, "findByIdAndUpdate", originalUpdate);
+    }
+});
+
+test("returnItem forwards database errors to next", async () => {
+    const originalFindById = Item.findById;
+    const databaseError = new Error("Return database error");
+
+    try {
+        Item.findById = async () => {
+            throw databaseError;
+        };
+
+        const req = { params: { id: "item-1" } };
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await returnItem(req, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, databaseError);
+        assert.equal(res.statusCode, null);
+    } finally {
+        restoreMethod(Item, "findById", originalFindById);
+    }
+});
+
+test("closeItem forwards database errors to next", async () => {
+    const originalFindById = Item.findById;
+    const databaseError = new Error("Close database error");
+
+    try {
+        Item.findById = async () => {
+            throw databaseError;
+        };
+
+        const req = { params: { id: "item-1" } };
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await closeItem(req, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, databaseError);
+        assert.equal(res.statusCode, null);
+    } finally {
+        restoreMethod(Item, "findById", originalFindById);
+    }
+});
+
+test("closeItem forwards save errors to next", async () => {
+    const originalFindById = Item.findById;
+    const databaseError = new Error("Save database error");
+
+    try {
+        Item.findById = async () => ({
+            _id: "item-1",
+            status: "RETURNED",
+            async save() {
+                throw databaseError;
+            },
+        });
+
+        const req = { params: { id: "item-1" } };
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await closeItem(req, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, databaseError);
+        assert.equal(res.statusCode, null);
+    } finally {
+        restoreMethod(Item, "findById", originalFindById);
+    }
+});
