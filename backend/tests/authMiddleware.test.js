@@ -114,3 +114,41 @@ test("rejects an expired JWT token", () => {
     assert.equal(res.statusCode, 401);
     assert.equal(res.body.message, "Invalid or expired token");
 });
+
+test("rejects an authorization header without Bearer scheme", () => {
+    const req = {
+        headers: {
+            authorization: "Basic some-token",
+        },
+    };
+
+    const res = createResponse();
+    let nextCalled = false;
+
+    protect(req, res, () => {
+        nextCalled = true;
+    });
+
+    assert.equal(nextCalled, false);
+    assert.equal(res.statusCode, 401);
+    assert.equal(res.body.message, "Authentication required");
+});
+
+test("rejects an empty Bearer token", () => {
+    const req = {
+        headers: {
+            authorization: "Bearer ",
+        },
+    };
+
+    const res = createResponse();
+    let nextCalled = false;
+
+    protect(req, res, () => {
+        nextCalled = true;
+    });
+
+    assert.equal(nextCalled, false);
+    assert.equal(res.statusCode, 401);
+    assert.equal(res.body.message, "Invalid or expired token");
+});

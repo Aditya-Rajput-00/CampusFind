@@ -111,3 +111,33 @@ test("authorize denies a user when no roles are allowed", () => {
     assert.equal(res.statusCode, 403);
     assert.equal(res.body.message, "Access denied");
 });
+
+test("authorize denies a request when user role is missing", () => {
+    const middleware = authorize("ADMIN");
+    const req = { user: { userId: "user-1" } };
+    const res = createResponse();
+    let nextCalled = false;
+
+    middleware(req, res, () => {
+        nextCalled = true;
+    });
+
+    assert.equal(nextCalled, false);
+    assert.equal(res.statusCode, 403);
+    assert.equal(res.body.message, "Access denied");
+});
+
+test("authorize denies a request when user role is empty", () => {
+    const middleware = authorize("ADMIN");
+    const req = { user: { userId: "user-1", role: "" } };
+    const res = createResponse();
+    let nextCalled = false;
+
+    middleware(req, res, () => {
+        nextCalled = true;
+    });
+
+    assert.equal(nextCalled, false);
+    assert.equal(res.statusCode, 403);
+    assert.equal(res.body.message, "Access denied");
+});
