@@ -538,3 +538,322 @@ test("updateMatchStatus rejects a match and notifies both reporters", async () =
         );
     }
 });
+
+test("getPendingMatches forwards database errors to next", async () => {
+    const originalFind = Match.find;
+
+    try {
+        const expectedError = new Error("Database error");
+
+        Match.find = () => ({
+            populate() {
+                return this;
+            },
+            sort() {
+                return Promise.reject(expectedError);
+            },
+        });
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await getPendingMatches({}, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(Match, "find", originalFind);
+    }
+});
+
+test("createMatch forwards item lookup errors to next", async () => {
+    const originalFindById = Item.findById;
+
+    try {
+        const expectedError = new Error("Item lookup failed");
+
+        Item.findById = async () => {
+            throw expectedError;
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await createMatch(
+            {
+                body: {
+                    lostItemId: "lost-1",
+                    foundItemId: "found-1",
+                    matchScore: 0.9,
+                },
+            },
+            res,
+            next
+        );
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(Item, "findById", originalFindById);
+    }
+});
+
+test("createMatch forwards match creation errors to next", async () => {
+    const originalFindById = Item.findById;
+    const originalCreate = Match.create;
+
+    try {
+        const expectedError = new Error("Match creation failed");
+
+        Item.findById = async (id) => ({
+            _id: id,
+            title: "Test Item",
+            reportedBy: `reporter-${id}`,
+        });
+
+        Match.create = async () => {
+            throw expectedError;
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await createMatch(
+            {
+                body: {
+                    lostItemId: "lost-1",
+                    foundItemId: "found-1",
+                    matchScore: 0.9,
+                },
+            },
+            res,
+            next
+        );
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(Item, "findById", originalFindById);
+        restoreMethod(Match, "create", originalCreate);
+    }
+});
+
+test("createMatch forwards notification errors to next", async () => {
+    const originalFindById = Item.findById;
+    const originalCreateMatch = Match.create;
+    const originalCreateNotification = Notification.create;
+
+    try {
+        const expectedError = new Error("Notification creation failed");
+
+        Item.findById = async (id) => ({
+            _id: id,
+            title: "Test Item",
+            reportedBy: `reporter-${id}`,
+        });
+
+        Match.create = async (data) => ({
+            _id: "match-1",
+            ...data,
+        });
+
+        Notification.create = async () => {
+            throw expectedError;
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await createMatch(
+            {
+                body: {
+                    lostItemId: "lost-1",
+                    foundItemId: "found-1",
+                    matchScore: 0.9,
+                },
+            },
+            res,
+            next
+        );
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(Item, "findById", originalFindById);
+        restoreMethod(Match, "create", originalCreateMatch);
+        restoreMethod(Notification, "create", originalCreateNotification);
+    }
+});
+
+test("updateMatchStatus forwards match update errors to next", async () => {
+    const originalUpdate = Match.findByIdAndUpdate;
+
+    try {
+        const expectedError = new Error("Match update failed");
+
+        Match.findByIdAndUpdate = async () => {
+            throw expectedError;
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await updateMatchStatus(
+            {
+                body: { status: "CONFIRMED" },
+                params: { id: "match-1" },
+            },
+            res,
+            next
+        );
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(
+            Match,
+            "findByIdAndUpdate",
+            originalUpdate
+        );
+    }
+});
+
+test("updateMatchStatus forwards related item lookup errors to next", async () => {
+    const originalUpdate = Match.findByIdAndUpdate;
+    const originalFindById = Item.findById;
+
+    try {
+        const expectedError = new Error("Related item lookup failed");
+
+        Match.findByIdAndUpdate = async () => ({
+            _id: "match-1",
+            lostItemId: "lost-1",
+            foundItemId: "found-1",
+        });
+
+        Item.findById = async () => {
+            throw expectedError;
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await updateMatchStatus(
+            {
+                body: { status: "CONFIRMED" },
+                params: { id: "match-1" },
+            },
+            res,
+            next
+        );
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(Match, "findByIdAndUpdate", originalUpdate);
+        restoreMethod(Item, "findById", originalFindById);
+    }
+});
+
+test("updateMatchStatus forwards item save errors to next", async () => {
+    const originalUpdate = Match.findByIdAndUpdate;
+    const originalFindById = Item.findById;
+
+    try {
+        const expectedError = new Error("Item save failed");
+
+        Match.findByIdAndUpdate = async () => ({
+            _id: "match-1",
+            lostItemId: "lost-1",
+            foundItemId: "found-1",
+        });
+
+        const lostItem = {
+            _id: "lost-1",
+            title: "Lost Wallet",
+            reportedBy: "reporter-1",
+            status: "ACTIVE",
+            save: async () => {
+                throw expectedError;
+            },
+        };
+
+        const foundItem = {
+            _id: "found-1",
+            title: "Found Wallet",
+            reportedBy: "reporter-2",
+            status: "ACTIVE",
+            save: async () => foundItem,
+        };
+
+        Item.findById = async (id) => {
+            if (id === "lost-1") return lostItem;
+            if (id === "found-1") return foundItem;
+            return null;
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await updateMatchStatus(
+            {
+                body: { status: "CONFIRMED" },
+                params: { id: "match-1" },
+            },
+            res,
+            next
+        );
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(Match, "findByIdAndUpdate", originalUpdate);
+        restoreMethod(Item, "findById", originalFindById);
+    }
+});
+
+test("updateMatchStatus forwards notification errors to next", async () => {
+    const originalUpdate = Match.findByIdAndUpdate;
+    const originalFindById = Item.findById;
+    const originalCreateNotification = Notification.create;
+
+    try {
+        const expectedError = new Error("Notification creation failed");
+
+        Match.findByIdAndUpdate = async () => ({
+            _id: "match-1",
+            lostItemId: "lost-1",
+            foundItemId: "found-1",
+        });
+
+        Item.findById = async (id) => ({
+            _id: id,
+            title: "Test Item",
+            reportedBy: `reporter-${id}`,
+            status: "ACTIVE",
+        });
+
+        Notification.create = async () => {
+            throw expectedError;
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await updateMatchStatus(
+            {
+                body: { status: "REJECTED" },
+                params: { id: "match-1" },
+            },
+            res,
+            next
+        );
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, expectedError);
+    } finally {
+        restoreMethod(Match, "findByIdAndUpdate", originalUpdate);
+        restoreMethod(Item, "findById", originalFindById);
+        restoreMethod(Notification, "create", originalCreateNotification);
+    }
+});
