@@ -1,4 +1,6 @@
+
 import Login from './pages/auth/Login';
+import Items from './pages/items/Items';
 import { useAuth } from './context/AuthContext';
 
 function App() {
@@ -9,18 +11,39 @@ function App() {
     }
 
     return (
-        <div className="login-page">
-            <div className="login-card">
-                <h1>CampusFind</h1>
+        <div>
+            <header
+                style={{
+                    padding: '20px 40px',
+                    background: '#151d32',
+                    borderBottom: '1px solid #273451',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    color: '#ffffff',
+                }}
+            >
+                <h2 style={{ color: '#a78bfa' }}>CampusFind</h2>
 
-                <h2>Welcome, {user?.name}!</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <span>Welcome, {user?.name}!</span>
 
-                <p>You are successfully logged in.</p>
+                    <button
+                        onClick={logout}
+                        style={{
+                            padding: '10px 18px',
+                            background: '#7c3aed',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '7px',
+                        }}
+                    >
+                        Logout
+                    </button>
+                </div>
+            </header>
 
-                <button onClick={logout}>
-                    Logout
-                </button>
-            </div>
+            <Items />
         </div>
     );
 }
