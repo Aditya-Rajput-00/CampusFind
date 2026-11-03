@@ -1,4 +1,8 @@
 
+const path = require("path");
+const express = require("express");
+const helmet = require("helmet");
+
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const itemRoutes = require("./routes/itemRoutes");
@@ -6,19 +10,23 @@ const claimRoutes = require("./routes/claimRoutes");
 const matchRoutes = require("./routes/matchRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+
 const errorHandler = require("./middleware/errorMiddleware");
 const apiLimiter = require("./middleware/rateLimitMiddleware");
+
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./docs/swagger");
-
-const express = require("express");
-const helmet = require("helmet");
 
 const app = express();
 
 app.use(express.json());
-
 app.use(helmet());
+
+// Serve uploaded item images
+app.use(
+    "/uploads",
+    express.static(path.join(__dirname, "../uploads"))
+);
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
