@@ -1,14 +1,31 @@
 
+import { useState } from 'react';
 import Login from './pages/auth/Login';
 import Items from './pages/items/Items';
+import Claims from './pages/claims/Claims';
 import { useAuth } from './context/AuthContext';
 
 function App() {
     const { isAuthenticated, user, logout } = useAuth();
+    const [activePage, setActivePage] = useState('items');
 
     if (!isAuthenticated) {
         return <Login />;
     }
+
+    const navigationButtonStyle = (page) => ({
+        padding: '10px 18px',
+        background: activePage === page
+            ? 'linear-gradient(135deg, #9333ea, #4f46e5)'
+            : 'transparent',
+        color: '#ffffff',
+        border: activePage === page
+            ? 'none'
+            : '1px solid #374563',
+        borderRadius: '7px',
+        cursor: 'pointer',
+        fontWeight: 600,
+    });
 
     return (
         <div>
@@ -20,12 +37,38 @@ function App() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '15px',
                     color: '#ffffff',
                 }}
             >
                 <h2 style={{ color: '#a78bfa' }}>CampusFind</h2>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <nav style={{
+                    display: 'flex',
+                    gap: '10px',
+                    flexWrap: 'wrap',
+                }}>
+                    <button
+                        style={navigationButtonStyle('items')}
+                        onClick={() => setActivePage('items')}
+                    >
+                        Lost & Found
+                    </button>
+
+                    <button
+                        style={navigationButtonStyle('claims')}
+                        onClick={() => setActivePage('claims')}
+                    >
+                        Claims
+                    </button>
+                </nav>
+
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '20px',
+                }}>
                     <span>Welcome, {user?.name}!</span>
 
                     <button
@@ -36,6 +79,7 @@ function App() {
                             color: '#ffffff',
                             border: 'none',
                             borderRadius: '7px',
+                            cursor: 'pointer',
                         }}
                     >
                         Logout
@@ -43,7 +87,7 @@ function App() {
                 </div>
             </header>
 
-            <Items />
+            {activePage === 'items' ? <Items /> : <Claims />}
         </div>
     );
 }

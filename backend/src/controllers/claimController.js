@@ -4,14 +4,27 @@ const Item = require("../models/Item");
 const Notification = require("../models/Notification");
 const { successResponse } = require("../utils/apiResponse");
 
+
 const getClaims = async (req, res, next) => {
     try {
-        const claims = await Claim.find()
+        // Students can only see their own claims.
+        // Staff and admins can see all claims.
+        const filter =
+            req.user.role === "student"
+                ? { claimantId: req.user.userId }
+                : {};
+
+        const claims = await Claim.find(filter)
             .populate("itemId")
             .populate("claimantId", "name email")
             .sort({ createdAt: -1 });
 
-        return successResponse(res, 200, "Claims fetched successfully", claims);
+        return successResponse(
+            res,
+            200,
+            "Claims fetched successfully",
+            claims
+        );
     } catch (error) {
         console.error("Get claims error:", error);
         return next(error);
