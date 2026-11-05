@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Login from './pages/auth/Login';
 import Items from './pages/items/Items';
 import Claims from './pages/claims/Claims';
+import Matches from './pages/matches/Matches';
 import { useAuth } from './context/AuthContext';
 
 function App() {
@@ -62,6 +63,13 @@ function App() {
                     >
                         Claims
                     </button>
+
+                    <button
+                        style={navigationButtonStyle('matches')}
+                        onClick={() => setActivePage('matches')}
+                    >
+                        Matches
+                    </button>
                 </nav>
 
                 <div style={{
@@ -87,7 +95,9 @@ function App() {
                 </div>
             </header>
 
-            {activePage === 'items' ? <Items /> : <Claims />}
+            {activePage === 'items' && <Items />}
+            {activePage === 'claims' && <Claims />}
+            {activePage === 'matches' && <Matches />}
         </div>
     );
 }

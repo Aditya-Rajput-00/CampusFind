@@ -6,7 +6,30 @@ const { successResponse } = require("../utils/apiResponse");
 
 const getMatches = async (req, res, next) => {
     try {
-        const matches = await Match.find()
+        let filter = {};
+
+        if (req.user.role === "student") {
+            // Find items reported by the logged-in student.
+            const itemIds = await Item.find({
+                reportedBy: req.user.userId,
+            }).distinct("_id");
+
+            // Find matches involving at least one of the student's items.
+            filter = {
+                $or: [
+                    { lostItemId: { $in: itemIds } },
+                    { foundItemId: { $in: itemIds } },
+                ],
+            };
+        } else if (!["staff", "admin"].includes(req.user.role)) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied",
+                errors: [],
+            });
+        }
+
+        const matches = await Match.find(filter)
             .populate("lostItemId")
             .populate("foundItemId")
             .sort({ createdAt: -1 });
@@ -54,7 +77,7 @@ const createMatch = async (req, res, next) => {
             });
         }
 
-        // Find both items
+        // Find both items.
         const lostItem = await Item.findById(lostItemId);
         const foundItem = await Item.findById(foundItemId);
 
@@ -66,14 +89,14 @@ const createMatch = async (req, res, next) => {
             });
         }
 
-        // Create the match
+        // Create the match.
         const match = await Match.create({
             lostItemId,
             foundItemId,
             matchScore,
         });
 
-        // Notify the person who reported the lost item
+        // Notify the person who reported the lost item.
         await Notification.create({
             userId: lostItem.reportedBy,
             type: "MATCH",
@@ -81,7 +104,7 @@ const createMatch = async (req, res, next) => {
             message: `A potential match was found for your lost item: ${lostItem.title}.`,
         });
 
-        // Notify the person who reported the found item
+        // Notify the person who reported the found item.
         await Notification.create({
             userId: foundItem.reportedBy,
             type: "MATCH",
@@ -124,7 +147,7 @@ const updateMatchStatus = async (req, res, next) => {
             });
         }
 
-        // Find both items
+        // Find both items.
         const lostItem = await Item.findById(match.lostItemId);
         const foundItem = await Item.findById(match.foundItemId);
 
@@ -144,7 +167,7 @@ const updateMatchStatus = async (req, res, next) => {
             await foundItem.save();
         }
 
-        // Notify the person who reported the lost item
+        // Notify the person who reported the lost item.
         await Notification.create({
             userId: lostItem.reportedBy,
             type: "MATCH",
@@ -152,7 +175,7 @@ const updateMatchStatus = async (req, res, next) => {
             message: `The match for your lost item "${lostItem.title}" has been ${status.toLowerCase()}.`,
         });
 
-        // Notify the person who reported the found item
+        // Notify the person who reported the found item.
         await Notification.create({
             userId: foundItem.reportedBy,
             type: "MATCH",
