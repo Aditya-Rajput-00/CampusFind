@@ -4,6 +4,7 @@ import Login from './pages/auth/Login';
 import Items from './pages/items/Items';
 import Claims from './pages/claims/Claims';
 import Matches from './pages/matches/Matches';
+import Notifications from './pages/notifications/Notifications';
 import { useAuth } from './context/AuthContext';
 
 function App() {
@@ -70,6 +71,13 @@ function App() {
                     >
                         Matches
                     </button>
+
+                    <button
+                        style={navigationButtonStyle('notifications')}
+                        onClick={() => setActivePage('notifications')}
+                    >
+                        Notifications
+                    </button>
                 </nav>
 
                 <div style={{
@@ -98,6 +106,7 @@ function App() {
             {activePage === 'items' && <Items />}
             {activePage === 'claims' && <Claims />}
             {activePage === 'matches' && <Matches />}
+            {activePage === 'notifications' && <Notifications />}
         </div>
     );
 }
