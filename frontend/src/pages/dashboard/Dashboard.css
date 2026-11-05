@@ -1,0 +1,194 @@
+/* ========================================
+   CAMPUSFIND - STAFF & ADMIN DASHBOARD
+======================================== */
+
+.dashboard-page {
+    min-height: 100vh;
+    padding: 40px;
+    background: #0b1020;
+    color: #ffffff;
+}
+
+/* Dashboard Header */
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 35px;
+}
+
+.dashboard-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.dashboard-header p {
+    color: #9ca3af;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+/* Refresh Button */
+
+.dashboard-refresh-button {
+    padding: 13px 24px;
+    background: linear-gradient(135deg, #9333ea, #4f46e5);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dashboard-refresh-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 25px rgba(124, 58, 237, 0.35);
+}
+
+.dashboard-refresh-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Loading State */
+
+.dashboard-loading {
+    padding: 30px 0;
+    color: #c4b5fd;
+    font-size: 15px;
+}
+
+/* Error Message */
+
+.dashboard-error {
+    padding: 15px 18px;
+    margin-bottom: 25px;
+    border-radius: 10px;
+    color: #fca5a5;
+    background: rgba(127, 29, 29, 0.35);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    font-size: 14px;
+}
+
+/* Statistics Grid */
+
+.dashboard-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 22px;
+    margin-top: 30px;
+}
+
+/* Statistics Cards */
+
+.dashboard-stat-card {
+    min-height: 155px;
+    padding: 25px;
+    background: rgba(30, 41, 70, 0.45);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.dashboard-stat-card:hover {
+    transform: translateY(-5px);
+    border-color: #8b5cf6;
+    box-shadow: 0 10px 30px rgba(124, 58, 237, 0.15);
+}
+
+/* Card Heading */
+
+.dashboard-stat-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.dashboard-stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    height: 36px;
+    padding: 0 8px;
+    background: rgba(124, 58, 237, 0.18);
+    color: #c4b5fd;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+}
+
+.dashboard-stat-label {
+    color: #9ca3af;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Card Number */
+
+.dashboard-stat-card h2 {
+    color: #c4b5fd;
+    font-size: 34px;
+    font-weight: 700;
+}
+
+/* Responsive Design */
+
+@media (max-width: 1000px) {
+    .dashboard-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .dashboard-page {
+        padding: 22px 16px;
+    }
+
+    .dashboard-header {
+        align-items: flex-start;
+    }
+
+    .dashboard-header h1 {
+        font-size: 26px;
+    }
+
+    .dashboard-refresh-button {
+        width: 100%;
+    }
+
+    .dashboard-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .dashboard-stat-card {
+        min-height: 135px;
+        padding: 17px;
+    }
+
+    .dashboard-stat-top {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .dashboard-stat-card h2 {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 360px) {
+    .dashboard-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
