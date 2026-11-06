@@ -55,6 +55,8 @@ const createClaimQuery = (expectedClaims) => ({
     },
 });
 
+// GET CLAIMS TESTS
+
 test("getClaims returns all claims", async () => {
     const originalFind = Claim.find;
 
@@ -65,7 +67,11 @@ test("getClaims returns all claims", async () => {
         const res = createResponse();
         const { next, state } = createNext();
 
-        await getClaims({}, res, next);
+        await getClaims(
+            { user: { role: "staff", userId: "staff-1" } },
+            res,
+            next
+        );
 
         assert.equal(state.called, false);
         assert.equal(res.statusCode, 200);
@@ -136,6 +142,7 @@ test("getClaims forwards database errors to next", async () => {
 
     try {
         const expectedError = new Error("Database error");
+
         Claim.find = () => ({
             populate() {
                 return this;
@@ -148,7 +155,11 @@ test("getClaims forwards database errors to next", async () => {
         const res = createResponse();
         const { next, state } = createNext();
 
-        await getClaims({}, res, next);
+        await getClaims(
+            { user: { role: "staff", userId: "staff-1" } },
+            res,
+            next
+        );
 
         assert.equal(state.called, true);
         assert.equal(state.error, expectedError);
@@ -156,6 +167,8 @@ test("getClaims forwards database errors to next", async () => {
         restoreMethod(Claim, "find", originalFind);
     }
 });
+
+// CREATE CLAIM TESTS
 
 test("createClaim rejects a missing item ID", async () => {
     const res = createResponse();
@@ -280,6 +293,8 @@ test("createClaim creates a claim and notifies the item reporter", async () => {
         restoreMethod(Notification, "create", originalCreateNotification);
     }
 });
+
+// UPDATE CLAIM STATUS TESTS
 
 test("updateClaimStatus rejects an unsupported status", async () => {
     const res = createResponse();
@@ -473,6 +488,8 @@ test("updateClaimStatus rejects a claim and notifies the claimant", async () => 
     }
 });
 
+// VERIFY CLAIM TESTS
+
 test("verifyClaim rejects an unsupported verification result", async () => {
     const res = createResponse();
     const { next, state } = createNext();
@@ -565,23 +582,19 @@ test("verifyClaim records successful verification and notifies the claimant", as
         assert.equal(res.statusCode, 200);
         assert.equal(claim.verification.result, "SUCCESS");
         assert.equal(claim.verification.verifiedBy, "verifier-1");
-        assert.equal(
-            claim.verification.notes,
-            "Ownership confirmed"
-        );
+        assert.equal(claim.verification.notes, "Ownership confirmed");
         assert.ok(claim.verification.verifiedAt instanceof Date);
         assert.equal(notificationData.userId, "claimant-1");
         assert.equal(notificationData.type, "STATUS_UPDATE");
-        assert.equal(
-            notificationData.title,
-            "Verification Successful"
-        );
+        assert.equal(notificationData.title, "Verification Successful");
         assert.equal(res.body.data.claim, claim);
     } finally {
         restoreMethod(Claim, "findById", originalFindById);
         restoreMethod(Notification, "create", originalCreateNotification);
     }
 });
+
+// ERROR HANDLING TESTS
 
 test("getPendingClaims forwards database errors to next", async () => {
     const originalFind = Claim.find;

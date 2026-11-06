@@ -1,4 +1,3 @@
-
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -48,6 +47,7 @@ const createMatchQuery = (expectedMatches) => ({
     populate() {
         return this;
     },
+
     sort() {
         return Promise.resolve(expectedMatches);
     },
@@ -64,7 +64,12 @@ test("getMatches returns all matches", async () => {
         const res = createResponse();
         const { next, state } = createNext();
 
-        await getMatches({}, res, next);
+        // Staff users can view all matches.
+        await getMatches(
+            { user: { role: "staff", userId: "staff-1" } },
+            res,
+            next
+        );
 
         assert.equal(state.called, false);
         assert.equal(res.statusCode, 200);
@@ -121,7 +126,12 @@ test("getMatches forwards database errors to next", async () => {
         const res = createResponse();
         const { next, state } = createNext();
 
-        await getMatches({}, res, next);
+        // Staff users can view all matches.
+        await getMatches(
+            { user: { role: "staff", userId: "staff-1" } },
+            res,
+            next
+        );
 
         assert.equal(state.called, true);
         assert.equal(state.error, expectedError);
@@ -406,6 +416,7 @@ test("updateMatchStatus confirms a match, updates both items, and notifies both 
                 new: true,
                 runValidators: true,
             });
+
             return match;
         };
 
@@ -681,7 +692,11 @@ test("createMatch forwards notification errors to next", async () => {
     } finally {
         restoreMethod(Item, "findById", originalFindById);
         restoreMethod(Match, "create", originalCreateMatch);
-        restoreMethod(Notification, "create", originalCreateNotification);
+        restoreMethod(
+            Notification,
+            "create",
+            originalCreateNotification
+        );
     }
 });
 
