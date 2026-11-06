@@ -1,6 +1,6 @@
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '../../context/useAuth.js';
 import { getItems } from '../../services/itemService';
 import {
     getClaims,
@@ -31,42 +31,50 @@ function Claims() {
 
     const [verificationNotes, setVerificationNotes] = useState({});
 
-    // Fetch claims and available items
-    const fetchData = async () => {
-        setLoading(true);
-        setError('');
+    // Fetch claims and available items.
+    const loadClaimsData = useCallback(async () => {
+        const claimsResult = await getClaims();
 
-        try {
-            const claimsResult = await getClaims();
+        if (!claimsResult.success) {
+            throw new Error(
+                claimsResult.message || 'Unable to fetch claims'
+            );
+        }
 
-            if (!claimsResult.success) {
+        let availableItems = [];
+
+        if (isStudent) {
+            const itemsResult = await getItems({
+                type: 'found',
+                status: 'ACTIVE',
+                limit: 100,
+            });
+
+            if (!itemsResult.success) {
                 throw new Error(
-                    claimsResult.message || 'Unable to fetch claims'
+                    itemsResult.message || 'Unable to fetch items'
                 );
             }
 
-            setClaims(
-                Array.isArray(claimsResult.data)
-                    ? claimsResult.data
-                    : []
-            );
+            availableItems = itemsResult.data?.items || [];
+        }
 
-            if (isStudent) {
-                const itemsResult = await getItems({
-                    type: 'found',
-                    status: 'ACTIVE',
-                    limit: 100,
-                });
+        return {
+            claims: Array.isArray(claimsResult.data)
+                ? claimsResult.data
+                : [],
+            items: availableItems,
+        };
+    }, [isStudent]);
 
-                if (!itemsResult.success) {
-                    throw new Error(
-                        itemsResult.message || 'Unable to fetch items'
-                    );
-                }
+    // Refresh claims data after an action.
+    const fetchData = useCallback(async () => {
+        try {
+            const data = await loadClaimsData();
 
-                const availableItems = itemsResult.data?.items || [];
-                setItems(availableItems);
-            }
+            setClaims(data.claims);
+            setItems(data.items);
+            setError('');
         } catch (err) {
             console.error('Claims page error:', err);
 
@@ -78,13 +86,43 @@ function Claims() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [loadClaimsData]);
 
+    // Load claims when the page opens or user role changes.
     useEffect(() => {
-        fetchData();
-    }, [user?.role]);
+        let isActive = true;
 
-    // Submit a new claim
+        loadClaimsData()
+            .then((data) => {
+                if (!isActive) return;
+
+                setClaims(data.claims);
+                setItems(data.items);
+                setError('');
+            })
+            .catch((err) => {
+                if (!isActive) return;
+
+                console.error('Claims page error:', err);
+
+                setError(
+                    err.response?.data?.message ||
+                    err.message ||
+                    'Something went wrong.'
+                );
+            })
+            .finally(() => {
+                if (isActive) {
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            isActive = false;
+        };
+    }, [loadClaimsData]);
+
+    // Submit a new claim.
     const handleSubmitClaim = async (event) => {
         event.preventDefault();
 
@@ -133,7 +171,7 @@ function Claims() {
         }
     };
 
-    // Approve or reject a claim
+    // Approve or reject a claim.
     const handleStatusUpdate = async (id, status) => {
         setError('');
         setSuccess('');
@@ -164,7 +202,7 @@ function Claims() {
         }
     };
 
-    // Verify ownership
+    // Verify ownership.
     const handleVerification = async (id, resultValue) => {
         setError('');
         setSuccess('');
@@ -204,7 +242,7 @@ function Claims() {
         }
     };
 
-    // Calculate statistics
+    // Calculate statistics.
     const pendingClaims = claims.filter(
         (claim) => claim.status === 'PENDING'
     );

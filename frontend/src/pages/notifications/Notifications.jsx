@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
     getNotifications,
     markNotificationAsRead,
@@ -15,38 +15,50 @@ function Notifications() {
     const [actionLoading, setActionLoading] = useState('');
 
     // Fetch notifications from the backend.
-    const fetchNotifications = async () => {
-        setLoading(true);
-        setError('');
+    const loadNotificationsData = useCallback(async () => {
+        const result = await getNotifications();
 
-        try {
-            const result = await getNotifications();
-
-            if (!result.success) {
-                throw new Error(
-                    result.message || 'Unable to fetch notifications'
-                );
-            }
-
-            setNotifications(
-                Array.isArray(result.data) ? result.data : []
+        if (!result.success) {
+            throw new Error(
+                result.message || 'Unable to fetch notifications'
             );
-        } catch (err) {
-            console.error('Notifications page error:', err);
-
-            setError(
-                err.response?.data?.message ||
-                err.message ||
-                'Something went wrong.'
-            );
-        } finally {
-            setLoading(false);
         }
-    };
 
-    useEffect(() => {
-        fetchNotifications();
+        return Array.isArray(result.data) ? result.data : [];
     }, []);
+
+    // Load notifications when the page opens.
+    useEffect(() => {
+        let isActive = true;
+
+        loadNotificationsData()
+            .then((data) => {
+                if (!isActive) return;
+
+                setNotifications(data);
+                setError('');
+            })
+            .catch((err) => {
+                if (!isActive) return;
+
+                console.error('Notifications page error:', err);
+
+                setError(
+                    err.response?.data?.message ||
+                    err.message ||
+                    'Something went wrong.'
+                );
+            })
+            .finally(() => {
+                if (isActive) {
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            isActive = false;
+        };
+    }, [loadNotificationsData]);
 
     // Mark one notification as read.
     const handleMarkAsRead = async (id) => {
@@ -123,13 +135,17 @@ function Notifications() {
     );
 
     const getTypeClass = (type) => {
-        return type?.toLowerCase().replace('_', '-') || 'system';
+        return type?.toLowerCase().replace(/_/g, '-') || 'system';
     };
 
     const formatDate = (date) => {
         if (!date) return 'Date unavailable';
 
-        return new Date(date).toLocaleString();
+        const parsedDate = new Date(date);
+
+        return Number.isNaN(parsedDate.getTime())
+            ? 'Date unavailable'
+            : parsedDate.toLocaleString();
     };
 
     return (
@@ -235,7 +251,7 @@ function Notifications() {
                                                     )}`}
                                                 >
                                                     {notification.type?.replace(
-                                                        '_',
+                                                        /_/g,
                                                         ' '
                                                     ) || 'SYSTEM'}
                                                 </span>

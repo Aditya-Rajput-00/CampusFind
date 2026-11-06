@@ -1,6 +1,6 @@
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '../../context/useAuth.js';
 import {
     getMatches,
     updateMatchStatus,
@@ -20,22 +20,25 @@ function Matches() {
     const [actionLoading, setActionLoading] = useState('');
 
     // Fetch matches from the backend.
-    const fetchMatches = async () => {
-        setLoading(true);
-        setError('');
+    const loadMatchesData = useCallback(async () => {
+        const result = await getMatches();
 
-        try {
-            const result = await getMatches();
-
-            if (!result.success) {
-                throw new Error(
-                    result.message || 'Unable to fetch matches'
-                );
-            }
-
-            setMatches(
-                Array.isArray(result.data) ? result.data : []
+        if (!result.success) {
+            throw new Error(
+                result.message || 'Unable to fetch matches'
             );
+        }
+
+        return Array.isArray(result.data) ? result.data : [];
+    }, []);
+
+    // Refresh matches after an action.
+    const fetchMatches = useCallback(async () => {
+        try {
+            const data = await loadMatchesData();
+
+            setMatches(data);
+            setError('');
         } catch (err) {
             console.error('Matches page error:', err);
 
@@ -47,11 +50,40 @@ function Matches() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [loadMatchesData]);
 
+    // Load matches when the page opens or user role changes.
     useEffect(() => {
-        fetchMatches();
-    }, [user?.role]);
+        let isActive = true;
+
+        loadMatchesData()
+            .then((data) => {
+                if (!isActive) return;
+
+                setMatches(data);
+                setError('');
+            })
+            .catch((err) => {
+                if (!isActive) return;
+
+                console.error('Matches page error:', err);
+
+                setError(
+                    err.response?.data?.message ||
+                    err.message ||
+                    'Something went wrong.'
+                );
+            })
+            .finally(() => {
+                if (isActive) {
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            isActive = false;
+        };
+    }, [loadMatchesData, user?.role]);
 
     // Confirm or reject a match.
     const handleStatusUpdate = async (id, status) => {
@@ -242,13 +274,12 @@ function Matches() {
 
                                                     <p>
                                                         Location:{' '}
-                                                        {lostItem?.location?.building ||
-                                                            'N/A'}
+                                                        {lostItem?.location?.building || 'N/A'}
                                                     </p>
                                                 </div>
 
                                                 <div className="match-connector">
-                                                    <span>↕</span>
+                                                    <span>↔</span>
                                                 </div>
 
                                                 <div className="match-item">
@@ -268,8 +299,7 @@ function Matches() {
 
                                                     <p>
                                                         Location:{' '}
-                                                        {foundItem?.location?.building ||
-                                                            'N/A'}
+                                                        {foundItem?.location?.building || 'N/A'}
                                                     </p>
                                                 </div>
                                             </div>
@@ -278,9 +308,7 @@ function Matches() {
                                                 <div className="match-actions">
                                                     <button
                                                         className="match-confirm-button"
-                                                        disabled={
-                                                            actionLoading === match._id
-                                                        }
+                                                        disabled={actionLoading === match._id}
                                                         onClick={() =>
                                                             handleStatusUpdate(
                                                                 match._id,
@@ -293,9 +321,7 @@ function Matches() {
 
                                                     <button
                                                         className="match-reject-button"
-                                                        disabled={
-                                                            actionLoading === match._id
-                                                        }
+                                                        disabled={actionLoading === match._id}
                                                         onClick={() =>
                                                             handleStatusUpdate(
                                                                 match._id,

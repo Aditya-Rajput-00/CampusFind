@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { getDashboardStats } from '../../services/dashboardService';
 import './Dashboard.css';
 
-// Dashboard statistics displayed in the cards.
 const statisticCards = [
     { key: 'totalUsers', label: 'Total Users', icon: 'USERS' },
     { key: 'totalItems', label: 'Total Items', icon: 'ITEMS' },
@@ -20,8 +19,47 @@ function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    // Fetch dashboard statistics from the backend.
-    const fetchStats = async () => {
+    // Load statistics when the page opens.
+    useEffect(() => {
+        let isActive = true;
+
+        getDashboardStats()
+            .then((result) => {
+                if (!isActive) return;
+
+                if (!result.success || !result.data) {
+                    throw new Error(
+                        result.message || 'Unable to fetch dashboard statistics'
+                    );
+                }
+
+                setStats(result.data);
+                setError('');
+            })
+            .catch((err) => {
+                if (!isActive) return;
+
+                console.error('Dashboard error:', err);
+
+                setError(
+                    err.response?.data?.message ||
+                    err.message ||
+                    'Something went wrong.'
+                );
+            })
+            .finally(() => {
+                if (isActive) {
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            isActive = false;
+        };
+    }, []);
+
+    // Refresh dashboard statistics manually.
+    const handleRefresh = async () => {
         setLoading(true);
         setError('');
 
@@ -48,15 +86,8 @@ function Dashboard() {
         }
     };
 
-    // Load statistics when the page opens.
-    useEffect(() => {
-        fetchStats();
-    }, []);
-
     return (
         <div className="dashboard-page">
-
-            {/* Dashboard Header */}
             <div className="dashboard-header">
                 <div>
                     <h1>Staff & Admin Dashboard</h1>
@@ -67,28 +98,24 @@ function Dashboard() {
 
                 <button
                     className="dashboard-refresh-button"
-                    onClick={fetchStats}
+                    onClick={handleRefresh}
                     disabled={loading}
                 >
                     {loading ? 'Loading...' : 'Refresh'}
                 </button>
             </div>
 
-            {/* Error Message */}
             {error && (
                 <div className="dashboard-error">
                     {error}
                 </div>
             )}
 
-            {/* Loading State */}
             {loading ? (
                 <p className="dashboard-loading">
                     Loading dashboard statistics...
                 </p>
             ) : stats ? (
-
-                /* Statistics Cards */
                 <div className="dashboard-stats-grid">
                     {statisticCards.map((card) => (
                         <div
@@ -105,9 +132,7 @@ function Dashboard() {
                                 </span>
                             </div>
 
-                            <h2>
-                                {stats[card.key] ?? 0}
-                            </h2>
+                            <h2>{stats[card.key] ?? 0}</h2>
                         </div>
                     ))}
                 </div>
@@ -116,7 +141,6 @@ function Dashboard() {
                     No dashboard data available.
                 </p>
             ) : null}
-
         </div>
     );
 }

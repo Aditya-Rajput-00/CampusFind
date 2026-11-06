@@ -8,7 +8,7 @@ import Matches from './pages/matches/Matches';
 import Notifications from './pages/notifications/Notifications';
 import Dashboard from './pages/dashboard/Dashboard';
 
-import { useAuth } from './context/AuthContext';
+import { useAuth } from './context/useAuth.js';
 
 function App() {
     const { isAuthenticated, user, logout } = useAuth();
