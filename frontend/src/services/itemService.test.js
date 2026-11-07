@@ -10,6 +10,7 @@ vi.mock('./api', () => ({
 }));
 
 import api from './api';
+
 import {
     getItems,
     createItem,
@@ -46,7 +47,7 @@ describe('Item Service Tests', () => {
         expect(result).toEqual(mockData);
     });
 
-    it('should create a new item', async () => {
+    it('should create a new item with multipart headers', async () => {
         const itemData = {
             title: 'Lost Laptop',
             type: 'lost',
@@ -62,7 +63,16 @@ describe('Item Service Tests', () => {
 
         const result = await createItem(itemData);
 
-        expect(api.post).toHaveBeenCalledWith('/items', itemData);
+        expect(api.post).toHaveBeenCalledWith(
+            '/items',
+            itemData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            }
+        );
+
         expect(result).toEqual(mockData);
     });
 

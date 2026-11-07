@@ -1,49 +1,44 @@
+import { useEffect, useRef, useState } from 'react';
+import { getItems, createItem } from '../../services/itemService';
 
-import { useEffect, useState } from 'react';
-import { getItems } from '../../services/itemService';
 import './Items.css';
+import './ItemForm.css';
 
-const categories = ['Bag', 'Books', 'Wallet'];
-
-const statuses = [
-    { value: 'ACTIVE', label: 'Active' },
-    { value: 'MATCHED', label: 'Matched' },
-    { value: 'CLAIMED', label: 'Claimed' },
-    { value: 'UNDER_VERIFICATION', label: 'Under Verification' },
-    { value: 'VERIFIED', label: 'Verified' },
-    { value: 'RETURNED', label: 'Returned' },
-    { value: 'CLOSED', label: 'Closed' },
-];
-
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 10;
 
 function Items() {
     const [items, setItems] = useState([]);
+    const [pagination, setPagination] = useState(null);
 
-    const [searchInput, setSearchInput] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
-
     const [type, setType] = useState('');
     const [category, setCategory] = useState('');
     const [status, setStatus] = useState('');
-
     const [page, setPage] = useState(1);
-
-    const [pagination, setPagination] = useState({
-        page: 1,
-        limit: ITEMS_PER_PAGE,
-        totalItems: 0,
-        totalPages: 0,
-    });
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    useEffect(() => {
-        const fetchItems = async () => {
-            setLoading(true);
-            setError('');
+    const [showForm, setShowForm] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [formError, setFormError] = useState('');
 
+    const dateInputRef = useRef(null);
+
+    const [formData, setFormData] = useState({
+        title: '',
+        description: '',
+        category: '',
+        type: 'lost',
+        date: '',
+        image: null,
+    });
+
+    // Fetch items whenever filters or search change.
+    useEffect(() => {
+        let isActive = true;
+
+        const loadItems = async () => {
             try {
                 const result = await getItems({
                     search: searchQuery,
@@ -54,37 +49,93 @@ function Items() {
                     limit: ITEMS_PER_PAGE,
                 });
 
+                if (!isActive) return;
+
                 if (!result.success) {
                     throw new Error(
-                        result.message || 'Unable to fetch items'
+                        result.message || 'Unable to fetch items.'
                     );
                 }
 
                 setItems(result.data.items || []);
                 setPagination(result.data.pagination);
+                setError('');
+            } catch (err) {
+                if (!isActive) return;
 
-            } catch (error) {
                 setError(
-                    error.response?.data?.message ||
-                    error.message ||
+                    err.response?.data?.message ||
+                    err.message ||
                     'Something went wrong.'
                 );
             } finally {
-                setLoading(false);
+                if (isActive) {
+                    setLoading(false);
+                }
             }
         };
 
-        fetchItems();
+        loadItems();
+
+        return () => {
+            isActive = false;
+        };
     }, [searchQuery, type, category, status, page]);
 
-    const handleSearch = (event) => {
-        event.preventDefault();
-        setPage(1);
-        setSearchQuery(searchInput.trim());
+    // Update form fields.
+    const handleFormChange = (event) => {
+        const { name, value, files } = event.target;
+
+        setFormData((previousData) => ({
+            ...previousData,
+            [name]: name === 'image' ? files?.[0] || null : value,
+        }));
     };
 
-    const handleClearFilters = () => {
-        setSearchInput('');
+    // Open the native calendar picker.
+    const handleOpenCalendar = () => {
+        const dateInput = dateInputRef.current;
+
+        if (!dateInput) return;
+
+        if (typeof dateInput.showPicker === 'function') {
+            dateInput.showPicker();
+        } else {
+            dateInput.focus();
+            dateInput.click();
+        }
+    };
+
+    // Select today's date using the local date.
+    const handleSelectToday = () => {
+        const today = new Date();
+
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+
+        setFormData((previousData) => ({
+            ...previousData,
+            date: `${year}-${month}-${day}`,
+        }));
+    };
+
+    // Reset the form.
+    const resetForm = () => {
+        setFormData({
+            title: '',
+            description: '',
+            category: '',
+            type: 'lost',
+            date: '',
+            image: null,
+        });
+
+        setFormError('');
+    };
+
+    // Clear all search and filters.
+    const handleResetFilters = () => {
         setSearchQuery('');
         setType('');
         setCategory('');
@@ -92,215 +143,473 @@ function Items() {
         setPage(1);
     };
 
-    const handleTypeChange = (value) => {
-        setType(value);
-        setPage(1);
+    // Submit a new lost/found item.
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        setFormError('');
+
+        if (
+            !formData.title.trim() ||
+            !formData.description.trim() ||
+            !formData.category ||
+            !formData.date
+        ) {
+            setFormError('Please fill in all required fields.');
+            return;
+        }
+
+        const data = new FormData();
+
+        data.append('title', formData.title.trim());
+        data.append('description', formData.description.trim());
+        data.append('category', formData.category);
+        data.append('type', formData.type);
+        data.append('date', formData.date);
+
+        if (formData.image) {
+            data.append('image', formData.image);
+        }
+
+        try {
+            setSubmitting(true);
+
+            const result = await createItem(data);
+
+            if (!result.success) {
+                throw new Error(
+                    result.message || 'Unable to report item.'
+                );
+            }
+
+            resetForm();
+            setShowForm(false);
+            setPage(1);
+
+            // Refresh the item list after successful submission.
+            const refreshedItems = await getItems({
+                search: searchQuery,
+                type,
+                category,
+                status,
+                page: 1,
+                limit: ITEMS_PER_PAGE,
+            });
+
+            if (refreshedItems.success) {
+                setItems(refreshedItems.data.items || []);
+                setPagination(refreshedItems.data.pagination);
+            }
+        } catch (err) {
+            setFormError(
+                err.response?.data?.message ||
+                err.message ||
+                'Unable to report item. Please try again.'
+            );
+        } finally {
+            setSubmitting(false);
+        }
     };
 
-    const handleCategoryChange = (value) => {
-        setCategory(value);
-        setPage(1);
-    };
-
-    const handleStatusChange = (value) => {
-        setStatus(value);
+    // Handle filter changes.
+    const handleFilterChange = (setter) => (event) => {
+        setter(event.target.value);
         setPage(1);
     };
 
     return (
         <div className="items-page">
-            <header className="items-header">
-                <h1>Lost & Found Items</h1>
-                <p>
-                    Find your lost belongings or help someone
-                    find theirs.
-                </p>
-            </header>
 
-            <form className="items-search-form" onSubmit={handleSearch}>
-                <input
-                    type="text"
-                    className="items-search-input"
-                    placeholder="Search by item name or description..."
-                    value={searchInput}
-                    onChange={(event) => setSearchInput(event.target.value)}
-                />
-
-                <button type="submit" className="search-button">
-                    Search
-                </button>
-
-                {(searchInput || searchQuery) && (
-                    <button
-                        type="button"
-                        className="clear-search-button"
-                        onClick={handleClearFilters}
-                    >
-                        Clear
-                    </button>
-                )}
-            </form>
-
-            <div className="items-filter-bar">
-                <div className="filter-group">
-                    <label htmlFor="type-filter">Item Type</label>
-                    <select
-                        id="type-filter"
-                        value={type}
-                        onChange={(event) => handleTypeChange(event.target.value)}
-                    >
-                        <option value="">All Items</option>
-                        <option value="lost">Lost</option>
-                        <option value="found">Found</option>
-                    </select>
-                </div>
-
-                <div className="filter-group">
-                    <label htmlFor="category-filter">Category</label>
-                    <select
-                        id="category-filter"
-                        value={category}
-                        onChange={(event) => handleCategoryChange(event.target.value)}
-                    >
-                        <option value="">All Categories</option>
-
-                        {categories.map((itemCategory) => (
-                            <option key={itemCategory} value={itemCategory}>
-                                {itemCategory}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="filter-group">
-                    <label htmlFor="status-filter">Status</label>
-                    <select
-                        id="status-filter"
-                        value={status}
-                        onChange={(event) => handleStatusChange(event.target.value)}
-                    >
-                        <option value="">All Statuses</option>
-
-                        {statuses.map((itemStatus) => (
-                            <option
-                                key={itemStatus.value}
-                                value={itemStatus.value}
-                            >
-                                {itemStatus.label}
-                            </option>
-                        ))}
-                    </select>
+            {/* Page Header */}
+            <div className="items-header">
+                <div>
+                    <h1>Lost & Found Items</h1>
+                    <p>
+                        Find lost belongings or report an item you found.
+                    </p>
                 </div>
 
                 <button
                     type="button"
-                    className="reset-filters-button"
-                    onClick={handleClearFilters}
+                    className="report-item-btn"
+                    onClick={() => {
+                        resetForm();
+                        setShowForm(true);
+                    }}
                 >
-                    Reset Filters
+                    + Report Item
                 </button>
             </div>
 
-            <div className="items-count">
-                Showing {items.length} of {pagination.totalItems} items
+            {/* Search and Filters */}
+            <div className="items-filters">
+
+                <input
+                    type="text"
+                    placeholder="Search items..."
+                    value={searchQuery}
+                    onChange={(event) => {
+                        setSearchQuery(event.target.value);
+                        setPage(1);
+                    }}
+                />
+
+                {/* Item Type Filter */}
+                <select
+                    value={type}
+                    onChange={handleFilterChange(setType)}
+                >
+                    <option value="">All Types</option>
+                    <option value="lost">Lost</option>
+                    <option value="found">Found</option>
+                </select>
+
+                {/* Category Filter */}
+                <select
+                    value={category}
+                    onChange={handleFilterChange(setCategory)}
+                >
+                    <option value="">All Categories</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Books">Books</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Accessories">Accessories</option>
+                    <option value="Documents">Documents</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                {/* Status Filter */}
+                <select
+                    value={status}
+                    onChange={handleFilterChange(setStatus)}
+                >
+                    <option value="">All Statuses</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="MATCHED">Matched</option>
+                    <option value="CLAIMED">Claimed</option>
+                    <option value="UNDER_VERIFICATION">
+                        Under Verification
+                    </option>
+                    <option value="VERIFIED">Verified</option>
+                    <option value="RETURNED">Returned</option>
+                    <option value="CLOSED">Closed</option>
+                </select>
+
+                {/* Clear All Filters Button */}
+                <button
+                    type="button"
+                    className="report-item-btn"
+                    onClick={handleResetFilters}
+                >
+                    Clear Filters
+                </button>
+
             </div>
 
+            {/* Error Message */}
+            {error && (
+                <div className="items-error">
+                    {error}
+                </div>
+            )}
+
+            {/* Items List */}
             {loading ? (
-                <p>Loading items...</p>
-            ) : error ? (
-                <p className="items-error">{error}</p>
+                <div className="items-loading">
+                    Loading items...
+                </div>
             ) : items.length === 0 ? (
                 <div className="items-empty">
-                    <h2>No items found</h2>
+                    <h3>No items found</h3>
                     <p>Try changing your search or filters.</p>
                 </div>
             ) : (
-                <>
-                    <div className="items-grid">
-                        {items.map((item) => (
-                            <article className="item-card" key={item._id}>
-                                {item.images?.length > 0 ? (
-                                    <img
-                                        className="item-image"
-                                        src={item.images[0]}
-                                        alt={item.title}
-                                    />
-                                ) : (
-                                    <div className="item-image-placeholder">
-                                        No Image Available
-                                    </div>
+                <div className="items-grid">
+                    {items.map((item) => (
+                        <div className="item-card" key={item._id}>
+
+                            {item.images?.length > 0 && (
+                                <img
+                                    src={item.images[0]}
+                                    alt={item.title}
+                                    className="item-image"
+                                />
+                            )}
+
+                            <div className="item-card-content">
+
+                                <span className={`item-type ${item.type}`}>
+                                    {item.type}
+                                </span>
+
+                                <h3>{item.title}</h3>
+
+                                <p>{item.description}</p>
+
+                                <div className="item-details">
+                                    <span>
+                                        Category: {item.category}
+                                    </span>
+
+                                    <span>
+                                        Status: {item.status}
+                                    </span>
+                                </div>
+
+                                {item.date && (
+                                    <p className="item-date">
+                                        Date: {new Date(
+                                            item.date
+                                        ).toLocaleDateString()}
+                                    </p>
                                 )}
 
-                                <div className="item-content">
-                                    <div className="item-badges">
-                                        <span className={`type-badge ${item.type}`}>
-                                            {item.type.toUpperCase()}
-                                        </span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
-                                        <span className="status-badge">
-                                            {item.status.replaceAll('_', ' ')}
-                                        </span>
-                                    </div>
+            {/* Pagination */}
+            {pagination && pagination.totalPages > 1 && (
+                <div className="items-pagination">
 
-                                    <h2>{item.title}</h2>
+                    <button
+                        type="button"
+                        disabled={page <= 1}
+                        onClick={() => setPage((current) => current - 1)}
+                    >
+                        Previous
+                    </button>
 
-                                    <p className="item-category">
-                                        {item.category}
-                                    </p>
+                    <span>
+                        Page {page} of {pagination.totalPages}
+                    </span>
 
-                                    <p className="item-description">
-                                        {item.description}
-                                    </p>
+                    <button
+                        type="button"
+                        disabled={page >= pagination.totalPages}
+                        onClick={() => setPage((current) => current + 1)}
+                    >
+                        Next
+                    </button>
 
-                                    {item.location?.building && (
-                                        <p className="item-detail">
-                                            Location: {item.location.building}
-                                        </p>
-                                    )}
+                </div>
+            )}
 
-                                    {item.location?.area && (
-                                        <p className="item-detail">
-                                            Area: {item.location.area}
-                                        </p>
-                                    )}
+            {/* Report Item Modal */}
+            {showForm && (
+                <div
+                    className="item-modal-overlay"
+                    onClick={(event) => {
+                        if (event.target === event.currentTarget) {
+                            setShowForm(false);
+                        }
+                    }}
+                >
 
-                                    <p className="item-detail">
-                                        Date: {new Date(item.date).toLocaleDateString()}
-                                    </p>
+                    <div className="item-modal">
 
-                                    <p className="item-reporter">
-                                        Reported by: {item.reportedBy?.name || 'Unknown'}
-                                    </p>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-
-                    {pagination.totalPages > 1 && (
-                        <div className="items-pagination">
-                            <button
-                                className="pagination-button"
-                                onClick={() => setPage((current) => current - 1)}
-                                disabled={page === 1 || loading}
-                            >
-                                Previous
-                            </button>
-
-                            <span className="pagination-info">
-                                Page {page} of {pagination.totalPages}
-                            </span>
+                        {/* Modal Header */}
+                        <div className="item-modal-header">
+                            <div>
+                                <h2>Report an Item</h2>
+                                <p>
+                                    Share the details of the lost or found item.
+                                </p>
+                            </div>
 
                             <button
-                                className="pagination-button"
-                                onClick={() => setPage((current) => current + 1)}
-                                disabled={page >= pagination.totalPages || loading}
+                                type="button"
+                                className="modal-close-btn"
+                                onClick={() => setShowForm(false)}
+                                aria-label="Close form"
                             >
-                                Next
+                                ×
                             </button>
                         </div>
-                    )}
-                </>
+
+                        <form onSubmit={handleSubmit}>
+
+                            {/* Item Title */}
+                            <div className="form-group">
+                                <label htmlFor="title">
+                                    Item Title *
+                                </label>
+
+                                <input
+                                    id="title"
+                                    name="title"
+                                    type="text"
+                                    placeholder="e.g. Black wallet"
+                                    value={formData.title}
+                                    onChange={handleFormChange}
+                                    required
+                                />
+                            </div>
+
+                            {/* Description */}
+                            <div className="form-group">
+                                <label htmlFor="description">
+                                    Description *
+                                </label>
+
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    placeholder="Describe the item..."
+                                    value={formData.description}
+                                    onChange={handleFormChange}
+                                    rows="4"
+                                    required
+                                />
+                            </div>
+
+                            {/* Item Type and Category */}
+                            <div className="form-row">
+
+                                <div className="form-group">
+                                    <label htmlFor="type">
+                                        Item Type *
+                                    </label>
+
+                                    <select
+                                        id="type"
+                                        name="type"
+                                        value={formData.type}
+                                        onChange={handleFormChange}
+                                    >
+                                        <option value="lost">Lost</option>
+                                        <option value="found">Found</option>
+                                    </select>
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="category">
+                                        Category *
+                                    </label>
+
+                                    <select
+                                        id="category"
+                                        name="category"
+                                        value={formData.category}
+                                        onChange={handleFormChange}
+                                        required
+                                    >
+                                        <option value="">
+                                            Select category
+                                        </option>
+                                        <option value="Electronics">
+                                            Electronics
+                                        </option>
+                                        <option value="Books">Books</option>
+                                        <option value="Clothing">
+                                            Clothing
+                                        </option>
+                                        <option value="Accessories">
+                                            Accessories
+                                        </option>
+                                        <option value="Documents">
+                                            Documents
+                                        </option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+
+                            </div>
+
+                            {/* Date Picker */}
+                            <div className="form-group">
+                                <label htmlFor="date">
+                                    Date *
+                                </label>
+
+                                <div className="date-picker-actions">
+
+                                    <input
+                                        ref={dateInputRef}
+                                        id="date"
+                                        name="date"
+                                        type="date"
+                                        value={formData.date}
+                                        onChange={handleFormChange}
+                                        required
+                                    />
+
+                                    <button
+                                        type="button"
+                                        className="date-picker-trigger"
+                                        onClick={handleOpenCalendar}
+                                        aria-label="Open calendar"
+                                        title="Choose a date"
+                                    >
+                                        📅
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        className="today-date-btn"
+                                        onClick={handleSelectToday}
+                                    >
+                                        Today
+                                    </button>
+
+                                </div>
+                            </div>
+
+                            {/* Image Upload */}
+                            <div className="form-group">
+                                <label htmlFor="image">
+                                    Item Image (Optional)
+                                </label>
+
+                                <input
+                                    id="image"
+                                    name="image"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFormChange}
+                                />
+                            </div>
+
+                            {/* Form Error */}
+                            {formError && (
+                                <div className="items-error">
+                                    {formError}
+                                </div>
+                            )}
+
+                            {/* Form Actions */}
+                            <div className="item-form-actions">
+
+                                <button
+                                    type="button"
+                                    className="cancel-btn"
+                                    onClick={() => {
+                                        setShowForm(false);
+                                        resetForm();
+                                    }}
+                                    disabled={submitting}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    className="submit-item-btn"
+                                    disabled={submitting}
+                                >
+                                    {submitting
+                                        ? 'Submitting...'
+                                        : 'Submit Item'}
+                                </button>
+
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
             )}
+
         </div>
     );
 }
