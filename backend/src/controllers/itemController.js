@@ -2,6 +2,7 @@
 const Item = require("../models/Item");
 const { successResponse } = require("../utils/apiResponse");
 const Notification = require("../models/Notification");
+const cloudinary = require("../config/cloudinary");
 
 const getItems = async (req, res, next) => {
     try {
@@ -75,6 +76,32 @@ const getItems = async (req, res, next) => {
     }
 };
 
+const uploadImageToCloudinary = (fileBuffer) => {
+    return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+            {
+                folder: "campusfind/items",
+                resource_type: "image",
+            },
+            (error, result) => {
+                if (error) {
+                    return reject(error);
+                }
+
+                if (!result?.secure_url) {
+                    return reject(
+                        new Error("Cloudinary image upload failed")
+                    );
+                }
+
+                resolve(result.secure_url);
+            }
+        );
+
+        uploadStream.end(fileBuffer);
+    });
+};
+
 const createItem = async (req, res, next) => {
     try {
         const {
@@ -94,6 +121,13 @@ const createItem = async (req, res, next) => {
             });
         }
 
+        let imageUrls = [];
+
+        if (req.file) {
+            const imageUrl = await uploadImageToCloudinary(req.file.buffer);
+            imageUrls.push(imageUrl);
+        }
+
         const item = await Item.create({
             title,
             description,
@@ -102,7 +136,7 @@ const createItem = async (req, res, next) => {
             location,
             date,
             reportedBy: req.user.userId,
-            images: req.file ? [`/uploads/${req.file.filename}`] : [],
+            images: imageUrls,
         });
 
         return successResponse(res, 201, "Item created successfully", {

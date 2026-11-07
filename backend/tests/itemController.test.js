@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 
 const Item = require("../src/models/Item");
 const Notification = require("../src/models/Notification");
+const cloudinary = require("../src/config/cloudinary");
 
 const {
     getItems,
@@ -156,8 +157,6 @@ test("getItems passes search and category filters to the model", async () => {
     }
 });
 
-// NEW TEST: DATABASE ERROR HANDLING
-
 test("getItems forwards database errors to next", async () => {
     const originalCountDocuments = Item.countDocuments;
     const databaseError = new Error("Database error");
@@ -195,16 +194,38 @@ test("createItem rejects missing required fields", async () => {
     assert.equal(state.called, false);
 });
 
-test("createItem creates an item with the reporter and image", async () => {
+test("createItem creates an item with a Cloudinary image URL", async () => {
     const originalCreate = Item.create;
+    const originalUploadStream = cloudinary.uploader.upload_stream;
 
     try {
         let savedData;
+        let uploadedBuffer;
+        let uploadOptions;
+
+        const cloudinaryUrl =
+            "https://res.cloudinary.com/demo/image/upload/wallet.png";
+
+        cloudinary.uploader.upload_stream = (options, callback) => {
+            uploadOptions = options;
+
+            return {
+                end(buffer) {
+                    uploadedBuffer = buffer;
+
+                    callback(null, {
+                        secure_url: cloudinaryUrl,
+                    });
+                },
+            };
+        };
 
         Item.create = async (data) => {
             savedData = data;
             return { _id: "item-123", ...data };
         };
+
+        const imageBuffer = Buffer.from("test-image-data");
 
         const req = {
             body: {
@@ -216,7 +237,10 @@ test("createItem creates an item with the reporter and image", async () => {
                 date: "2026-10-16",
             },
             user: { userId: "user-123" },
-            file: { filename: "wallet.png" },
+            file: {
+                buffer: imageBuffer,
+                mimetype: "image/png",
+            },
         };
 
         const res = createResponse();
@@ -228,10 +252,98 @@ test("createItem creates an item with the reporter and image", async () => {
         assert.equal(res.statusCode, 201);
         assert.equal(res.body.success, true);
         assert.equal(savedData.reportedBy, "user-123");
-        assert.deepEqual(savedData.images, ["/uploads/wallet.png"]);
+        assert.deepEqual(savedData.images, [cloudinaryUrl]);
         assert.equal(res.body.data.item._id, "item-123");
+        assert.deepEqual(uploadedBuffer, imageBuffer);
+        assert.deepEqual(uploadOptions, {
+            folder: "campusfind/items",
+            resource_type: "image",
+        });
     } finally {
         restoreMethod(Item, "create", originalCreate);
+        restoreMethod(
+            cloudinary.uploader,
+            "upload_stream",
+            originalUploadStream
+        );
+    }
+});
+
+test("createItem creates an item without an image", async () => {
+    const originalCreate = Item.create;
+
+    try {
+        let savedData;
+
+        Item.create = async (data) => {
+            savedData = data;
+            return { _id: "item-456", ...data };
+        };
+
+        const req = {
+            body: {
+                title: "Lost Keys",
+                description: "Keys near the library",
+                category: "Accessories",
+                type: "LOST",
+                date: "2026-10-16",
+            },
+            user: { userId: "user-123" },
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await createItem(req, res, next);
+
+        assert.equal(state.called, false);
+        assert.equal(res.statusCode, 201);
+        assert.deepEqual(savedData.images, []);
+        assert.equal(savedData.reportedBy, "user-123");
+    } finally {
+        restoreMethod(Item, "create", originalCreate);
+    }
+});
+
+test("createItem forwards Cloudinary upload errors to next", async () => {
+    const originalUploadStream = cloudinary.uploader.upload_stream;
+    const databaseError = new Error("Cloudinary upload failed");
+
+    try {
+        cloudinary.uploader.upload_stream = (options, callback) => ({
+            end() {
+                callback(databaseError, null);
+            },
+        });
+
+        const req = {
+            body: {
+                title: "Lost Wallet",
+                description: "Black wallet",
+                category: "Accessories",
+                type: "LOST",
+                date: "2026-10-16",
+            },
+            user: { userId: "user-1" },
+            file: {
+                buffer: Buffer.from("test-image-data"),
+            },
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await createItem(req, res, next);
+
+        assert.equal(state.called, true);
+        assert.equal(state.error, databaseError);
+        assert.equal(res.statusCode, null);
+    } finally {
+        restoreMethod(
+            cloudinary.uploader,
+            "upload_stream",
+            originalUploadStream
+        );
     }
 });
 
@@ -495,7 +607,6 @@ test("closeItem closes a returned item", async () => {
     }
 });
 
-
 // ADDITIONAL DATABASE ERROR HANDLING TESTS
 
 test("getItems forwards errors from Item.find to next", async () => {
@@ -503,10 +614,12 @@ test("getItems forwards errors from Item.find to next", async () => {
         countDocuments: Item.countDocuments,
         find: Item.find,
     };
+
     const databaseError = new Error("Find database error");
 
     try {
         Item.countDocuments = async () => 0;
+
         Item.find = () => {
             throw databaseError;
         };
@@ -528,6 +641,7 @@ test("getItems forwards errors from Item.find to next", async () => {
 
 test("createItem forwards database errors to next", async () => {
     const originalCreate = Item.create;
+
     const databaseError = new Error("Create database error");
 
     try {
