@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
@@ -25,6 +26,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["student", "staff", "admin"],
       default: "student",
+    },
+
+    accountStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "approved",
     },
 
     department: {

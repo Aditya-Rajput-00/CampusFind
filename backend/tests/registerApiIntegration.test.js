@@ -16,9 +16,9 @@ async function makeRequest(body) {
             {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify(body)
+                body: JSON.stringify(body),
             }
         );
     } finally {
@@ -34,14 +34,15 @@ async function makeRequest(body) {
     }
 }
 
-test("POST /api/auth/register creates a student account successfully", async (t) => {
+test("POST /api/auth/register creates an approved student account successfully", async (t) => {
     const createdUser = {
         _id: "test-user-id",
         name: "Test Student",
         email: "newstudent@example.com",
         role: "student",
+        accountStatus: "approved",
         department: "Computer Science",
-        phone: "9999999999"
+        phone: "9999999999",
     };
 
     t.mock.method(User, "findOne", async () => null);
@@ -50,10 +51,15 @@ test("POST /api/auth/register creates a student account successfully", async (t)
         assert.equal(userData.name, "Test Student");
         assert.equal(userData.email, "newstudent@example.com");
         assert.equal(userData.role, "student");
+        assert.equal(userData.accountStatus, "approved");
         assert.ok(userData.passwordHash);
         assert.notEqual(userData.passwordHash, "ExamplePassword123");
 
-        return createdUser;
+        return {
+            ...createdUser,
+            ...userData,
+            _id: createdUser._id,
+        };
     });
 
     const response = await makeRequest({
@@ -61,17 +67,18 @@ test("POST /api/auth/register creates a student account successfully", async (t)
         email: "newstudent@example.com",
         password: "ExamplePassword123",
         department: "Computer Science",
-        phone: "9999999999"
+        phone: "9999999999",
     });
 
     const body = await response.json();
 
     assert.equal(response.status, 201);
     assert.equal(body.success, true);
-    assert.equal(body.message, "User registered successfully");
+    assert.equal(body.message, "Student account registered successfully");
     assert.equal(body.data.user.id, "test-user-id");
     assert.equal(body.data.user.email, "newstudent@example.com");
     assert.equal(body.data.user.role, "student");
+    assert.equal(body.data.user.accountStatus, "approved");
     assert.equal(body.data.user.passwordHash, undefined);
     assert.equal(body.data.user.password, undefined);
 });
@@ -81,7 +88,7 @@ test("POST /api/auth/register returns 409 for an existing email", async (t) => {
         _id: "existing-user-id",
         name: "Existing Student",
         email: "existing@example.com",
-        role: "student"
+        role: "student",
     };
 
     t.mock.method(User, "findOne", async () => existingUser);
@@ -89,7 +96,7 @@ test("POST /api/auth/register returns 409 for an existing email", async (t) => {
     const response = await makeRequest({
         name: "Another Student",
         email: "existing@example.com",
-        password: "ExamplePassword123"
+        password: "ExamplePassword123",
     });
 
     const body = await response.json();
@@ -100,12 +107,12 @@ test("POST /api/auth/register returns 409 for an existing email", async (t) => {
     assert.deepEqual(body.errors, []);
 });
 
-test("POST /api/auth/register rejects an unsupported role", async () => {
+test("POST /api/auth/register rejects public admin registration", async () => {
     const response = await makeRequest({
         name: "Test Admin",
         email: "testadmin@example.com",
         password: "ExamplePassword123",
-        role: "admin"
+        role: "admin",
     });
 
     const body = await response.json();

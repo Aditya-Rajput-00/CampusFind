@@ -1,6 +1,11 @@
+
 const express = require("express");
+
 const {
     getUsers,
+    getPendingStaff,
+    approveStaff,
+    rejectStaff,
     updateUser,
     updateUserRole,
     getMyProfile,
@@ -34,21 +39,24 @@ const validateRequest = (req, res, next) => {
 
 /**
  * @swagger
+ * tags:
+ *   name: Users
+ *   description: User profile and account management
+ */
+
+/**
+ * @swagger
  * /api/users/me:
  *   get:
- *     summary: Get the current user's profile
+ *     summary: Get current user's profile
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Current user's profile retrieved successfully
+ *         description: Current user profile fetched successfully
  *       401:
- *         description: Authentication required
- *       404:
- *         description: User profile not found
- *       500:
- *         description: Internal server error
+ *         description: Unauthorized
  */
 router.get("/me", protect, getMyProfile);
 
@@ -57,26 +65,50 @@ router.get("/me", protect, getMyProfile);
  * /api/users:
  *   get:
  *     summary: Get all users
+ *     description: Admin-only endpoint to retrieve users.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Users retrieved successfully
+ *         description: Users fetched successfully
  *       401:
- *         description: Authentication required
+ *         description: Unauthorized
  *       403:
  *         description: Admin access required
- *       500:
- *         description: Internal server error
  */
 router.get("/", protect, authorize("admin"), getUsers);
 
 /**
  * @swagger
- * /api/users/{id}:
+ * /api/users/pending-staff:
+ *   get:
+ *     summary: Get pending staff registrations
+ *     description: Admin-only endpoint to retrieve staff accounts awaiting approval.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Pending staff registrations fetched successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ */
+router.get(
+    "/pending-staff",
+    protect,
+    authorize("admin"),
+    getPendingStaff
+);
+
+/**
+ * @swagger
+ * /api/users/{id}/approve:
  *   patch:
- *     summary: Update a user's details
+ *     summary: Approve a staff registration
+ *     description: Admin-only endpoint to approve a pending staff account.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -86,33 +118,96 @@ router.get("/", protect, authorize("admin"), getUsers);
  *         required: true
  *         schema:
  *           type: string
- *         description: MongoDB user ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               department:
- *                 type: string
- *               phone:
- *                 type: string
+ *         description: Staff user's MongoDB ObjectId
  *     responses:
  *       200:
- *         description: User updated successfully
+ *         description: Staff account approved successfully
  *       400:
- *         description: Invalid user ID or request data
+ *         description: Invalid account status or user role
  *       401:
- *         description: Authentication required
+ *         description: Unauthorized
  *       403:
  *         description: Admin access required
  *       404:
  *         description: User not found
- *       500:
- *         description: Internal server error
+ *       409:
+ *         description: Account is not pending
+ */
+router.patch(
+    "/:id/approve",
+    protect,
+    authorize("admin"),
+    objectIdValidator,
+    validateRequest,
+    approveStaff
+);
+
+/**
+ * @swagger
+ * /api/users/{id}/reject:
+ *   patch:
+ *     summary: Reject a staff registration
+ *     description: Admin-only endpoint to reject a pending staff account.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Staff user's MongoDB ObjectId
+ *     responses:
+ *       200:
+ *         description: Staff account rejected successfully
+ *       400:
+ *         description: Invalid account status or user role
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ *       404:
+ *         description: User not found
+ *       409:
+ *         description: Account is not pending
+ */
+router.patch(
+    "/:id/reject",
+    protect,
+    authorize("admin"),
+    objectIdValidator,
+    validateRequest,
+    rejectStaff
+);
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   patch:
+ *     summary: Update user details
+ *     description: Admin-only endpoint to update a user's details.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User's MongoDB ObjectId
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *       400:
+ *         description: Validation failed
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ *       404:
+ *         description: User not found
  */
 router.patch(
     "/:id",
@@ -127,7 +222,8 @@ router.patch(
  * @swagger
  * /api/users/{id}/role:
  *   patch:
- *     summary: Update a user's role
+ *     summary: Update user role
+ *     description: Admin-only endpoint to change a user's role.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -137,32 +233,18 @@ router.patch(
  *         required: true
  *         schema:
  *           type: string
- *         description: MongoDB user ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - role
- *             properties:
- *               role:
- *                 type: string
- *                 enum: [student, staff, admin]
+ *         description: User's MongoDB ObjectId
  *     responses:
  *       200:
  *         description: User role updated successfully
  *       400:
- *         description: Invalid user ID or role
+ *         description: Validation failed
  *       401:
- *         description: Authentication required
+ *         description: Unauthorized
  *       403:
  *         description: Admin access required
  *       404:
  *         description: User not found
- *       500:
- *         description: Internal server error
  */
 router.patch(
     "/:id/role",
@@ -177,34 +259,15 @@ router.patch(
  * @swagger
  * /api/users/me:
  *   patch:
- *     summary: Update the current user's profile
+ *     summary: Update current user's profile
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               department:
- *                 type: string
- *               phone:
- *                 type: string
  *     responses:
  *       200:
  *         description: Profile updated successfully
- *       400:
- *         description: Invalid profile data
  *       401:
- *         description: Authentication required
- *       404:
- *         description: User not found
- *       500:
- *         description: Internal server error
+ *         description: Unauthorized
  */
 router.patch("/me", protect, updateMyProfile);
 
@@ -212,38 +275,17 @@ router.patch("/me", protect, updateMyProfile);
  * @swagger
  * /api/users/me/password:
  *   patch:
- *     summary: Change the current user's password
+ *     summary: Change current user's password
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - currentPassword
- *               - newPassword
- *             properties:
- *               currentPassword:
- *                 type: string
- *                 format: password
- *               newPassword:
- *                 type: string
- *                 format: password
- *                 minLength: 8
  *     responses:
  *       200:
  *         description: Password changed successfully
  *       400:
- *         description: Password validation failed
+ *         description: Validation failed
  *       401:
- *         description: Authentication required or current password is incorrect
- *       404:
- *         description: User not found
- *       500:
- *         description: Internal server error
+ *         description: Unauthorized
  */
 router.patch(
     "/me/password",

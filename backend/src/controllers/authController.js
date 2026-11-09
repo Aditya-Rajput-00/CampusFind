@@ -6,7 +6,14 @@ const { successResponse } = require("../utils/apiResponse");
 
 const register = async (req, res, next) => {
     try {
-        const { name, email, password, department, phone } = req.body;
+        const {
+            name,
+            email,
+            password,
+            department,
+            phone,
+            role = "student",
+        } = req.body;
 
         if (!name || !email || !password) {
             return res.status(400).json({
@@ -16,7 +23,20 @@ const register = async (req, res, next) => {
             });
         }
 
-        const existingUser = await User.findOne({ email });
+        // Public registration only supports student and staff.
+        if (!["student", "staff"].includes(role)) {
+            return res.status(400).json({
+                success: false,
+                message: "Only student and staff registration is allowed",
+                errors: [],
+            });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const existingUser = await User.findOne({
+            email: normalizedEmail,
+        });
 
         if (existingUser) {
             return res.status(409).json({
@@ -28,22 +48,33 @@ const register = async (req, res, next) => {
 
         const passwordHash = await bcrypt.hash(password, 10);
 
-        // Public registration must never grant staff or admin privileges.
+        // Students are automatically approved.
+        // Staff accounts require admin approval.
+        const accountStatus =
+            role === "student" ? "approved" : "pending";
+
         const user = await User.create({
             name,
-            email,
+            email: normalizedEmail,
             passwordHash,
-            role: "student",
+            role,
+            accountStatus,
             department,
             phone,
         });
 
-        return successResponse(res, 201, "User registered successfully", {
+        const message =
+            role === "student"
+                ? "Student account registered successfully"
+                : "Staff registration submitted. Please wait for admin approval.";
+
+        return successResponse(res, 201, message, {
             user: {
                 id: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                accountStatus: user.accountStatus,
                 department: user.department,
                 phone: user.phone,
             },
@@ -66,7 +97,11 @@ const login = async (req, res, next) => {
             });
         }
 
-        const user = await User.findOne({ email });
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const user = await User.findOne({
+            email: normalizedEmail,
+        });
 
         if (!user) {
             return res.status(401).json({
@@ -89,6 +124,33 @@ const login = async (req, res, next) => {
             });
         }
 
+        // Treat older accounts without accountStatus as approved.
+        const accountStatus = user.accountStatus || "approved";
+
+        if (accountStatus === "pending") {
+            return res.status(403).json({
+                success: false,
+                message: "Your staff account is awaiting admin approval",
+                errors: [],
+            });
+        }
+
+        if (accountStatus === "rejected") {
+            return res.status(403).json({
+                success: false,
+                message: "Your account registration was rejected. Please contact the administrator.",
+                errors: [],
+            });
+        }
+
+        if (accountStatus !== "approved") {
+            return res.status(403).json({
+                success: false,
+                message: "Your account is not approved",
+                errors: [],
+            });
+        }
+
         const token = jwt.sign(
             {
                 userId: user._id,
@@ -107,6 +169,7 @@ const login = async (req, res, next) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                accountStatus,
                 department: user.department,
                 phone: user.phone,
             },
