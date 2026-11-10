@@ -3,35 +3,68 @@ import { useState } from 'react';
 import { AuthContext } from './authContext';
 import { loginUser } from '../services/authService';
 
-export function AuthProvider({ children }) {
-    const [user, setUser] = useState(() => {
-        try {
-            const savedUser = sessionStorage.getItem('campusfindUser');
-            return savedUser ? JSON.parse(savedUser) : null;
-        } catch {
-            sessionStorage.removeItem('campusfindUser');
-            return null;
-        }
-    });
+const validRoles = ['student', 'staff', 'admin'];
 
-    const [token, setToken] = useState(() => {
-        return sessionStorage.getItem('campusfindToken');
-    });
+// Check whether stored user information is valid.
+const isValidUser = (user) => {
+    return (
+        user !== null &&
+        typeof user === 'object' &&
+        !Array.isArray(user) &&
+        validRoles.includes(user.role)
+    );
+};
+
+// Restore authentication only when both token and user are valid.
+const getInitialSession = () => {
+    const token = sessionStorage.getItem('campusfindToken');
+    const savedUser = sessionStorage.getItem('campusfindUser');
+
+    try {
+        if (!token || !token.trim() || !savedUser) {
+            throw new Error('Incomplete session');
+        }
+
+        const user = JSON.parse(savedUser);
+
+        if (!isValidUser(user)) {
+            throw new Error('Invalid user information');
+        }
+
+        return { user, token };
+    } catch {
+        sessionStorage.removeItem('campusfindToken');
+        sessionStorage.removeItem('campusfindUser');
+
+        return {
+            user: null,
+            token: null,
+        };
+    }
+};
+
+export function AuthProvider({ children }) {
+    const [session, setSession] = useState(getInitialSession);
 
     const login = async (credentials) => {
         const result = await loginUser(credentials);
 
-        if (!result.success || !result.data?.token) {
-            throw new Error(result.message || 'Login failed');
-        }
+        const token = result?.data?.token;
+        const user = result?.data?.user;
 
-        const { token, user } = result.data;
+        if (
+            !result?.success ||
+            typeof token !== 'string' ||
+            !token.trim() ||
+            !isValidUser(user)
+        ) {
+            throw new Error(result?.message || 'Login failed');
+        }
 
         sessionStorage.setItem('campusfindToken', token);
         sessionStorage.setItem('campusfindUser', JSON.stringify(user));
 
-        setToken(token);
-        setUser(user);
+        setSession({ user, token });
 
         return user;
     };
@@ -40,14 +73,16 @@ export function AuthProvider({ children }) {
         sessionStorage.removeItem('campusfindToken');
         sessionStorage.removeItem('campusfindUser');
 
-        setToken(null);
-        setUser(null);
+        setSession({
+            user: null,
+            token: null,
+        });
     };
 
     const value = {
-        user,
-        token,
-        isAuthenticated: Boolean(token),
+        user: session.user,
+        token: session.token,
+        isAuthenticated: Boolean(session.token && session.user),
         login,
         logout,
     };

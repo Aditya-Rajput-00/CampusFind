@@ -2,28 +2,36 @@
 import { useState } from 'react';
 
 import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
 import Items from './pages/items/Items';
 import Claims from './pages/claims/Claims';
 import Matches from './pages/matches/Matches';
 import Notifications from './pages/notifications/Notifications';
 import Dashboard from './pages/dashboard/Dashboard';
+import StaffApprovals from './pages/admin/StaffApprovals';
 
 import { useAuth } from './context/useAuth.js';
 
 function App() {
     const { isAuthenticated, user, logout } = useAuth();
     const [activePage, setActivePage] = useState('items');
-
-    // Check whether the logged-in user is Staff or Admin.
-    const isStaffOrAdmin = ['staff', 'admin'].includes(user?.role);
+    const [authView, setAuthView] = useState('login');
 
     if (!isAuthenticated) {
-        return <Login />;
+        return authView === 'register' ? (
+            <Register onLoginClick={() => setAuthView('login')} />
+        ) : (
+            <Login onRegisterClick={() => setAuthView('register')} />
+        );
     }
 
-    // Prevent students from accessing the Dashboard.
+    const isStaffOrAdmin = ['staff', 'admin'].includes(user?.role);
+    const isAdmin = user?.role === 'admin';
+
+    // Restrict dashboard and staff approvals to their authorized roles.
     const currentPage =
-        !isStaffOrAdmin && activePage === 'dashboard'
+        (!isStaffOrAdmin && activePage === 'dashboard') ||
+            (!isAdmin && activePage === 'staff-approvals')
             ? 'items'
             : activePage;
 
@@ -106,6 +114,16 @@ function App() {
                             Dashboard
                         </button>
                     )}
+
+                    {/* Staff Approvals: Admin only */}
+                    {isAdmin && (
+                        <button
+                            style={navigationButtonStyle('staff-approvals')}
+                            onClick={() => setActivePage('staff-approvals')}
+                        >
+                            Staff Approvals
+                        </button>
+                    )}
                 </nav>
 
                 {/* User Information */}
@@ -144,6 +162,10 @@ function App() {
 
             {isStaffOrAdmin && currentPage === 'dashboard' && (
                 <Dashboard />
+            )}
+
+            {isAdmin && currentPage === 'staff-approvals' && (
+                <StaffApprovals />
             )}
         </div>
     );

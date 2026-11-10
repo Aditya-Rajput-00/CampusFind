@@ -126,14 +126,14 @@ describe('Claim Service Tests', () => {
 
         const result = await verifyClaim(
             'claim-1',
-            'VERIFIED',
+            'SUCCESS',
             'Student provided valid proof'
         );
 
         expect(api.patch).toHaveBeenCalledWith(
             '/claims/claim-1/verify',
             {
-                result: 'VERIFIED',
+                result: 'SUCCESS',
                 notes: 'Student provided valid proof',
             }
         );

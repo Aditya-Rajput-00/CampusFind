@@ -1,15 +1,13 @@
-
 # CampusFind — Project Context
 
 ## 1. Project Overview
 
-**Project Name:** CampusFind
-
-**Repository:** https://github.com/Aditya-Rajput-00/CampusFind
-
+**Project Name:** CampusFind  
+**Repository:** https://github.com/Aditya-Rajput-00/CampusFind  
 **Local Path:** D:/CampusFind
 
 **Description:**
+
 CampusFind is a full-stack campus lost-and-found application designed to help students and staff report lost or found items, submit claims, manage matches, and receive notifications.
 
 ## 2. Technology Stack
@@ -42,7 +40,7 @@ CampusFind is a full-stack campus lost-and-found application designed to help st
 
 ## 3. Project Architecture
 
-CampusFind uses a separate frontend and backend architecture.
+CampusFind uses separate frontend and backend applications.
 
 ### Backend Structure
 
@@ -122,20 +120,22 @@ Existing middleware:
 
 ## 6. Frontend Modules
 
-Existing application areas:
-
+Application areas:
 - Authentication
 - Dashboard
 - Items
 - Claims
 - Matches
 - Notifications
+- Admin staff approvals
 
-API service files exist for authentication, claims, dashboard, items, matches and notifications.
+Frontend service modules include authentication, claims, dashboard, items, matches, notifications, and user services.
+
+Inspect actual source files before documenting additional functionality or API behavior.
 
 ## 7. Verified Development History
 
-Recent GitHub commits:
+Previously recorded GitHub commits:
 
 - b10be06 — Add staff registration approval workflow
 - be65ca1 — Add Cloudinary image storage for production
@@ -147,10 +147,27 @@ These commits are historical evidence, not proof that every feature currently pa
 
 ## 8. Current Development Position
 
-- The staff registration approval workflow has been identified as the last completed development milestone, according to the developer's confirmation.
-- The next development task has not yet been selected.
-- The next task must be identified before implementation begins.
-- Existing application code must be inspected before making changes.
+**Overall roadmap position:**
+- Phase 15 — Final Testing & Deployment
+- Task 84 — Production Environment Setup
+
+This is the current overall roadmap position confirmed by the developer.
+
+The frontend registration, staff approval UI, authentication improvements, and related tests have been reviewed and verified locally as a separate development activity.
+
+The frontend changes remain local, uncommitted, and unpushed.
+
+The frontend verification results recorded on November 11, 2026:
+- 10 test files passed.
+- 51 tests passed.
+- 0 test failures.
+- ESLint passed.
+- Vite production build passed.
+- 101 modules transformed.
+
+These results apply to the local working tree at the time of verification. Rerun verification after any further code changes.
+
+Task 84 must be handled separately. Do not mark production setup or deployment complete based on frontend verification.
 
 ## 9. Development Rules
 
@@ -161,9 +178,11 @@ These commits are historical evidence, not proof that every feature currently pa
 5. Test every implementation.
 6. Fix errors before proceeding.
 7. Maintain GitHub regularly.
-8. Commit only verified changes.
+8. Commit only verified changes after explicit developer approval.
 9. Never expose .env secrets.
 10. Never assume unverified features are implemented.
+11. Preserve existing uncommitted work.
+12. Do not stage unrelated files or documentation accidentally.
 
 ## 10. Development Workflow
 
@@ -184,7 +203,7 @@ Maintain these files in the repository root:
 
 Update relevant documentation after every significant development milestone.
 
-## 12. Important Instruction for AI Assistants
+## 12. Important Instructions for AI Assistants
 
 Before starting any new development conversation:
 
@@ -193,7 +212,7 @@ Before starting any new development conversation:
 3. Read CHANGELOG.md.
 4. Read DECISIONS.md.
 5. Inspect relevant source code.
-6. Confirm the current development position.
+6. Confirm the current development position with the developer.
 7. Continue from the last verified task.
 
 If information is missing, ask the developer rather than inventing details.
