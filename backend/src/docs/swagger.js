@@ -2,6 +2,9 @@
 const swaggerJsdoc = require("swagger-jsdoc");
 const path = require("path");
 
+const swaggerServerUrl =
+    process.env.SWAGGER_SERVER_URL || "http://localhost:5000";
+
 const options = {
     definition: {
         openapi: "3.0.0",
@@ -13,8 +16,10 @@ const options = {
         },
         servers: [
             {
-                url: "http://localhost:5000",
-                description: "Local development server",
+                url: swaggerServerUrl,
+                description: process.env.SWAGGER_SERVER_URL
+                    ? "Production server"
+                    : "Local development server",
             },
         ],
         components: {
@@ -38,7 +43,6 @@ const options = {
         path.resolve(__dirname, "../routes/dashboardRoutes.js"),
         path.resolve(__dirname, "../server.js"),
     ],
-
 };
 
 const swaggerSpec = swaggerJsdoc(options);
