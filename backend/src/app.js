@@ -2,6 +2,7 @@
 const path = require("path");
 const express = require("express");
 const helmet = require("helmet");
+const cors = require("cors");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -18,6 +19,14 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./docs/swagger");
 
 const app = express();
+
+// Configure allowed frontend origin
+const allowedOrigin =
+    process.env.CLIENT_URL || "http://localhost:5173";
+
+app.use(cors({
+    origin: allowedOrigin,
+}));
 
 app.use(express.json());
 app.use(helmet());

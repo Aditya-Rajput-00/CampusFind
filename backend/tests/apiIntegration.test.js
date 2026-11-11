@@ -58,7 +58,6 @@ test("GET to an unknown route returns a 404 response", async () => {
     }
 });
 
-
 test("POST /api/auth/register rejects an invalid email", async () => {
     const server = app.listen(0);
 
@@ -102,7 +101,6 @@ test("POST /api/auth/register rejects an invalid email", async () => {
     }
 });
 
-
 test("POST /api/auth/register rejects missing required fields", async () => {
     const server = app.listen(0);
 
@@ -139,7 +137,6 @@ test("POST /api/auth/register rejects missing required fields", async () => {
         });
     }
 });
-
 
 test("POST /api/auth/login rejects an invalid email", async () => {
     const server = app.listen(0);
@@ -183,7 +180,6 @@ test("POST /api/auth/login rejects an invalid email", async () => {
     }
 });
 
-
 test("POST /api/auth/login rejects missing credentials", async () => {
     const server = app.listen(0);
 
@@ -210,13 +206,15 @@ test("POST /api/auth/login rejects missing credentials", async () => {
     } finally {
         await new Promise((resolve, reject) => {
             server.close((error) => {
-                if (error) reject(error);
-                else resolve();
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve();
+                }
             });
         });
     }
 });
-
 
 test("POST /api/auth/login rejects a missing password", async () => {
     const server = app.listen(0);
@@ -249,13 +247,15 @@ test("POST /api/auth/login rejects a missing password", async () => {
     } finally {
         await new Promise((resolve, reject) => {
             server.close((error) => {
-                if (error) reject(error);
-                else resolve();
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve();
+                }
             });
         });
     }
 });
-
 
 test("POST /api/auth/login rejects a missing email", async () => {
     const server = app.listen(0);
@@ -288,8 +288,115 @@ test("POST /api/auth/login rejects a missing email", async () => {
     } finally {
         await new Promise((resolve, reject) => {
             server.close((error) => {
-                if (error) reject(error);
-                else resolve();
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    }
+});
+
+// CORS integration tests
+
+test("CORS allows requests from the configured frontend origin", async () => {
+    const server = app.listen(0);
+
+    try {
+        const address = server.address();
+
+        const response = await fetch(`http://127.0.0.1:${address.port}/`, {
+            headers: {
+                Origin: "http://localhost:5173",
+            },
+        });
+
+        assert.equal(response.status, 200);
+        assert.equal(
+            response.headers.get("access-control-allow-origin"),
+            "http://localhost:5173"
+        );
+    } finally {
+        await new Promise((resolve, reject) => {
+            server.close((error) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    }
+});
+
+test("CORS does not allow requests from an untrusted origin", async () => {
+    const server = app.listen(0);
+
+    try {
+        const address = server.address();
+
+        const response = await fetch(`http://127.0.0.1:${address.port}/`, {
+            headers: {
+                Origin: "https://untrusted-example.com",
+            },
+        });
+
+        assert.equal(response.status, 200);
+
+        assert.notEqual(
+            response.headers.get("access-control-allow-origin"),
+            "https://untrusted-example.com"
+        );
+    } finally {
+        await new Promise((resolve, reject) => {
+            server.close((error) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    }
+});
+
+test("CORS handles preflight OPTIONS requests from the configured frontend", async () => {
+    const server = app.listen(0);
+
+    try {
+        const address = server.address();
+
+        const response = await fetch(
+            `http://127.0.0.1:${address.port}/api/auth/login`,
+            {
+                method: "OPTIONS",
+                headers: {
+                    Origin: "http://localhost:5173",
+                    "Access-Control-Request-Method": "POST",
+                    "Access-Control-Request-Headers": "content-type,authorization",
+                },
+            }
+        );
+
+        assert.equal(response.status, 204);
+        assert.equal(
+            response.headers.get("access-control-allow-origin"),
+            "http://localhost:5173"
+        );
+
+        assert.ok(
+            response.headers.get("access-control-allow-methods")
+                .includes("POST")
+        );
+    } finally {
+        await new Promise((resolve, reject) => {
+            server.close((error) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve();
+                }
             });
         });
     }
