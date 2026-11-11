@@ -59,6 +59,8 @@ describe('API Service Integration Tests', () => {
 
         const requestConfig = adapter.mock.calls[0][0];
 
-        expect(requestConfig.baseURL).toBe('/api');
+        expect(requestConfig.baseURL).toBe(
+            import.meta.env.VITE_API_URL || '/api'
+        );
     });
 });
