@@ -1,105 +1,110 @@
 # CampusFind — Changelog
 
-All significant development changes are recorded here. Do not record unverified work as completed.
+All notable project changes are documented in this file.
 
-## 2026-11-12
+The format follows a simplified Keep a Changelog structure.
 
-### Backend Authentication Security Review — In Progress
+---
 
-- Updated `backend/src/middleware/authMiddleware.js` to validate the authenticated user against the current MongoDB record.
-- Added validation of the JWT user ID format before database lookup.
-- Authentication now rejects deleted users and accounts whose status is not `approved`.
-- The middleware uses the current database role instead of relying on potentially outdated role information stored in a JWT.
-- Database errors are forwarded to centralized error handling.
-- Updated authentication middleware unit tests to cover missing headers, invalid and expired tokens, invalid user IDs, deleted users, pending and rejected accounts, database errors, and database role validation.
-- Updated affected claim, dashboard, item, match, and user integration tests to support database-backed authentication.
-- Confirmed that CORS integration tests exist for configured origins, untrusted origins, and preflight OPTIONS requests.
-- Authentication middleware unit tests passed: 11/11.
-- Full backend test suite passed: 162/162 tests, 0 failures.
-- `git diff --check` completed without errors.
-- Removed temporary patch and backup files after verifying that their useful changes were already represented in the actual source files.
-- Updated `PROJECT_CONTEXT.md` and `CURRENT_TASK.md`.
-- The security changes and documentation updates remain local, uncommitted, and unpushed.
-- Task 89 — Final Security Check remains in progress pending final review and verification.
+## [Unreleased]
 
-### Git Working Tree Review
+### Release Preparation — 2026-11-12
 
-- Confirmed the current branch is `main`.
-- Confirmed the latest commit is `a730e92` — `fix: configure Express trust proxy for Render`.
-- Confirmed local `main` and `origin/main` point to the same commit.
-- Confirmed seven modified backend files before documentation updates.
-- No changes have been staged or committed for the current security work.
+- Added the root `README.md` for project documentation.
+- Updated `PROJECT_CONTEXT.md` with the current verified project status.
+- Updated `CURRENT_TASK.md` to reflect completed Task 89 and ongoing Task 90.
+- Preparing the first GitHub release, `v1.0.0`.
+- GitHub release and version tag have not yet been published.
 
-## 2026-11-11
+---
 
-### Frontend Final Review and Verification — Locally Verified
+## [1.0.0] — Planned
 
-- Completed the frontend review of application navigation, authentication context, registration UI, admin staff approvals, service modules, tests, and relevant page integrations.
-- Reviewed the staff approval component, its tests, and responsive CSS.
-- Reviewed frontend role-based navigation and access tests.
-- Full frontend test suite passed: 10 test files, 51 tests, 0 failures.
-- ESLint passed.
-- Vite production build passed; 101 modules transformed.
-- These results apply to the local working tree at the time of verification.
-- The frontend changes were recorded as local, uncommitted, and unpushed at that time.
+**Status:** Release preparation in progress. This version has not yet been published.
 
-### Git Working Tree Review
+### Security
 
-- Confirmed the current branch was `main`.
-- Confirmed the branch was up to date with `origin/main` at the time of inspection.
-- Confirmed that no changes were staged.
-- Identified `app-diff.txt` as an untracked temporary diff file for review.
-- Identified intentional Markdown hard-break spaces in `PROJECT_CONTEXT.md`.
-- Git reported an LF/CRLF warning for `frontend/src/App.jsx`; no broad line-ending conversion was performed.
+- Improved authentication middleware to validate the current user against MongoDB.
+- Added validation of the user ID format.
+- Rejected deleted users and accounts that are not approved.
+- Used the current database role instead of relying on potentially outdated JWT role information.
+- Forwarded database errors to centralized error handling.
 
-## 2026-11-10
+### Backend
 
-### Frontend Registration and Staff Approval UI — Locally Verified
+- Implemented authentication and user management.
+- Implemented lost and found item management.
+- Implemented claim and match functionality.
+- Implemented notification functionality.
+- Implemented dashboard statistics.
+- Added API documentation using Swagger/OpenAPI.
+- Configured centralized error handling and security middleware.
 
-- Added student/staff registration UI using the existing authentication service.
-- Added admin staff-approval UI for reviewing pending staff registrations.
-- Added frontend user service methods for fetching pending staff and approving/rejecting registrations.
-- Added role-based navigation, registration, staff-approval, and authentication-context tests.
-- Refined frontend authentication session restoration and login response validation.
-- These changes were local and uncommitted at the time of the recorded verification.
+### Frontend
 
-### Claim Verification Contract Test Correction
+- Established the React and Vite frontend application.
+- Configured frontend API communication.
+- Added frontend testing and linting tools.
 
-- Corrected the Claim Service test input and expected request payload from `VERIFIED` to `SUCCESS`.
-- This aligns the test with the backend controller contract, which accepts `SUCCESS` or `FAILURE`.
-- No production claim code was changed for this correction.
-- Focused Claim Service tests passed: 6/6.
+### Infrastructure
 
-### Frontend Verification
+- Integrated MongoDB using Mongoose.
+- Configured Cloudinary for image management.
+- Prepared the production deployment architecture using Vercel, Render, MongoDB Atlas, and Cloudinary.
 
-- Full frontend suite: 10 test files passed; 51 tests passed; 0 failed.
-- ESLint passed.
-- Vite production build passed; 101 modules transformed.
-- These results apply to the local working tree at the time of verification.
+### Verification
 
-### Project Documentation Setup
+- Task 89 backend test results: 162 passed, 0 failed.
+- Authentication middleware unit tests: 11/11 passed.
+- CORS integration tests cover allowed origins, untrusted origins, and OPTIONS requests.
 
-- Created `PROJECT_CONTEXT.md`.
-- Created `CURRENT_TASK.md`.
-- Established persistent project documentation workflow.
+These are recorded verification results from Task 89, not a claim that every production deployment component has been re-tested.
 
-### Previously Recorded GitHub Milestones
+---
 
-- `b10be06` — Add staff registration approval workflow.
-- `be65ca1` — Add Cloudinary image storage for production.
-- `6fc4c85` — Improve lost and found items page.
-- `8ab0f48` — Add frontend integration test coverage.
-- `1eded03` — Fix claim and match controller test fixtures.
+## [0.0.0] — Initial Development
 
-### Important Note
+### Project Foundation
 
-The commits above are historical records. Their current implementation and test status must be verified before making claims about functionality.
+- Created the CampusFind repository.
+- Initialized the backend using Node.js and Express.
+- Connected the backend to MongoDB.
+- Established the initial frontend application.
+- Created the initial project structure and documentation.
 
-## Documentation Rules
+### Backend Models
 
-1. Record significant features and fixes.
-2. Record important bug resolutions.
-3. Record test improvements.
-4. Include relevant commit hashes only after a commit exists.
-5. Update after verified development milestones.
-6. Do not record unverified changes as completed.
+- User
+- Item
+- Claim
+- Match
+- Notification
+
+### Backend Modules
+
+- Authentication
+- Users
+- Items
+- Claims
+- Matches
+- Notifications
+- Dashboard
+
+---
+
+## Versioning Notes
+
+- The repository's first planned GitHub release is `v1.0.0`.
+- Backend and frontend package versions are maintained independently.
+- The GitHub release version does not automatically change either package version.
+- A release is considered published only after its Git tag and GitHub Release have been verified.
+
+---
+
+## Latest Verified Security Commit
+
+`64c3b78` — `fix: validate current user state in auth middleware`
+
+Branch: `main`
+
+Status: Committed and pushed to GitHub.

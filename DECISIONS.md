@@ -1,175 +1,123 @@
-# CampusFind — Technical Decisions
+# CampusFind — Architecture & Project Decisions
 
-This document records confirmed architectural, technical, and product decisions.
+This document records important technical and project decisions so future development remains consistent.
 
-## 1. Application Architecture
+---
 
-Decision: Separate frontend and backend applications.
+## 1. Project Architecture
 
-Structure:
-- `frontend/`
-- `backend/`
+**Decision:** CampusFind uses a separate frontend and backend architecture.
 
-Status: Verified from repository structure.
+- Frontend: React with Vite.
+- Backend: Node.js with Express.
+- Database: MongoDB with Mongoose.
+- API communication: HTTP REST APIs.
 
-## 2. Frontend Technology
+**Reason:** Separating frontend and backend makes the application easier to maintain, test, and deploy.
 
-Decision: React with Vite.
+---
 
-Technologies:
-- React 19
-- Vite 8
-- Axios
-- JavaScript ES Modules
-- CSS
+## 2. Backend Technology
 
-Frontend testing and quality tools:
-- Vitest
-- React Testing Library
-- ESLint
+**Decision:** Use Node.js and Express 5 with CommonJS modules.
 
-Status: Verified from frontend package configuration and the existing project setup.
+**Reason:** This provides a lightweight and maintainable backend structure.
 
-## 3. Backend Technology
+The backend uses Mongoose for MongoDB interaction and centralized middleware for request processing and error handling.
 
-Decision: Node.js with Express.
+---
 
-Technologies:
-- Node.js
-- Express 5
-- JavaScript CommonJS
-- Mongoose
+## 3. Database Design
 
-Status: Verified from backend package configuration.
+**Decision:** Use MongoDB with Mongoose models.
 
-## 4. Database
+The main models are:
 
-Decision: MongoDB with Mongoose.
-
-Existing models:
 - User
 - Item
 - Claim
 - Match
 - Notification
 
-Status: Existing project decision. Verify implementation before changing models or relationships.
+**Reason:** These models represent the main entities and relationships required by the CampusFind Lost & Found workflow.
 
-## 5. Authentication and Registration Policy
+---
 
-Existing technologies and middleware:
-- JSON Web Token
-- bcryptjs
-- authMiddleware
-- roleMiddleware
+## 4. Authentication and Authorization
 
-Confirmed registration policy:
+**Decision:** Use JWT-based authentication and role-based authorization.
 
-- Public registration permits student and staff roles only.
-- Student registrations are approved immediately.
-- Staff registrations remain pending until an admin approves them.
+- Passwords are hashed using bcryptjs.
+- JWTs are verified by authentication middleware.
+- The current user is retrieved from MongoDB.
+- Deleted users and accounts that are not approved are rejected.
+- The current database role is used for authorization decisions.
+- Public registration permits student and staff accounts only.
+- Student accounts are automatically approved.
+- Staff accounts require administrator approval.
 - Pending or rejected staff accounts cannot log in.
-- Public registration must not permit creation of admin accounts.
-- Admin-only endpoints manage pending staff approvals.
+- Public registration cannot create administrator accounts.
 
-Rationale: Keep public student onboarding straightforward while requiring an administrator to authorize staff accounts. Prevent privilege escalation through public registration.
+**Reason:** Authentication and authorization must reflect the current account state and prevent users from gaining privileges through outdated or manipulated token data.
 
-Status: User-selected policy implemented in the backend and reflected in the current frontend registration and admin approval work. Inspect current source and tests before changing it.
+---
 
-## 5.1 Database-Backed Authentication Validation
+## 5. API Error Handling
 
-**Decision:** Validate the authenticated user's current account state and role against MongoDB on every protected request.
+**Decision:** Use centralized error-handling middleware.
 
-### Implementation
+Controllers should pass unexpected errors to the centralized error handler using `next(error)` rather than implementing inconsistent error responses in individual controllers.
 
-The authentication middleware:
+**Reason:** Consistent error handling improves maintainability and API reliability.
 
-- Verifies the JWT signature and expiration.
-- Validates the user ID format.
-- Retrieves the current user record from MongoDB.
-- Rejects deleted users.
-- Rejects accounts that are not approved.
-- Uses the current database role instead of trusting the role embedded in the JWT.
-- Forwards database errors to centralized error handling.
+---
 
-### Rationale
+## 6. API Documentation
 
-JWT claims can become outdated after a user's role or account status changes.
+**Decision:** Use Swagger/OpenAPI documentation.
 
-Checking the current database record prevents an old token from continuing to grant access based on outdated role or approval information.
+The API documentation is available through the backend's `/api-docs` route.
 
-### Security Benefit
+**Reason:** API documentation makes endpoints easier to understand, test, and maintain.
 
-- Reduces the risk of stale-role privilege escalation.
-- Prevents deleted accounts from continuing to authenticate.
-- Prevents pending or rejected accounts from accessing protected routes with previously issued tokens.
+---
 
-### Trade-off
+## 7. Image Management
 
-The middleware performs a database lookup for each protected request. This adds database dependency and request overhead, but provides current account and role validation.
+**Decision:** Use Cloudinary for image storage and management.
 
-**Status:** Implemented locally and covered by unit and integration tests. Final security verification and commit are pending.
+Multer is used for handling uploaded files.
 
-## 6. Image Storage
+**Reason:** External image storage avoids depending on the backend server's local filesystem for production image hosting.
 
-Cloudinary integration exists in the backend.
+---
 
-Related file:
+## 8. Security
 
-`backend/src/config/cloudinary.js`
+**Decision:** Apply security controls through dedicated middleware and configuration.
 
-Status: Historical implementation milestone. Verify current configuration before making changes.
+The backend includes:
 
-## 7. API Documentation
+- Helmet.
+- Express Rate Limit.
+- CORS configuration.
+- JWT authentication.
+- Role-based authorization.
+- Input validation.
+- Centralized error handling.
 
-Decision: Use Swagger/OpenAPI documentation.
+**Reason:** Security should be applied consistently across the application rather than handled separately in every route.
 
-Related file:
+---
 
-`backend/src/docs/swagger.js`
+## 9. Frontend Architecture
 
-## 8. Testing
+**Decision:** Use React 19 and Vite 8.
 
-Backend:
-- Node.js built-in test runner.
+Axios is used for API communication.
 
-Frontend:
-- Vitest
-- React Testing Library
-- ESLint
-- Vite production build
+The frontend API service supports `VITE_API_URL`, with `/api` as the fallback.
 
-Decision: Test relevant functionality before considering a task complete.
+The Vite development configuration proxies `/api` requests to the local backend.
 
-Latest recorded local frontend verification on 2026-11-11:
-- 10 test files passed.
-- 51 tests passed.
-- 0 failed.
-- ESLint passed.
-- Vite production build passed.
-- 101 modules transformed.
-
-These results describe the local working tree at the time of verification. Rerun checks after further code changes.
-
-## 9. Development Rules
-
-- Preserve existing architecture.
-- Avoid unnecessary dependencies.
-- Never rewrite working functionality without a reason.
-- Prefer reusable and maintainable code.
-- Use centralized error handling.
-- Protect sensitive configuration.
-- Inspect actual source before making implementation claims.
-- Preserve existing uncommitted work.
-- Commit verified changes only after explicit developer approval.
-- Do not stage unrelated files accidentally.
-
-## 10. Decision Management
-
-Whenever a significant architectural or product decision is made:
-
-1. Record the decision.
-2. Explain why it was selected.
-3. Record alternatives if relevant.
-4. Update this document.
-5. Never silently reverse an existing decision.
+**Reason:** This keeps API configuration manageable across development and production environments.
