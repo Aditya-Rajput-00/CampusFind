@@ -121,3 +121,104 @@ The frontend API service supports `VITE_API_URL`, with `/api` as the fallback.
 The Vite development configuration proxies `/api` requests to the local backend.
 
 **Reason:** This keeps API configuration manageable across development and production environments.
+
+---
+
+## 10. Testing Strategy
+
+**Decision:** Maintain separate testing tools for the backend and frontend.
+
+- Backend: Node.js built-in test runner.
+- Frontend: Vitest and React Testing Library.
+- Frontend code quality: ESLint.
+
+**Reason:** Separate test environments allow each application layer to be tested using appropriate tools.
+
+---
+
+## 11. Production Deployment Architecture
+
+**Decision:** Use the following planned production architecture:
+
+- Frontend: Vercel.
+- Backend: Render.
+- Database: MongoDB Atlas.
+- Image storage: Cloudinary.
+
+**Reason:** These services provide separate hosting for the frontend, backend, database, and uploaded images.
+
+Production deployment should be considered verified only when the relevant services and configurations have actually been checked.
+
+---
+
+## 12. Versioning and GitHub Release
+
+**Decision:** Use `v1.0.0` as the first published GitHub release version.
+
+The first release is published and marked as Latest on GitHub.
+
+**Release details:**
+
+- Release title: CampusFind v1.0.0
+- Tag: `v1.0.0`
+- Target branch: `main`
+- Target commit: `ee447b3b9df0c559f2ae54bd60b5ec3c6a6d84bd`
+
+**Release URL:**
+
+https://github.com/Aditya-Rajput-00/CampusFind/releases/tag/v1.0.0
+
+The backend and frontend package versions remain independent.
+
+**Reason:** The GitHub release identifies the overall application release, while package versions belong to their respective applications.
+
+---
+
+## 13. Documentation Structure
+
+**Decision:** Maintain four separate project documentation files:
+
+- `PROJECT_CONTEXT.md` — Overall project context and architecture.
+- `CURRENT_TASK.md` — Current roadmap position and active task.
+- `CHANGELOG.md` — History of notable project changes.
+- `DECISIONS.md` — Important technical and architectural decisions.
+
+The root `README.md` provides the project's introduction and setup information.
+
+**Reason:** Each document has a distinct purpose, making project continuity easier across development sessions.
+
+---
+
+## 14. Development Workflow
+
+**Decision:** Follow this workflow for project development:
+
+1. PLAN
+2. INSPECT
+3. IMPLEMENT
+4. TEST
+5. VERIFY
+6. REVIEW
+7. COMMIT
+
+Work on one focused task at a time. Do not proceed to the next task until the current work has been verified.
+
+**Reason:** This reduces unnecessary changes, prevents regressions, and maintains a clear development history.
+
+---
+
+## 15. Release Status
+
+**Current roadmap position:** Phase 15 — Final Testing & Deployment.
+
+- Task 88: Completed.
+- Task 89: Completed and pushed.
+- Task 90: GitHub release published; final documentation synchronization in progress.
+
+Latest release-preparation commit:
+
+`ee447b3` — `docs: prepare CampusFind v1.0.0 release`
+
+The release tag and GitHub Release have been verified.
+
+The final documentation synchronization changes still require review, commit, and push.

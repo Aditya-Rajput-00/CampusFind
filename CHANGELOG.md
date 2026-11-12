@@ -6,21 +6,29 @@ The format follows a simplified Keep a Changelog structure.
 
 ---
 
-## [Unreleased]
+## [1.0.0] — 2026-11-12
 
-### Release Preparation — 2026-11-12
+**Status: Published — First Stable Release**
 
-- Added the root `README.md` for project documentation.
-- Updated `PROJECT_CONTEXT.md` with the current verified project status.
-- Updated `CURRENT_TASK.md` to reflect completed Task 89 and ongoing Task 90.
-- Preparing the first GitHub release, `v1.0.0`.
-- GitHub release and version tag have not yet been published.
+GitHub Release:
 
----
+https://github.com/Aditya-Rajput-00/CampusFind/releases/tag/v1.0.0
 
-## [1.0.0] — Planned
+Git tag: `v1.0.0`
 
-**Status:** Release preparation in progress. This version has not yet been published.
+Target commit: `ee447b3b9df0c559f2ae54bd60b5ec3c6a6d84bd`
+
+### Features
+
+- User registration and authentication.
+- Student and staff account management.
+- Administrator approval for staff registrations.
+- Lost and found item reporting and management.
+- Claim submission and management.
+- Item matching functionality.
+- Notifications and dashboard statistics.
+- Image management using Cloudinary.
+- API documentation using Swagger/OpenAPI.
 
 ### Security
 
@@ -30,39 +38,57 @@ The format follows a simplified Keep a Changelog structure.
 - Used the current database role instead of relying on potentially outdated JWT role information.
 - Forwarded database errors to centralized error handling.
 
-### Backend
+### Technology Stack
 
-- Implemented authentication and user management.
-- Implemented lost and found item management.
-- Implemented claim and match functionality.
-- Implemented notification functionality.
-- Implemented dashboard statistics.
-- Added API documentation using Swagger/OpenAPI.
-- Configured centralized error handling and security middleware.
-
-### Frontend
-
-- Established the React and Vite frontend application.
-- Configured frontend API communication.
-- Added frontend testing and linting tools.
+- Frontend: React 19, Vite 8, Axios.
+- Backend: Node.js, Express 5.
+- Database: MongoDB, Mongoose.
+- Authentication: JWT, bcryptjs.
+- Image storage: Cloudinary.
+- Frontend testing: Vitest, React Testing Library, ESLint.
+- Backend testing: Node.js Test Runner.
 
 ### Infrastructure
 
-- Integrated MongoDB using Mongoose.
-- Configured Cloudinary for image management.
-- Prepared the production deployment architecture using Vercel, Render, MongoDB Atlas, and Cloudinary.
+The planned production architecture uses:
 
-### Verification
+- Frontend: Vercel.
+- Backend: Render.
+- Database: MongoDB Atlas.
+- Image storage: Cloudinary.
 
-- Task 89 backend test results: 162 passed, 0 failed.
+### Recorded Verification
+
+Task 89 backend security verification recorded:
+
+- Full backend test suite: 162 passed, 0 failed.
 - Authentication middleware unit tests: 11/11 passed.
 - CORS integration tests cover allowed origins, untrusted origins, and OPTIONS requests.
 
-These are recorded verification results from Task 89, not a claim that every production deployment component has been re-tested.
+These results refer to the recorded Task 89 verification and do not claim that every production deployment component was re-tested during release publication.
+
+### Release Preparation
+
+- Added the root `README.md`.
+- Updated `PROJECT_CONTEXT.md`.
+- Updated `CURRENT_TASK.md`.
+- Updated `CHANGELOG.md`.
+- Updated `DECISIONS.md`.
+- Reviewed and committed the documentation changes.
+
+Release-preparation commit:
+
+`ee447b3` — `docs: prepare CampusFind v1.0.0 release`
 
 ---
 
-## [0.0.0] — Initial Development
+## [Unreleased]
+
+No changes recorded yet.
+
+---
+
+## Initial Development
 
 ### Project Foundation
 
@@ -94,17 +120,7 @@ These are recorded verification results from Task 89, not a claim that every pro
 
 ## Versioning Notes
 
-- The repository's first planned GitHub release is `v1.0.0`.
+- `v1.0.0` is the first published GitHub release.
 - Backend and frontend package versions are maintained independently.
 - The GitHub release version does not automatically change either package version.
-- A release is considered published only after its Git tag and GitHub Release have been verified.
-
----
-
-## Latest Verified Security Commit
-
-`64c3b78` — `fix: validate current user state in auth middleware`
-
-Branch: `main`
-
-Status: Committed and pushed to GitHub.
+- Future releases should document significant features, fixes, security improvements, and verification results.
