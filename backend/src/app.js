@@ -20,6 +20,9 @@ const swaggerSpec = require("./docs/swagger");
 
 const app = express();
 
+// Trust the single reverse proxy used by Render.
+app.set("trust proxy", 1);
+
 // Configure allowed frontend origin
 const allowedOrigin =
     process.env.CLIENT_URL || "http://localhost:5173";
