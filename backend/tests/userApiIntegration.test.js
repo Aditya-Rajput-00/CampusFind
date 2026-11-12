@@ -8,12 +8,17 @@ const User = require("../src/models/User");
 
 const TEST_SECRET = "campusfind-test-secret";
 
+const TEST_USER_IDS = {
+    student: "64b000000000000000000001",
+    admin: "64b000000000000000000002",
+};
+
 function createToken(role) {
     process.env.JWT_SECRET = TEST_SECRET;
 
     return jwt.sign(
         {
-            userId: `test-${role}-id`,
+            userId: TEST_USER_IDS[role],
             role,
         },
         TEST_SECRET,
@@ -53,17 +58,32 @@ function restoreEnvironment(t) {
     });
 }
 
-function restoreUserMethods(t) {
-    const originalFind = User.find;
+function mockAuthenticatedUser(t, role, additionalUsers = {}) {
     const originalFindById = User.findById;
+    const authenticatedUserId = TEST_USER_IDS[role];
+
+    const authenticatedUser = {
+        _id: authenticatedUserId,
+        role,
+        accountStatus: "approved",
+    };
+
+    const users = {
+        [authenticatedUserId]: authenticatedUser,
+        ...additionalUsers,
+    };
+
+    User.findById = async (id) => {
+        const userId = id.toString();
+        return users[userId] || null;
+    };
 
     t.after(() => {
-        User.find = originalFind;
         User.findById = originalFindById;
     });
 }
 
-// Existing test 1: Authentication required
+// Test 1: Authentication required
 test("GET /api/users/me rejects requests without authentication", async () => {
     const response = await makeRequest("/api/users/me");
     const body = await response.json();
@@ -76,9 +96,10 @@ test("GET /api/users/me rejects requests without authentication", async () => {
     });
 });
 
-// Existing test 2: Students cannot access admin user list
+// Test 2: Students cannot access admin user list
 test("GET /api/users denies an authenticated student", async (t) => {
     restoreEnvironment(t);
+    mockAuthenticatedUser(t, "student");
 
     const token = createToken("student");
 
@@ -98,16 +119,22 @@ test("GET /api/users denies an authenticated student", async (t) => {
     });
 });
 
-// New test 3: Admin can view pending staff registrations
+// Test 3: Admin can view pending staff registrations
 test("GET /api/users/pending-staff allows admin access", async (t) => {
     restoreEnvironment(t);
-    restoreUserMethods(t);
+    mockAuthenticatedUser(t, "admin");
+
+    const originalFind = User.find;
+
+    t.after(() => {
+        User.find = originalFind;
+    });
 
     const token = createToken("admin");
 
     const pendingStaff = [
         {
-            _id: "64b000000000000000000001",
+            _id: "64b000000000000000000003",
             name: "Test Staff",
             email: "staff@example.com",
             role: "staff",
@@ -149,9 +176,10 @@ test("GET /api/users/pending-staff allows admin access", async (t) => {
     );
 });
 
-// New test 4: Students cannot view pending staff registrations
+// Test 4: Students cannot view pending staff registrations
 test("GET /api/users/pending-staff denies student access", async (t) => {
     restoreEnvironment(t);
+    mockAuthenticatedUser(t, "student");
 
     const token = createToken("student");
 
@@ -167,13 +195,11 @@ test("GET /api/users/pending-staff denies student access", async (t) => {
     assert.equal(body.message, "Access denied");
 });
 
-// New test 5: Admin can approve a pending staff account
+// Test 5: Admin can approve a pending staff account
 test("PATCH /api/users/:id/approve allows admin to approve staff", async (t) => {
     restoreEnvironment(t);
-    restoreUserMethods(t);
 
-    const token = createToken("admin");
-    const staffId = "64b000000000000000000001";
+    const staffId = "64b000000000000000000004";
 
     const staffUser = {
         _id: staffId,
@@ -186,10 +212,11 @@ test("PATCH /api/users/:id/approve allows admin to approve staff", async (t) => 
         },
     };
 
-    User.findById = async (id) => {
-        assert.equal(id, staffId);
-        return staffUser;
-    };
+    mockAuthenticatedUser(t, "admin", {
+        [staffId]: staffUser,
+    });
+
+    const token = createToken("admin");
 
     const response = await makeRequest(
         `/api/users/${staffId}/approve`,
@@ -209,13 +236,11 @@ test("PATCH /api/users/:id/approve allows admin to approve staff", async (t) => 
     assert.equal(staffUser.saved, true);
 });
 
-// New test 6: Admin can reject a pending staff account
+// Test 6: Admin can reject a pending staff account
 test("PATCH /api/users/:id/reject allows admin to reject staff", async (t) => {
     restoreEnvironment(t);
-    restoreUserMethods(t);
 
-    const token = createToken("admin");
-    const staffId = "64b000000000000000000002";
+    const staffId = "64b000000000000000000005";
 
     const staffUser = {
         _id: staffId,
@@ -228,10 +253,11 @@ test("PATCH /api/users/:id/reject allows admin to reject staff", async (t) => {
         },
     };
 
-    User.findById = async (id) => {
-        assert.equal(id, staffId);
-        return staffUser;
-    };
+    mockAuthenticatedUser(t, "admin", {
+        [staffId]: staffUser,
+    });
+
+    const token = createToken("admin");
 
     const response = await makeRequest(
         `/api/users/${staffId}/reject`,
@@ -251,12 +277,13 @@ test("PATCH /api/users/:id/reject allows admin to reject staff", async (t) => {
     assert.equal(staffUser.saved, true);
 });
 
-// New test 7: Students cannot approve staff accounts
+// Test 7: Students cannot approve staff accounts
 test("PATCH /api/users/:id/approve denies student access", async (t) => {
     restoreEnvironment(t);
+    mockAuthenticatedUser(t, "student");
 
     const token = createToken("student");
-    const staffId = "64b000000000000000000003";
+    const staffId = "64b000000000000000000006";
 
     const response = await makeRequest(
         `/api/users/${staffId}/approve`,

@@ -1,183 +1,174 @@
 # CampusFind — Current Development Status
 
 ## Project
+
 CampusFind
 
 ## Repository
+
 https://github.com/Aditya-Rajput-00/CampusFind
 
 ## Local Path
-D:/CampusFind
+
+`D:/CampusFind`
 
 ## Current Branch
-main
 
-## Last Known GitHub Commit
-`b10be06` — `feat: add staff registration approval workflow`
+`main`
 
-The branch was last confirmed up to date with `origin/main` before the current local frontend changes.
+## Last Confirmed GitHub Commit
 
-The current frontend and documentation changes are local, uncommitted, and unpushed.
+`a730e92` — `fix: configure Express trust proxy for Render`
+
+The local `main` branch and `origin/main` were confirmed to point to the same commit on November 12, 2026.
+
+The current backend security changes are local, uncommitted, and unpushed.
+
+---
 
 ## Overall Roadmap Position
 
 **Phase 15 — Final Testing & Deployment**
 
-**Current Roadmap Task: Task 84 — Production Environment Setup**
+**Current Task: Task 89 — Final Security Check**
 
-This is the overall project roadmap position confirmed by the developer.
+**Last completed roadmap task: Task 88 — Production API Configuration**
 
-The frontend review and verification described below are separate activities. They do not mean Task 84 is complete.
+Task 88 was previously completed and verified.
 
-## Last Completed Backend Milestone
+Task 89 is currently in progress. Do not mark it complete until the final security review and verification are finished.
 
-Staff registration approval workflow.
+**Next roadmap task: Task 90 — Final GitHub Release/Version**
 
-Status: Implemented, tested, committed, and pushed in `b10be06`, according to the existing project record.
+Do not start Task 90 until Task 89 is completed and verified.
 
-## Recently Reviewed Frontend Work
+---
 
-- Student and staff registration UI.
-- Admin staff-registration approval UI.
-- User service methods for listing, approving, and rejecting pending staff registrations.
-- Role-based navigation and access tests.
-- AuthContext session restoration and login response validation.
-- Claim Service verification test corrected to use the backend-supported `SUCCESS` value instead of `VERIFIED`.
+## Task 89 — Final Security Check
 
-These frontend changes remain local, uncommitted, and unpushed.
+### Security improvement implemented
 
-## Frontend Review Progress
+The authentication middleware was updated to validate the authenticated user against the current MongoDB user record.
 
-- [x] Item Service and tests reviewed.
-- [x] Items page FormData submission integration inspected.
-- [x] Shared Axios API service and tests reviewed.
-- [x] Claim Service and tests reviewed.
-- [x] Claim frontend/backend routes and payloads compared.
-- [x] Claim verification test corrected (`SUCCESS` / `FAILURE` contract).
-- [x] Focused Claim Service tests passed: 6/6.
-- [x] Match Service and tests reviewed.
-- [x] Remaining service modules and relevant page integrations reviewed.
-- [x] Registration component and tests reviewed.
-- [x] Staff approval component, tests, and CSS reviewed.
-- [x] App navigation and role-based access tests reviewed.
-- [x] Authentication context and related tests reviewed.
-- [x] Final frontend file review completed.
-- [x] Full frontend test suite passed: 51/51 across 10 files.
-- [x] ESLint passed.
-- [x] Vite production build passed: 101 modules transformed.
-- [ ] Resolve or explicitly accept minor review observations before the final frontend commit.
-- [ ] Perform final frontend verification after any corrections.
-- [ ] Complete final Git diff review.
-- [ ] Keep documentation changes separate from the frontend commit.
-- [ ] Obtain explicit developer approval before staging, committing, or pushing.
+The updated middleware:
 
-## Current Verification Results
+- Verifies the JWT.
+- Validates the user ID format.
+- Retrieves the current user from MongoDB.
+- Rejects deleted users.
+- Rejects accounts that are not approved.
+- Uses the current database role instead of trusting the role stored in an older JWT.
+- Passes database errors to centralized error handling.
 
-Last verified on 2026-11-11 from `D:/CampusFind/frontend`:
+### Updated test coverage
+
+The following files were updated to support database-backed authentication:
+
+- `backend/tests/authMiddleware.test.js`
+- `backend/tests/claimApiIntegration.test.js`
+- `backend/tests/dashboardApiIntegration.test.js`
+- `backend/tests/itemApiIntegration.test.js`
+- `backend/tests/matchApiIntegration.test.js`
+- `backend/tests/userApiIntegration.test.js`
+
+### Verified test results
+
+Last full backend test run:
 
 ```text
-Vitest:
-10 test files passed
-51 tests passed
-0 failed
-
-ESLint:
-Passed
-
-Vite production build:
-Passed
-101 modules transformed
+Tests: 162
+Passed: 162
+Failed: 0
+Cancelled: 0
+Skipped: 0
+Todo: 0
 ```
 
-The Vitest process was running in watch mode after the successful test run. The developer exited or can exit it using `q`.
+Authentication middleware unit tests: 11/11 passed.
 
-These results apply to the local working tree at the time of verification. Rerun tests, lint, and build after any code corrections.
+Updated integration test files also passed their targeted tests.
 
-## Review Observations
+CORS integration tests are present in `backend/tests/apiIntegration.test.js`:
 
-Minor issues identified during source review that should be resolved or explicitly accepted before the final frontend commit:
+- Configured frontend origin is allowed.
+- Untrusted origin is rejected.
+- Preflight OPTIONS requests are handled.
 
-- User-facing fallback text in AuthContext may need spacing correction (`Loginfailed`).
-- Staff registration notice text may need spacing correction (`requireadmin`).
-- Staff approval fallback error text may need spacing correction (`pendingstaff`).
-- Staff approval success-message test assertions should be checked for missing spaces.
-- Registration test error-message assertion should be compared with the actual component message.
-- Consider keyboard-visible `:focus-visible` styling for staff approval buttons.
-- Consider additional tests for invalid API responses and component unmount behavior if appropriate.
+`git diff --check` completed without errors.
 
-Do not assume these observations have already been corrected. Inspect the current source before making changes.
+These results apply to the working tree at the time of the test run. Rerun the full backend test suite after any further code changes.
 
-## Git Working Tree — Last Observed
+### Current modified backend files
 
-Branch: `main`
+1. `backend/src/middleware/authMiddleware.js`
+2. `backend/tests/authMiddleware.test.js`
+3. `backend/tests/claimApiIntegration.test.js`
+4. `backend/tests/dashboardApiIntegration.test.js`
+5. `backend/tests/itemApiIntegration.test.js`
+6. `backend/tests/matchApiIntegration.test.js`
+7. `backend/tests/userApiIntegration.test.js`
 
-The branch was reported up to date with `origin/main`.
+### Git status
 
-### Modified tracked files
+Last checked on November 12, 2026:
 
-- `CHANGELOG.md`
-- `CURRENT_TASK.md`
-- `DECISIONS.md`
-- `PROJECT_CONTEXT.md`
-- `frontend/src/App.jsx`
-- `frontend/src/context/AuthContext.jsx`
-- `frontend/src/context/AuthContext.test.jsx`
-- `frontend/src/pages/auth/Login.jsx`
-- `frontend/src/services/authService.js`
-- `frontend/src/services/claimService.test.js`
+- Branch: `main`
+- Seven modified tracked files.
+- No untracked files.
+- No staged changes.
+- No commit or push for the current security changes.
 
-### Untracked files
+Temporary patch and backup files were removed after confirming that their useful changes were already represented in the actual source files.
 
-- `app-diff.txt`
-- `frontend/src/App.test.jsx`
-- `frontend/src/pages/admin/StaffApprovals.css`
-- `frontend/src/pages/admin/StaffApprovals.jsx`
-- `frontend/src/pages/admin/StaffApprovals.test.jsx`
-- `frontend/src/pages/auth/Register.jsx`
-- `frontend/src/pages/auth/Register.test.jsx`
-- `frontend/src/services/userService.js`
-- `frontend/src/services/userService.test.js`
+---
 
-No changes were staged at the last Git status check.
+## Remaining Work for Task 89
 
-No commit or push has been made for the current local frontend changes.
+- [x] Update authentication middleware to validate the current database user.
+- [x] Use the current database role instead of the JWT role.
+- [x] Reject deleted, pending, and rejected users.
+- [x] Add and update middleware tests.
+- [x] Update affected integration tests.
+- [x] Verify CORS tests are present.
+- [x] Run the full backend test suite successfully.
+- [x] Check Git diff formatting.
+- [x] Clean up unnecessary temporary files.
+- [ ] Finish updating all four project documentation files.
+- [ ] Perform final review of all seven modified backend files.
+- [ ] Run final backend tests.
+- [ ] Review the complete Git diff and working-tree status.
+- [ ] Obtain explicit developer approval before staging and committing.
+- [ ] Push the verified commit after approval.
 
-`app-diff.txt` contains a temporary diff of `frontend/src/App.jsx`. Its purpose should be confirmed before deciding whether to retain or exclude it. Do not delete it without developer approval.
+---
 
-### Git diff check observations
+## Next Roadmap Task
 
-- `PROJECT_CONTEXT.md` contains intentional Markdown hard-break trailing spaces on lines 6 and 7.
-- Git emitted an LF/CRLF warning for `frontend/src/App.jsx`.
-- Do not perform broad line-ending conversion or remove intentional Markdown formatting without a reason.
+After Task 89 is completed:
 
-Re-run `git status` and inspect current diffs before staging because the working tree may have changed since this record.
+**Phase 15 — Task 90: Final GitHub Release/Version**
 
-## Next Development Step
+Inspect the roadmap and repository state before starting Task 90.
 
-First finish the frontend review observations and prepare a clean, verified frontend-only change set.
-
-Keep the four project documentation files separate from the frontend commit unless the developer explicitly chooses otherwise.
-
-After the frontend changes are committed and pushed with approval, resume the overall roadmap at:
-
-**Phase 15 — Task 84: Production Environment Setup**
-
-Inspect the actual deployment configuration, environment variables, hosting requirements, and database configuration before implementing production setup.
-
-Do not assume production deployment is already configured or complete.
+---
 
 ## Working Instructions
 
-1. Inspect existing code before changes.
+1. Inspect existing code before modifying anything.
 2. Work on one focused task at a time.
-3. Preserve existing functionality and architecture.
-4. Test every implementation.
-5. Explain commands and file paths clearly.
-6. Wait for developer verification before proceeding.
-7. Preserve uncommitted work.
-8. Stage only intended files.
-9. Commit and push only verified changes after explicit developer approval.
-10. Never invent commit hashes or claim a push succeeded without confirmation.
+3. Preserve the existing architecture and conventions.
+4. Avoid unnecessary rewrites.
+5. Test every implementation.
+6. Fix errors before proceeding.
+7. Maintain GitHub regularly.
+8. Never discard uncommitted work without approval.
+9. Stage only intended files.
+10. Commit only verified changes after explicit developer approval.
+11. Never expose environment secrets.
+12. Never invent test results, commit hashes, or deployment status.
+13. Explain commands and file paths clearly.
+14. Wait for developer verification before proceeding.
 
 ## Last Updated
-2026-11-11
+
+2026-11-12

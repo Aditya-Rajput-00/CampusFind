@@ -1,8 +1,12 @@
+
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const jwt = require("jsonwebtoken");
 
 const app = require("../src/app");
+const User = require("../src/models/User");
+
+const TEST_USER_ID = "64b000000000000000000001";
 
 async function makeRequest() {
     const server = app.listen(0);
@@ -49,9 +53,23 @@ test("POST /api/items rejects requests without authentication", async () => {
 
 test("PATCH /api/items/:id/status denies an authenticated student", async (t) => {
     const originalSecret = process.env.JWT_SECRET;
+    const originalFindById = User.findById;
+
     process.env.JWT_SECRET = "campusfind-test-secret";
 
+    User.findById = async (id) => {
+        assert.equal(id, TEST_USER_ID);
+
+        return {
+            _id: TEST_USER_ID,
+            role: "student",
+            accountStatus: "approved",
+        };
+    };
+
     t.after(() => {
+        User.findById = originalFindById;
+
         if (originalSecret === undefined) {
             delete process.env.JWT_SECRET;
         } else {
@@ -61,7 +79,7 @@ test("PATCH /api/items/:id/status denies an authenticated student", async (t) =>
 
     const token = jwt.sign(
         {
-            userId: "test-student-id",
+            userId: TEST_USER_ID,
             role: "student",
         },
         process.env.JWT_SECRET,
@@ -72,6 +90,7 @@ test("PATCH /api/items/:id/status denies an authenticated student", async (t) =>
 
     try {
         const address = server.address();
+
         const response = await fetch(
             `http://127.0.0.1:${address.port}/api/items/507f1f77bcf86cd799439011/status`,
             {

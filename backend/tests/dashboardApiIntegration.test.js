@@ -9,6 +9,9 @@ const Item = require("../src/models/Item");
 const Claim = require("../src/models/Claim");
 const Match = require("../src/models/Match");
 
+const TEST_STUDENT_ID = "64b000000000000000000001";
+const TEST_STAFF_ID = "64b000000000000000000002";
+
 async function makeRequest(token) {
     const server = app.listen(0);
 
@@ -41,9 +44,11 @@ test("GET /api/dashboard/stats rejects requests without authentication", async (
 
     try {
         const address = server.address();
+
         const response = await fetch(
             `http://127.0.0.1:${address.port}/api/dashboard/stats`
         );
+
         const body = await response.json();
 
         assert.equal(response.status, 401);
@@ -67,9 +72,23 @@ test("GET /api/dashboard/stats rejects requests without authentication", async (
 
 test("GET /api/dashboard/stats denies an authenticated student", async (t) => {
     const originalSecret = process.env.JWT_SECRET;
+    const originalFindById = User.findById;
+
     process.env.JWT_SECRET = "campusfind-test-secret";
 
+    User.findById = async (id) => {
+        assert.equal(id, TEST_STUDENT_ID);
+
+        return {
+            _id: TEST_STUDENT_ID,
+            role: "student",
+            accountStatus: "approved",
+        };
+    };
+
     t.after(() => {
+        User.findById = originalFindById;
+
         if (originalSecret === undefined) {
             delete process.env.JWT_SECRET;
         } else {
@@ -79,7 +98,7 @@ test("GET /api/dashboard/stats denies an authenticated student", async (t) => {
 
     const token = jwt.sign(
         {
-            id: "test-student-id",
+            userId: TEST_STUDENT_ID,
             role: "student",
         },
         process.env.JWT_SECRET,
@@ -99,7 +118,7 @@ test("GET /api/dashboard/stats denies an authenticated student", async (t) => {
 
 test("GET /api/dashboard/stats returns statistics to an authenticated staff member", async (t) => {
     const originalSecret = process.env.JWT_SECRET;
-
+    const originalUserFindById = User.findById;
     const originalUserCount = User.countDocuments;
     const originalItemCount = Item.countDocuments;
     const originalClaimCount = Claim.countDocuments;
@@ -107,17 +126,28 @@ test("GET /api/dashboard/stats returns statistics to an authenticated staff memb
 
     process.env.JWT_SECRET = "campusfind-test-secret";
 
+    User.findById = async (id) => {
+        assert.equal(id, TEST_STAFF_ID);
+
+        return {
+            _id: TEST_STAFF_ID,
+            role: "staff",
+            accountStatus: "approved",
+        };
+    };
+
     t.after(() => {
+        User.findById = originalUserFindById;
+        User.countDocuments = originalUserCount;
+        Item.countDocuments = originalItemCount;
+        Claim.countDocuments = originalClaimCount;
+        Match.countDocuments = originalMatchCount;
+
         if (originalSecret === undefined) {
             delete process.env.JWT_SECRET;
         } else {
             process.env.JWT_SECRET = originalSecret;
         }
-
-        User.countDocuments = originalUserCount;
-        Item.countDocuments = originalItemCount;
-        Claim.countDocuments = originalClaimCount;
-        Match.countDocuments = originalMatchCount;
     });
 
     User.countDocuments = async () => 120;
@@ -136,7 +166,7 @@ test("GET /api/dashboard/stats returns statistics to an authenticated staff memb
 
     const token = jwt.sign(
         {
-            userId: "test-staff-id",
+            userId: TEST_STAFF_ID,
             role: "staff",
         },
         process.env.JWT_SECRET,
