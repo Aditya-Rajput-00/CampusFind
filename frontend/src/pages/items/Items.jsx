@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getItems, createItem } from '../../services/itemService';
+import Dropdown from '../../components/Dropdown';
 
 import './Items.css';
 import './ItemForm.css';
@@ -211,8 +212,8 @@ function Items() {
     };
 
     // Handle filter changes.
-    const handleFilterChange = (setter) => (event) => {
-        setter(event.target.value);
+    const handleFilterChange = (setter) => (value) => {
+        setter(value);
         setPage(1);
     };
 
@@ -254,45 +255,52 @@ function Items() {
                 />
 
                 {/* Item Type Filter */}
-                <select
+                <Dropdown
+                    id="items-type-filter"
+                    label="Filter by item type"
                     value={type}
+                    options={[
+                        { value: '', label: 'All Types' },
+                        { value: 'lost', label: 'Lost' },
+                        { value: 'found', label: 'Found' },
+                    ]}
                     onChange={handleFilterChange(setType)}
-                >
-                    <option value="">All Types</option>
-                    <option value="lost">Lost</option>
-                    <option value="found">Found</option>
-                </select>
+                />
 
                 {/* Category Filter */}
-                <select
+                <Dropdown
+                    id="items-category-filter"
+                    label="Filter by category"
                     value={category}
+                    options={[
+                        { value: '', label: 'All Categories' },
+                        { value: 'Electronics', label: 'Electronics' },
+                        { value: 'Books', label: 'Books' },
+                        { value: 'Clothing', label: 'Clothing' },
+                        { value: 'Accessories', label: 'Accessories' },
+                        { value: 'Documents', label: 'Documents' },
+                        { value: 'Other', label: 'Other' },
+                    ]}
                     onChange={handleFilterChange(setCategory)}
-                >
-                    <option value="">All Categories</option>
-                    <option value="Electronics">Electronics</option>
-                    <option value="Books">Books</option>
-                    <option value="Clothing">Clothing</option>
-                    <option value="Accessories">Accessories</option>
-                    <option value="Documents">Documents</option>
-                    <option value="Other">Other</option>
-                </select>
+                />
 
                 {/* Status Filter */}
-                <select
+                <Dropdown
+                    id="items-status-filter"
+                    label="Filter by status"
                     value={status}
+                    options={[
+                        { value: '', label: 'All Statuses' },
+                        { value: 'ACTIVE', label: 'Active' },
+                        { value: 'MATCHED', label: 'Matched' },
+                        { value: 'CLAIMED', label: 'Claimed' },
+                        { value: 'UNDER_VERIFICATION', label: 'Under Verification' },
+                        { value: 'VERIFIED', label: 'Verified' },
+                        { value: 'RETURNED', label: 'Returned' },
+                        { value: 'CLOSED', label: 'Closed' },
+                    ]}
                     onChange={handleFilterChange(setStatus)}
-                >
-                    <option value="">All Statuses</option>
-                    <option value="ACTIVE">Active</option>
-                    <option value="MATCHED">Matched</option>
-                    <option value="CLAIMED">Claimed</option>
-                    <option value="UNDER_VERIFICATION">
-                        Under Verification
-                    </option>
-                    <option value="VERIFIED">Verified</option>
-                    <option value="RETURNED">Returned</option>
-                    <option value="CLOSED">Closed</option>
-                </select>
+                />
 
                 {/* Clear All Filters Button */}
                 <button
@@ -472,15 +480,19 @@ function Items() {
                                         Item Type *
                                     </label>
 
-                                    <select
+                                    <Dropdown
                                         id="type"
-                                        name="type"
+                                        label="Item Type"
                                         value={formData.type}
-                                        onChange={handleFormChange}
-                                    >
-                                        <option value="lost">Lost</option>
-                                        <option value="found">Found</option>
-                                    </select>
+                                        options={[
+                                            { value: 'lost', label: 'Lost' },
+                                            { value: 'found', label: 'Found' },
+                                        ]}
+                                        onChange={(value) => setFormData((previousData) => ({
+                                            ...previousData,
+                                            type: value,
+                                        }))}
+                                    />
                                 </div>
 
                                 <div className="form-group">
@@ -488,31 +500,25 @@ function Items() {
                                         Category *
                                     </label>
 
-                                    <select
+                                    <Dropdown
                                         id="category"
-                                        name="category"
+                                        label="Category"
                                         value={formData.category}
-                                        onChange={handleFormChange}
+                                        options={[
+                                            { value: '', label: 'Select category' },
+                                            { value: 'Electronics', label: 'Electronics' },
+                                            { value: 'Books', label: 'Books' },
+                                            { value: 'Clothing', label: 'Clothing' },
+                                            { value: 'Accessories', label: 'Accessories' },
+                                            { value: 'Documents', label: 'Documents' },
+                                            { value: 'Other', label: 'Other' },
+                                        ]}
+                                        onChange={(value) => setFormData((previousData) => ({
+                                            ...previousData,
+                                            category: value,
+                                        }))}
                                         required
-                                    >
-                                        <option value="">
-                                            Select category
-                                        </option>
-                                        <option value="Electronics">
-                                            Electronics
-                                        </option>
-                                        <option value="Books">Books</option>
-                                        <option value="Clothing">
-                                            Clothing
-                                        </option>
-                                        <option value="Accessories">
-                                            Accessories
-                                        </option>
-                                        <option value="Documents">
-                                            Documents
-                                        </option>
-                                        <option value="Other">Other</option>
-                                    </select>
+                                    />
                                 </div>
 
                             </div>

@@ -222,3 +222,17 @@ Latest release-preparation commit:
 The release tag and GitHub Release have been verified.
 
 The final documentation synchronization changes still require review, commit, and push.
+
+---
+
+## 16. Reusable Frontend Dropdown
+
+**Decision:** Use one controlled React Dropdown component for the Items page filters and Report Item modal fields that need consistent custom styling.
+
+The component follows a select-only combobox pattern with listbox and option semantics. It supports Arrow Up/Down, Enter, Space, Escape, Home, End, and type-to-search; keyboard focus remains on the trigger while options are navigated. It closes on outside pointer interaction and Tab, retains trigger focus after selection or Escape, exposes required and disabled states, and scrolls an active option into view when necessary.
+
+The component is implemented without an additional dependency and passes the selected scalar value to its caller, preserving existing application state and API payloads.
+
+**Reason:** A shared component keeps the filter and modal controls visually consistent while providing predictable keyboard and assistive-technology behavior.
+
+**Follow-up:** Verify popup placement near the bottom of the scrolling Report Item modal on short viewports. The current popup opens below its trigger and may need a placement adjustment if clipping is observed.

@@ -84,7 +84,9 @@ Release-preparation commit:
 
 ## [Unreleased]
 
-No changes recorded yet.
+### Features
+
+- Added a reusable, keyboard-accessible Dropdown and integrated it into the Items filters and Report Item modal.
 
 ---
 

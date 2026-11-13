@@ -172,4 +172,25 @@ The backend and frontend package versions are independent and were not changed t
 
 ## Last Updated
 
-2026-11-12
+2026-11-14
+
+---
+
+## Frontend Custom Dropdown Milestone
+
+**Status: Implementation complete; verification recorded below.**
+
+A reusable controlled Dropdown component was added at `frontend/src/components/Dropdown.jsx` and integrated into the three Items page filters and the Item Type and Category fields in the Report Item modal. The component provides a select-only combobox with listbox and option semantics, keyboard navigation, type-to-search, outside-pointer dismissal, focus retention, and active-option scrolling.
+
+The existing item service calls, filter values, pagination reset behavior, category validation, and FormData submission flow were preserved. No backend files or dependencies were changed.
+
+### Verification
+
+- Frontend tests: 67 passed across 11 test files in the latest verified run.
+- Frontend lint: passed in the latest verified run.
+- Frontend production build: passed on 2026-11-14.
+- `git diff --check`: passed after documentation updates.
+
+### Remaining Review Item
+
+The dropdown popup opens below its trigger. Its behavior near the bottom of the scrolling Report Item modal still needs visual verification at short viewport heights; if clipping is observed, popup placement should be addressed in a focused follow-up.
