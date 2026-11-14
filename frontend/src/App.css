@@ -184,21 +184,25 @@
 }
 
 .app-header {
+  --header-hover: #493326;
+
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas: 'brand nav user';
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   padding: 16px 32px;
-  color: var(--color-text-primary);
-  background: var(--color-page-background);
-  border-bottom: 1px solid var(--color-divider);
+  color: var(--brand-warm-ivory);
+  background: var(--brand-dark-brown);
+  border-bottom: 1px solid var(--brand-muted-taupe);
 }
 
 .app-header__brand {
   grid-area: brand;
-  color: var(--brand-dark-brown);
-  font-size: 20px;
+  color: var(--brand-warm-ivory);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -208,28 +212,36 @@
   display: flex;
   min-width: 0;
   justify-content: center;
-  gap: 4px;
+  gap: 8px;
 }
 
 .app-header__nav-button {
   flex: 0 0 auto;
-  padding: 10px 18px;
-  border: 1px solid var(--color-border);
-  border-radius: 7px;
-  color: var(--color-text-primary);
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--brand-warm-ivory);
   background: transparent;
   white-space: nowrap;
   cursor: pointer;
   font-weight: 600;
+  transition: background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease, color var(--duration-fast) ease;
 }
 
 .app-header__nav-button:hover {
-  background: var(--brand-soft-taupe);
+  border-color: var(--brand-muted-taupe);
+  background: var(--header-hover);
 }
 
 .app-header__nav-button.is-active {
-  border: none;
+  border-color: var(--brand-muted-taupe);
   color: var(--brand-warm-ivory);
+  background: var(--brand-mocha);
+  box-shadow: inset 0 -2px 0 var(--brand-soft-taupe);
+}
+
+.app-header__nav-button.is-active:hover {
   background: var(--brand-mocha);
 }
 
@@ -238,7 +250,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 16px;
   min-width: 0;
 }
 
@@ -257,8 +269,8 @@
   place-items: center;
   border: 1px solid var(--brand-muted-taupe);
   border-radius: 50%;
-  color: var(--brand-mocha);
-  background: var(--brand-soft-taupe);
+  color: var(--brand-warm-ivory);
+  background: rgb(243 239 231 / 10%);
 }
 
 .app-header__profile-icon svg {
@@ -274,9 +286,9 @@
 .app-header__profile-name {
   max-width: 144px;
   overflow: hidden;
-  color: var(--color-text-secondary);
+  color: var(--brand-warm-ivory);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -290,11 +302,10 @@
   gap: 8px;
   min-height: 40px;
   padding: 8px 16px;
-  border: 1px solid var(--brand-mocha);
+  border: 1px solid var(--brand-muted-taupe);
   border-radius: 999px;
   color: var(--brand-warm-ivory);
-  background: var(--brand-mocha);
-  box-shadow: var(--shadow-sm);
+  background: transparent;
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
@@ -305,15 +316,15 @@
 }
 
 .app-header__logout:hover {
-  border-color: var(--brand-dark-brown);
-  background: var(--color-interactive-primary-hover);
-  box-shadow: var(--shadow-md);
+  border-color: var(--brand-soft-taupe);
+  background: var(--header-hover);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 18%);
   transform: translateY(-1px);
 }
 
 .app-header__logout:active {
-  background: var(--color-interactive-primary-active);
-  box-shadow: var(--shadow-sm);
+  background: var(--brand-mocha);
+  box-shadow: none;
   transform: translateY(0) scale(0.98);
 }
 
@@ -335,7 +346,7 @@
 
 .app-header__nav-button:focus-visible,
 .app-header__logout:focus-visible {
-  outline: 3px solid var(--color-focus-indicator);
+  outline: 3px solid var(--brand-soft-taupe);
   outline-offset: 2px;
 }
 
@@ -345,8 +356,8 @@
     grid-template-areas:
       'brand user'
       'nav nav';
-    gap: 12px 16px;
-    padding: 16px 24px;
+    gap: 12px 20px;
+    padding: 14px 24px;
   }
 
   .app-header__nav {
@@ -355,7 +366,7 @@
     overscroll-behavior-x: contain;
     scrollbar-color: var(--brand-muted-taupe) transparent;
     scrollbar-width: thin;
-    gap: 4px;
+    gap: 8px;
     padding-block: 4px;
   }
 }
@@ -366,7 +377,7 @@
     grid-template-areas:
       'brand user'
       'nav nav';
-    gap: 12px;
+    gap: 10px 12px;
     padding: 12px 16px;
   }
 
@@ -380,7 +391,7 @@
   }
 
   .app-header__profile-name {
-    max-width: clamp(44px, 18vw, 96px);
+    max-width: clamp(38px, 15vw, 88px);
   }
 
   .app-header__logout {
@@ -391,13 +402,49 @@
   .app-header__nav {
     display: flex;
     justify-content: flex-start;
-    gap: 4px;
+    gap: 8px;
     margin: 0 -16px;
     padding: 4px 16px;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scrollbar-color: var(--brand-muted-taupe) transparent;
     scrollbar-width: thin;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-header {
+    gap: 8px;
+    padding-inline: 12px;
+  }
+
+  .app-header__brand {
+    font-size: 17px;
+  }
+
+  .app-header__user {
+    gap: 6px;
+  }
+
+  .app-header__profile {
+    gap: 5px;
+  }
+
+  .app-header__profile-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .app-header__profile-name {
+    max-width: 38px;
+    font-size: 13px;
+  }
+
+  .app-header__logout {
+    gap: 6px;
+    min-height: 38px;
+    padding: 7px 10px;
+    font-size: 13px;
   }
 }
 

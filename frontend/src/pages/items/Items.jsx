@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getItems, createItem } from '../../services/itemService';
 import Dropdown from '../../components/Dropdown';
+import campusHeroImage from '../../assets/campus-hero.png';
 
 import './Items.css';
 import './ItemForm.css';
@@ -222,11 +223,15 @@ function Items() {
 
             {/* Page Header */}
             <div className="items-header">
-                <div>
+                <div className="items-header__copy">
                     <h1>Lost & Found Items</h1>
                     <p>
                         Find lost belongings or report an item you found.
                     </p>
+                </div>
+
+                <div className="items-header__illustration" aria-hidden="true">
+                    <img src={campusHeroImage} alt="" />
                 </div>
 
                 <button

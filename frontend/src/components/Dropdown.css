@@ -4,7 +4,7 @@
     width: 100%;
     min-width: 0;
     overflow: visible;
-    color: #F3F1EC;
+    color: var(--color-text-primary);
 }
 
 .dropdown:focus-within {
@@ -15,42 +15,42 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: var(--space-3);
     width: 100%;
     min-width: 0;
-    min-height: 44px;
-    padding: 0 14px;
-    border: 1px solid rgba(214, 173, 96, 0.48);
-    border-radius: 9px;
-    background: #141522;
-    color: #F3F1EC;
+    min-height: 48px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-card-surface);
+    color: var(--color-text-primary);
     font: inherit;
-    font-size: 14px;
-    line-height: 1.4;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
     text-align: left;
     cursor: pointer;
-    transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 
 .dropdown-trigger:hover:not(:disabled),
 .dropdown-trigger[aria-expanded="true"] {
-    border-color: #D6AD60;
-    background: #1B1C2B;
+    border-color: var(--brand-muted-cocoa);
+    background: var(--brand-warm-ivory);
 }
 
 .dropdown-trigger:focus-visible {
-    border-color: #F0D18B;
-    outline: 2px solid #F0D18B;
+    border-color: var(--color-focus-indicator);
+    outline: 3px solid var(--color-focus-indicator);
     outline-offset: 2px;
-    box-shadow: 0 0 0 4px rgba(214, 173, 96, 0.14);
+    box-shadow: var(--shadow-sm);
 }
 
 .dropdown-trigger:disabled {
-    border-color: #343448;
-    background: #141522;
-    color: #777988;
+    border-color: var(--color-disabled-border);
+    background: var(--color-disabled-surface);
+    color: var(--color-disabled-text);
     cursor: not-allowed;
-    opacity: 0.65;
+    opacity: 1;
 }
 
 .dropdown-value {
@@ -68,9 +68,9 @@
     margin-top: -4px;
     border-right: 1.5px solid currentColor;
     border-bottom: 1.5px solid currentColor;
-    color: #D6AD60;
+    color: var(--brand-mocha);
     transform: rotate(45deg);
-    transition: transform 160ms ease, margin 160ms ease;
+    transition: transform var(--duration-fast) ease, margin var(--duration-fast) ease;
 }
 
 .dropdown-trigger[aria-expanded="true"] .dropdown-indicator {
@@ -79,12 +79,12 @@
 }
 
 .dropdown-trigger:disabled .dropdown-indicator {
-    color: #777988;
+    color: var(--color-disabled-text);
 }
 
 .dropdown-listbox {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + var(--space-2));
     right: 0;
     left: 0;
     z-index: 1000;
@@ -92,17 +92,17 @@
     min-width: 100%;
     max-height: min(288px, 50vh);
     margin: 0;
-    padding: 6px;
+    padding: var(--space-2);
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
-    border: 1px solid #343448;
-    border-radius: 11px;
-    background: #1B1C2B;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(243, 241, 236, 0.035);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-raised-surface);
+    box-shadow: var(--shadow-md);
     list-style: none;
     animation: dropdownOpen 140ms ease-out both;
-    scrollbar-color: #555366 #1B1C2B;
+    scrollbar-color: var(--brand-muted-taupe) var(--color-raised-surface);
     scrollbar-width: thin;
 }
 
@@ -110,32 +110,83 @@
     display: flex;
     align-items: center;
     min-height: 40px;
-    padding: 8px 10px;
+    padding: var(--space-2) var(--space-3);
     border: 1px solid transparent;
-    border-radius: 7px;
-    color: #F3F1EC;
-    font-size: 14px;
-    line-height: 1.4;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
     overflow-wrap: anywhere;
     cursor: pointer;
-    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+    transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease, color var(--duration-fast) ease;
 }
 
 .dropdown-option[aria-selected="true"] {
-    border-color: rgba(214, 173, 96, 0.26);
-    background: rgba(214, 173, 96, 0.12);
-    color: #F0D18B;
+    border-color: var(--brand-muted-cocoa);
+    background: var(--brand-soft-taupe);
+    color: var(--color-text-primary);
 }
 
 .dropdown-option:hover,
 .dropdown-option.is-active {
-    border-color: rgba(214, 173, 96, 0.38);
-    background: rgba(214, 173, 96, 0.2);
-    color: #F0D18B;
+    border-color: var(--brand-muted-cocoa);
+    background: var(--brand-warm-ivory);
+    color: var(--color-text-primary);
 }
 
 .dropdown-option[aria-selected="true"].is-active {
-    background: rgba(214, 173, 96, 0.26);
+    background: var(--brand-soft-taupe);
+}
+
+/* Keep the reporting modal's existing dark form surface cohesive. */
+.item-modal .dropdown-trigger {
+    border-color: var(--modal-border);
+    background: var(--modal-page);
+    color: var(--modal-text);
+}
+
+.item-modal .dropdown-trigger:hover:not(:disabled),
+.item-modal .dropdown-trigger[aria-expanded="true"] {
+    border-color: var(--modal-gold);
+    background: var(--modal-surface);
+}
+
+.item-modal .dropdown-trigger:focus-visible {
+    border-color: var(--modal-gold-soft);
+    outline-color: var(--modal-gold-soft);
+    box-shadow: 0 0 0 4px rgb(214 173 96 / 14%);
+}
+
+.item-modal .dropdown-indicator {
+    color: var(--modal-gold);
+}
+
+.item-modal .dropdown-listbox {
+    border-color: var(--modal-border);
+    background: var(--modal-surface);
+    box-shadow: 0 12px 28px rgb(0 0 0 / 38%);
+    scrollbar-color: #555366 var(--modal-surface);
+}
+
+.item-modal .dropdown-option {
+    color: var(--modal-text);
+}
+
+.item-modal .dropdown-option[aria-selected="true"] {
+    border-color: rgb(214 173 96 / 26%);
+    background: rgb(214 173 96 / 12%);
+    color: var(--modal-gold-soft);
+}
+
+.item-modal .dropdown-option:hover,
+.item-modal .dropdown-option.is-active {
+    border-color: rgb(214 173 96 / 38%);
+    background: rgb(214 173 96 / 20%);
+    color: var(--modal-gold-soft);
+}
+
+.item-modal .dropdown-option[aria-selected="true"].is-active {
+    background: rgb(214 173 96 / 26%);
 }
 
 @keyframes dropdownOpen {
@@ -152,8 +203,8 @@
 
 @media (max-width: 600px) {
     .dropdown-trigger {
-        min-height: 44px;
-        padding: 0 12px;
+        min-height: 48px;
+        padding: 0 var(--space-3);
     }
 
     .dropdown-listbox {
