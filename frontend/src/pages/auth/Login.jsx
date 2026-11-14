@@ -8,6 +8,7 @@ function Login({ onRegisterClick }) {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -36,8 +37,8 @@ function Login({ onRegisterClick }) {
     };
 
     return (
-        <div className="login-page">
-            <div className="login-card">
+        <div className="login-page login-page--login">
+            <div className="login-card login-card--login">
                 <h1>CampusFind</h1>
                 <h2>Welcome Back!</h2>
                 <p>Log in to your CampusFind account.</p>
@@ -54,14 +55,29 @@ function Login({ onRegisterClick }) {
                     />
 
                     <label htmlFor="login-password">Password</label>
-                    <input
-                        id="login-password"
-                        type="password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        required
-                    />
+                    <div className="login-password-field">
+                        <input
+                            id="login-password"
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(event) => setPassword(event.target.value)}
+                            required
+                        />
+                        <button
+                            className="login-password-toggle"
+                            type="button"
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            aria-pressed={showPassword}
+                            onClick={() => setShowPassword((isVisible) => !isVisible)}
+                        >
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+                                <circle cx="12" cy="12" r="3" />
+                                {showPassword && <path d="m3 3 18 18" />}
+                            </svg>
+                        </button>
+                    </div>
 
                     {error && (
                         <p className="error-message" role="alert">
@@ -80,19 +96,12 @@ function Login({ onRegisterClick }) {
                     </button>
                 </form>
 
-                <p style={{ textAlign: 'center', marginTop: '22px' }}>
+                <p className="login-register-prompt">
                     Don't have an account?{' '}
                     <button
+                        className="login-register-link"
                         type="button"
                         onClick={onRegisterClick}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#a78bfa',
-                            cursor: 'pointer',
-                            fontWeight: 600,
-                            padding: 0,
-                        }}
                     >
                         Register here
                     </button>

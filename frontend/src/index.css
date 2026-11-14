@@ -1,7 +1,91 @@
 :root {
-  font-family: Arial, Helvetica, sans-serif;
-  color: #ffffff;
-  background: #0b1020;
+  /* Brand palette */
+  --brand-soft-taupe: #C5BEAE;
+  --brand-dark-brown: #2A1D14;
+  --brand-warm-ivory: #F3EFE7;
+  --brand-mocha: #795744;
+  --brand-muted-cocoa: #A17C65;
+  --brand-muted-taupe: #A99F8E;
+
+  /* Semantic surfaces and text */
+  --color-page-background: var(--brand-warm-ivory);
+  --color-card-surface: #FFFDFA;
+  --color-raised-surface: #FFFFFF;
+  --color-text-primary: var(--brand-dark-brown);
+  --color-text-secondary: var(--brand-mocha);
+  --color-text-muted: #65564A;
+  --color-border: var(--brand-muted-taupe);
+  --color-divider: var(--brand-soft-taupe);
+
+  /* Interactive states */
+  --color-interactive-primary: var(--brand-mocha);
+  --color-interactive-primary-hover: var(--brand-dark-brown);
+  --color-interactive-primary-active: #1F150F;
+  --color-interactive-secondary: var(--brand-soft-taupe);
+  --color-interactive-secondary-hover: var(--brand-muted-taupe);
+  --color-focus-indicator: var(--brand-mocha);
+  --color-focus-indicator-offset: var(--brand-warm-ivory);
+  --color-disabled-surface: #E6E0D6;
+  --color-disabled-text: #65564A;
+  --color-disabled-border: var(--brand-muted-taupe);
+
+  /* Status colors stay distinct from the brand palette. */
+  --color-status-success: #245C42;
+  --color-status-success-surface: #E7F0EA;
+  --color-status-warning: #75480B;
+  --color-status-warning-surface: #F5EBD7;
+  --color-status-danger: #8C302B;
+  --color-status-danger-surface: #F7E6E3;
+  --color-status-info: #28526B;
+  --color-status-info-surface: #E4EEF3;
+
+  /* Typography */
+  --font-family-sans: Arial, Helvetica, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.65;
+
+  /* Spacing: 4px base scale */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Shape, depth, and motion */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-pill: 9999px;
+  --shadow-sm: 0 1px 2px rgb(42 29 20 / 8%);
+  --shadow-md: 0 4px 12px rgb(42 29 20 / 10%);
+  --shadow-lg: 0 12px 28px rgb(42 29 20 / 12%);
+  --duration-fast: 120ms;
+  --duration-normal: 180ms;
+  --duration-slow: 260ms;
+
+  font-family: var(--font-family-sans);
+  color: var(--color-text-primary);
+  background: var(--color-page-background);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -18,7 +102,7 @@
 body {
   min-width: 320px;
   min-height: 100vh;
-  background: #0b1020;
+  background: var(--color-page-background);
 }
 
 button,
