@@ -77,6 +77,46 @@ describe('App Navigation and Role Permissions', () => {
         ).not.toBeInTheDocument();
     });
 
+    it('exposes the active page to assistive technology and updates it on navigation', () => {
+        render(<App />);
+
+        const itemsButton = screen.getByRole('button', { name: 'Lost & Found' });
+        const claimsButton = screen.getByRole('button', { name: 'Claims' });
+
+        expect(itemsButton).toHaveAttribute('aria-current', 'page');
+        expect(claimsButton).not.toHaveAttribute('aria-current');
+
+        fireEvent.click(claimsButton);
+
+        expect(claimsButton).toHaveAttribute('aria-current', 'page');
+        expect(itemsButton).not.toHaveAttribute('aria-current');
+    });
+
+    it('shows only the authenticated user first name in the profile', () => {
+        render(<App />);
+
+        expect(
+            screen.getByRole('group', { name: 'Signed in as Test' })
+        ).toHaveTextContent('Test');
+        expect(screen.queryByText(/Welcome,/)).not.toBeInTheDocument();
+    });
+
+    it('keeps navigation and Logout controls keyboard focusable', () => {
+        render(<App />);
+
+        const navigationButton = screen.getByRole('button', { name: 'Claims' });
+        const logoutButton = screen.getByRole('button', { name: 'Logout' });
+
+        expect(navigationButton).toHaveProperty('tabIndex', 0);
+        expect(logoutButton).toHaveProperty('tabIndex', 0);
+
+        navigationButton.focus();
+        expect(document.activeElement).toBe(navigationButton);
+
+        logoutButton.focus();
+        expect(document.activeElement).toBe(logoutButton);
+    });
+
     it('allows staff to access Dashboard but not Staff Approvals', () => {
         mockUseAuth.mockReturnValue({
             isAuthenticated: true,

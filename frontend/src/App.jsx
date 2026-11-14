@@ -11,6 +11,7 @@ import Dashboard from './pages/dashboard/Dashboard';
 import StaffApprovals from './pages/admin/StaffApprovals';
 
 import { useAuth } from './context/useAuth.js';
+import './App.css';
 
 function App() {
     const { isAuthenticated, user, logout } = useAuth();
@@ -35,71 +36,50 @@ function App() {
             ? 'items'
             : activePage;
 
-    const navigationButtonStyle = (page) => ({
-        padding: '10px 18px',
-        background: currentPage === page
-            ? 'linear-gradient(135deg, #9333ea, #4f46e5)'
-            : 'transparent',
-        color: '#ffffff',
-        border: currentPage === page
-            ? 'none'
-            : '1px solid #374563',
-        borderRadius: '7px',
-        cursor: 'pointer',
-        fontWeight: 600,
-    });
+    const firstName = typeof user?.name === 'string'
+        ? user.name.trim().split(/\s+/)[0]
+        : '';
+
+    const navigationButtonClass = (page) =>
+        `app-header__nav-button${currentPage === page ? ' is-active' : ''}`;
 
     return (
         <div>
             {/* Application Header */}
-            <header
-                style={{
-                    padding: '20px 40px',
-                    background: '#151d32',
-                    borderBottom: '1px solid #273451',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '15px',
-                    color: '#ffffff',
-                }}
-            >
-                <h2 style={{ color: '#a78bfa' }}>
+            <header className="app-header">
+                <h2 className="app-header__brand">
                     CampusFind
                 </h2>
 
                 {/* Navigation */}
-                <nav
-                    style={{
-                        display: 'flex',
-                        gap: '10px',
-                        flexWrap: 'wrap',
-                    }}
-                >
+                <nav className="app-header__nav" aria-label="Main navigation">
                     <button
-                        style={navigationButtonStyle('items')}
+                        className={navigationButtonClass('items')}
+                        aria-current={currentPage === 'items' ? 'page' : undefined}
                         onClick={() => setActivePage('items')}
                     >
                         Lost & Found
                     </button>
 
                     <button
-                        style={navigationButtonStyle('claims')}
+                        className={navigationButtonClass('claims')}
+                        aria-current={currentPage === 'claims' ? 'page' : undefined}
                         onClick={() => setActivePage('claims')}
                     >
                         Claims
                     </button>
 
                     <button
-                        style={navigationButtonStyle('matches')}
+                        className={navigationButtonClass('matches')}
+                        aria-current={currentPage === 'matches' ? 'page' : undefined}
                         onClick={() => setActivePage('matches')}
                     >
                         Matches
                     </button>
 
                     <button
-                        style={navigationButtonStyle('notifications')}
+                        className={navigationButtonClass('notifications')}
+                        aria-current={currentPage === 'notifications' ? 'page' : undefined}
                         onClick={() => setActivePage('notifications')}
                     >
                         Notifications
@@ -108,7 +88,8 @@ function App() {
                     {/* Dashboard: Staff and Admin only */}
                     {isStaffOrAdmin && (
                         <button
-                            style={navigationButtonStyle('dashboard')}
+                            className={navigationButtonClass('dashboard')}
+                            aria-current={currentPage === 'dashboard' ? 'page' : undefined}
                             onClick={() => setActivePage('dashboard')}
                         >
                             Dashboard
@@ -118,7 +99,8 @@ function App() {
                     {/* Staff Approvals: Admin only */}
                     {isAdmin && (
                         <button
-                            style={navigationButtonStyle('staff-approvals')}
+                            className={navigationButtonClass('staff-approvals')}
+                            aria-current={currentPage === 'staff-approvals' ? 'page' : undefined}
                             onClick={() => setActivePage('staff-approvals')}
                         >
                             Staff Approvals
@@ -127,29 +109,40 @@ function App() {
                 </nav>
 
                 {/* User Information */}
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '20px',
-                    }}
-                >
-                    <span>
-                        Welcome, {user?.name}!
-                    </span>
+                <div className="app-header__user">
+                    <div
+                        className="app-header__profile"
+                        role="group"
+                        aria-label={firstName ? `Signed in as ${firstName}` : 'Signed in user'}
+                    >
+                        <span className="app-header__profile-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                                <circle cx="12" cy="8" r="3.25" />
+                                <path d="M5.5 19a6.5 6.5 0 0 1 13 0" />
+                            </svg>
+                        </span>
+                        {firstName && (
+                            <span className="app-header__profile-name">
+                                {firstName}
+                            </span>
+                        )}
+                    </div>
 
                     <button
+                        className="app-header__logout"
+                        aria-label="Logout"
                         onClick={logout}
-                        style={{
-                            padding: '10px 18px',
-                            background: '#7c3aed',
-                            color: '#ffffff',
-                            border: 'none',
-                            borderRadius: '7px',
-                            cursor: 'pointer',
-                        }}
                     >
-                        Logout
+                        <svg
+                            className="app-header__logout-icon"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            focusable="false"
+                        >
+                            <path d="M10 17l5-5-5-5M15 12H3" />
+                            <path d="M12 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5" />
+                        </svg>
+                        <span>Sign out</span>
                     </button>
                 </div>
             </header>
