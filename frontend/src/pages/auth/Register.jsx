@@ -57,8 +57,8 @@ function Register({ onLoginClick }) {
     };
 
     return (
-        <div className="login-page">
-            <div className="login-card">
+        <div className="login-page login-page--register">
+            <div className="login-card login-card--register">
                 <h1>CampusFind</h1>
                 <h2>Create Your Account</h2>
                 <p>Join CampusFind to help reunite people with their belongings.</p>
@@ -74,6 +74,7 @@ function Register({ onLoginClick }) {
                         </p>
 
                         <button
+                            className="register-back-button"
                             type="button"
                             onClick={onLoginClick}
                         >
@@ -114,25 +115,18 @@ function Register({ onLoginClick }) {
 
                         <label htmlFor="register-role">Register As</label>
                         <select
+                            className="register-role-select"
                             id="register-role"
                             value={role}
                             onChange={(event) => setRole(event.target.value)}
                             required
-                            style={{
-                                padding: '13px',
-                                border: '1px solid #374563',
-                                borderRadius: '8px',
-                                background: '#0b1326',
-                                color: '#ffffff',
-                                fontSize: '15px',
-                            }}
                         >
                             <option value="student">Student</option>
                             <option value="staff">Staff</option>
                         </select>
 
                         {role === 'staff' && (
-                            <p style={{ fontSize: '13px', marginBottom: 0 }}>
+                            <p className="register-staff-notice">
                                 Staff accounts require admin approval before login.
                             </p>
                         )}
@@ -149,19 +143,12 @@ function Register({ onLoginClick }) {
                     </form>
                 )}
 
-                <p style={{ textAlign: 'center', marginTop: '22px' }}>
+                <p className="register-login-prompt">
                     Already have an account?{' '}
                     <button
+                        className="register-login-link"
                         type="button"
                         onClick={onLoginClick}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#a78bfa',
-                            cursor: 'pointer',
-                            fontWeight: 600,
-                            padding: 0,
-                        }}
                     >
                         Login here
                     </button>

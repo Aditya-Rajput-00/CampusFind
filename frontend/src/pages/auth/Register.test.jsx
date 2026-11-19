@@ -33,6 +33,22 @@ describe('Register Component Tests', () => {
         });
     };
 
+    it('renders required fields with the default student role and warm design hooks', () => {
+        render(<Register onLoginClick={onLoginClick} />);
+
+        expect(screen.getByLabelText('Full Name')).toBeRequired();
+        expect(screen.getByLabelText('Email Address')).toBeRequired();
+        expect(screen.getByLabelText('Password')).toBeRequired();
+
+        const roleSelect = screen.getByLabelText('Register As');
+        expect(roleSelect).toBeRequired();
+        expect(roleSelect).toHaveValue('student');
+        expect(roleSelect).toHaveClass('register-role-select');
+        expect(roleSelect).not.toHaveAttribute('style');
+        expect(screen.getByRole('button', { name: 'Login here' }))
+            .toHaveClass('register-login-link');
+    });
+
     it('registers a student successfully', async () => {
         registerUser.mockResolvedValue({
             success: true,
@@ -68,9 +84,12 @@ describe('Register Component Tests', () => {
 
         fillRegistrationForm('staff');
 
-        expect(
-            screen.getByText(/Staff accounts require admin approval/)
-        ).toBeInTheDocument();
+        const staffNotice = screen.getByText(
+            /Staff accounts require admin approval/
+        );
+        expect(staffNotice).toBeInTheDocument();
+        expect(staffNotice).toHaveClass('register-staff-notice');
+        expect(staffNotice).not.toHaveAttribute('style');
 
         fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 

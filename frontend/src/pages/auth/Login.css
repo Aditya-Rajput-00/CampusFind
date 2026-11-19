@@ -293,3 +293,226 @@
         transition: none;
     }
 }
+
+/* Registration page styling uses the same warm tokens as Login. */
+.login-page--register {
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: var(--space-5);
+    background: var(--color-page-background);
+}
+
+.login-card--register {
+    max-width: 420px;
+    padding: var(--space-10);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background: var(--color-card-surface);
+    box-shadow: var(--shadow-lg);
+    color: var(--color-text-primary);
+}
+
+.login-card--register h1 {
+    margin-bottom: var(--space-8);
+    color: var(--brand-dark-brown);
+    font-size: var(--font-size-3xl);
+    text-align: center;
+}
+
+.login-card--register h2 {
+    margin-bottom: var(--space-2);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-2xl);
+}
+
+.login-card--register > p {
+    margin-bottom: var(--space-6);
+    color: var(--color-text-secondary);
+    line-height: var(--line-height-normal);
+}
+
+.login-card--register form {
+    gap: var(--space-3);
+}
+
+.login-card--register label {
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.login-card--register input,
+.login-card--register .register-role-select {
+    width: 100%;
+    min-height: 48px;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-raised-surface);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--font-size-md);
+    transition: border-color var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease;
+}
+
+.login-card--register input:focus,
+.login-card--register .register-role-select:focus {
+    border-color: var(--color-focus-indicator);
+}
+
+.login-card--register input:focus-visible,
+.login-card--register .register-role-select:focus-visible {
+    outline: 2px solid var(--color-focus-indicator);
+    outline-offset: 2px;
+}
+
+.login-card--register input::placeholder {
+    color: var(--color-text-muted);
+    opacity: 1;
+}
+
+.login-card--register .register-staff-notice {
+    margin: 0;
+    padding: var(--space-3);
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-md);
+    background: var(--brand-warm-ivory);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+}
+
+.login-card--register form > button[type='submit'],
+.login-card--register .register-back-button {
+    min-height: 48px;
+    margin-top: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--brand-mocha);
+    border-radius: var(--radius-md);
+    background: var(--color-interactive-primary);
+    color: var(--brand-warm-ivory);
+    font: inherit;
+    font-weight: var(--font-weight-semibold);
+    transition: background-color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease;
+}
+
+.login-card--register form > button[type='submit']:hover:not(:disabled),
+.login-card--register .register-back-button:hover {
+    border-color: var(--color-interactive-primary-hover);
+    background: var(--color-interactive-primary-hover);
+    box-shadow: var(--shadow-sm);
+    opacity: 1;
+}
+
+.login-card--register form > button[type='submit']:active:not(:disabled),
+.login-card--register .register-back-button:active {
+    background: var(--color-interactive-primary-active);
+}
+
+.login-card--register form > button[type='submit']:focus-visible,
+.login-card--register .register-back-button:focus-visible,
+.login-card--register .register-login-link:focus-visible {
+    outline: 2px solid var(--color-focus-indicator);
+    outline-offset: 3px;
+}
+
+.login-card--register form > button[type='submit']:disabled {
+    border-color: var(--color-disabled-border);
+    background: var(--color-disabled-surface);
+    color: var(--color-disabled-text);
+    cursor: not-allowed;
+}
+
+.login-card--register .error-message,
+.login-card--register .success-message {
+    padding: var(--space-3);
+    border: 1px solid currentColor;
+    border-radius: var(--radius-md);
+    line-height: var(--line-height-normal);
+}
+
+.login-card--register .error-message {
+    background: var(--color-status-danger-surface);
+    color: var(--color-status-danger);
+}
+
+.login-card--register .success-message {
+    background: var(--color-status-success-surface);
+    color: var(--color-status-success);
+}
+
+.login-card--register .register-login-prompt {
+    margin: var(--space-6) 0 0;
+    color: var(--color-text-secondary);
+    line-height: var(--line-height-normal);
+    text-align: center;
+}
+
+.login-card--register .register-login-link {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-interactive-primary);
+    font: inherit;
+    font-weight: var(--font-weight-semibold);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.login-card--register .register-login-link:hover {
+    background: transparent;
+    color: var(--color-interactive-primary-hover);
+    opacity: 1;
+}
+
+@media (max-width: 480px) {
+    .login-page--register {
+        padding: var(--space-4);
+    }
+
+    .login-card--register {
+        padding: var(--space-6);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-card--register input,
+    .login-card--register .register-role-select,
+    .login-card--register form > button[type='submit'],
+    .login-card--register .register-back-button {
+        transition: none;
+    }
+}
+
+/* Shared, decorative campus backdrop for both authentication pages. */
+.login-page--login,
+.login-page--register {
+    background-color: var(--color-page-background);
+    background-image: url('/images/auth-campus-background.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+}
+
+@media (min-width: 601px) and (max-width: 1024px) {
+    .login-page--login,
+    .login-page--register {
+        background-image: url('/images/auth-tablet.png');
+        background-position: center 68%;
+        background-size: cover;
+    }
+}
+
+@media (max-width: 600px) {
+    .login-page--login,
+    .login-page--register {
+        background-image: url('/images/auth-mobile.png');
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-size: cover;
+    }
+}
