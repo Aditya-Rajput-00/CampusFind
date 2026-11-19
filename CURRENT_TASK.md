@@ -1,6 +1,6 @@
 # CampusFind — Current Development Status
 
-**Last synchronized:** 2026-11-19
+**Last synchronized:** 2026-11-20
 
 **Branch:** `main`
 
@@ -54,3 +54,20 @@ Visually review the reusable Dropdown popup near the bottom of the scrolling Rep
 - Preserve unrelated work and stage only files intended for a reviewed change.
 - Do not claim tests, release status, deployment availability, or visual verification without evidence.
 - Keep this file synchronized with completed work and the next confirmed review item.
+
+## First administrator bootstrap
+
+Implemented: run the backend bootstrap command from `backend/` with `npm run bootstrap`. It creates an approved first admin after a hidden password prompt and uses a unique MongoDB guard to prevent concurrent execution.
+
+### Automated verification
+
+- Bootstrap-focused tests: 8 passed, 0 failed.
+- Full backend test suite: 170 passed, 0 failed.
+- No backend lint script is currently defined.
+
+### Deployed API verification
+
+- The initial administrator was created successfully; admin login and access to an admin-protected API endpoint were verified.
+- The deployed staff workflow was verified end to end: staff registration, pending status, pending-login denial, admin pending-staff listing, approval, and successful staff login after approval.
+
+These deployed API checks are real service verification and are distinct from the automated backend test results above.

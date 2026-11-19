@@ -251,3 +251,17 @@ The component is implemented without an additional dependency and passes the sel
 The shared rules preserve the warm ivory page surface and do not alter authentication logic or API behavior.
 
 **Reason:** Dedicated compositions suit the available space at each device class and keep both authentication pages visually consistent.
+
+---
+
+## 18. First Administrator Bootstrap
+
+**Decision:** Create the first administrator only through the private backend CLI (`cd backend; npm run bootstrap`), never through an unauthenticated HTTP endpoint.
+
+- Password entry is interactive and hidden; passwords are not accepted as command-line arguments or printed to logs.
+- Email is normalized and validated. Passwords must be at least 12 characters and contain lowercase, uppercase, numeric, and symbol characters. Hashing uses the existing bcryptjs dependency at cost 10.
+- The created account has `role: "admin"` and `accountStatus: "approved"`.
+- A unique MongoDB `_id` guard document serializes concurrent attempts on standalone and replica-set deployments; no transaction support is required.
+- Existing admin or guard state refuses the operation. Pre-insertion failures release the guard only after a successful no-admin check. Once a user write is attempted, any error leaves the guard for operator inspection because the write outcome may be ambiguous.
+
+**Reason:** Public registration intentionally excludes admins, and staff approval requires an admin. A guarded operator-only command resolves initial provisioning without weakening route authorization.

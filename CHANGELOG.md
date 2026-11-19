@@ -4,6 +4,12 @@ Notable project changes are recorded here. The project has one published release
 
 ## [Unreleased]
 
+### Backend
+
+- Added an operator-run first-admin bootstrap CLI with hidden password entry, bcrypt hashing, and a unique MongoDB guard against concurrent initial administrator creation.
+- Successfully created the initial administrator and verified admin login and access to an admin-protected API endpoint.
+- Verified the deployed staff API workflow end to end: registration as pending, pending-login denial, admin listing and approval, and successful staff login after approval.
+
 ### Frontend
 
 - Added a reusable keyboard-accessible Dropdown for item filters and the Report Item form.

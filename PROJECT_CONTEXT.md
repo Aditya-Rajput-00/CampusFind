@@ -46,6 +46,8 @@ CampusFind uses separate frontend and backend applications.
 
 ```text
 backend/
+├── scripts/
+│   └── bootstrapAdmin.js
 ├── src/
 │   ├── config/
 │   ├── controllers/
@@ -151,6 +153,9 @@ Confirmed registration policy:
 - Pending or rejected staff accounts cannot log in.
 - Public registration cannot create admin accounts.
 - Admin-only endpoints manage pending staff approvals.
+- Provision the first administrator from `backend/` with `npm run bootstrap`. The CLI prompts interactively for name, email, and password; password input is hidden. It normalizes and validates email, enforces a strong password, hashes it with bcryptjs at cost 10, and creates an approved admin.
+- The command claims the unique `_id` `first-admin` in MongoDB's `adminBootstrapGuards` collection before inserting the user. MongoDB's unique `_id` serializes concurrent attempts and works with the standalone local MongoDB URI in `.env.example`; transactions are not required. It refuses if an admin exists or the guard is already claimed.
+- Failures before attempting user insertion release the guard only after the database confirms there is no admin. Once an insertion is attempted, the guard remains on any error because the write outcome may be ambiguous. An operator must inspect admin records and the guard before manually clearing a stale `in-progress` guard; do not clear it if an admin may have been created.
 
 ### Authentication Security
 
@@ -167,6 +172,12 @@ The middleware:
 - Forwards database errors to centralized error handling.
 
 This prevents outdated JWT role information from granting privileges after a user's role changes.
+
+### Initial Admin and Deployed Staff Workflow Verification
+
+The initial administrator was successfully created through the one-time bootstrap CLI. Admin login and access to an admin-protected API endpoint were verified.
+
+The deployed staff workflow was verified end to end: staff registration creates a pending account, pending staff login is denied, the admin can retrieve pending staff, the admin approves the test staff account, and that staff account can log in after approval. This records real deployed API verification and is separate from automated test-suite results.
 
 ## 8. Production Architecture
 
@@ -294,4 +305,4 @@ If information is missing, ask the developer rather than inventing details.
 
 ## Last Updated
 
-2026-11-19
+2026-11-20

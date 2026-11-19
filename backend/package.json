@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "bootstrap": "node scripts/bootstrapAdmin.js",
     "test": "node --test"
   },
   "keywords": [],
