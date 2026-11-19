@@ -2,56 +2,45 @@
 
 **A Campus Lost & Found Management System**
 
-CampusFind is a full-stack web application designed to help students and staff report lost or found belongings, submit claims, manage item matches, and receive notifications.
+CampusFind is a web application for campus communities to report lost and found belongings, submit and review claims, manage potential matches, and receive notifications. Students and staff use the public application; administrators manage staff approvals and account access through role-protected endpoints.
 
-## Features
+## Implemented features
 
-- **User Authentication:** Secure login and registration using JWT authentication.
-- **Lost & Found Reporting:** Report lost or found items.
-- **Claim Management:** Submit and manage claims for reported items.
-- **Item Matching:** Manage matches between lost and found reports.
-- **Notifications:** Receive updates about relevant activities.
-- **Role-Based Access:** Separate access for students, staff, and administrators.
-- **Staff Approval:** Administrators can review staff registrations.
-- **Image Storage:** Cloudinary integration for item images.
-- **API Documentation:** Swagger/OpenAPI documentation.
+- Student and staff registration, login, and role-aware access.
+- Administrator approval of staff registrations; public registration cannot create administrator accounts.
+- Lost and found item reporting, search, filters, status management, pagination, and image previews.
+- Claim submission and management, match review, and notifications.
+- Staff and administrator dashboard statistics; an administrator UI for staff approvals and API endpoints for user and role administration.
+- Responsive authentication pages and a shared warm visual design system.
+- REST API documentation through Swagger/OpenAPI.
 
-## Technology Stack
+## Technology
 
 | Area | Technologies |
-|---|---|
-| Frontend | React 19, Vite 8, JavaScript, Axios |
-| Backend | Node.js, Express 5 |
+| --- | --- |
+| Frontend | React 19, Vite 8, JavaScript, Axios, CSS |
+| Backend | Node.js, Express 5 (CommonJS) |
 | Database | MongoDB, Mongoose |
 | Authentication | JWT, bcryptjs |
-| Security | Helmet, Express Rate Limit, Express Validator |
-| Image Storage | Cloudinary |
-| API Documentation | Swagger / OpenAPI |
-| Frontend Testing | Vitest, React Testing Library, ESLint |
-| Backend Testing | Node.js Test Runner |
+| Validation and security | Express Validator, Helmet, Express Rate Limit, CORS |
+| Uploads and storage | Multer, Cloudinary |
+| API documentation | Swagger/OpenAPI |
+| Frontend checks | Vitest, React Testing Library, ESLint |
+| Backend tests | Node.js built-in test runner |
 
-## Project Structure
+## Project structure
 
 ```text
 CampusFind/
 ├── backend/
-│   ├── src/
-│   │   ├── config/
-│   │   ├── controllers/
-│   │   ├── docs/
-│   │   ├── middleware/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── utils/
-│   │   ├── validators/
-│   │   ├── app.js
-│   │   └── server.js
+│   ├── src/             # Express app, config, controllers, middleware, models, routes
 │   ├── tests/
+│   ├── uploads/
 │   ├── .env.example
 │   └── package.json
 ├── frontend/
-│   ├── src/
 │   ├── public/
+│   ├── src/             # React app, pages, components, context, services
 │   └── package.json
 ├── PROJECT_CONTEXT.md
 ├── CURRENT_TASK.md
@@ -59,138 +48,76 @@ CampusFind/
 └── DECISIONS.md
 ```
 
-## Getting Started
+## Local setup
 
 ### Prerequisites
 
 - Node.js and npm
-- MongoDB (local installation or MongoDB Atlas)
+- MongoDB locally or a MongoDB Atlas connection
 - Git
+- Cloudinary credentials for item image uploads
 
-### 1. Clone the Repository
+Clone the repository and install the two applications separately:
 
 ```bash
 git clone https://github.com/Aditya-Rajput-00/CampusFind.git
-cd CampusFind
+cd CampusFind/backend
+npm install
+cd ../frontend
+npm install
 ```
 
-### 2. Configure the Backend
+Create `backend/.env` from `backend/.env.example` (for example, run `Copy-Item backend/.env.example backend/.env` in PowerShell from the repository root). Set `PORT`, `CLIENT_URL`, `MONGO_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`, and the Cloudinary values. Keep real credentials out of Git. The example defaults to a local MongoDB database and frontend origin `http://localhost:5173`.
+
+Open two terminals at the repository root. In the first, start the backend:
 
 ```bash
 cd backend
-npm install
-```
-
-Create a `.env` file by copying `.env.example`.
-
-For Windows PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Update the values in `backend/.env`:
-
-- `PORT`
-- `CLIENT_URL`
-- `MONGO_URI`
-- `JWT_SECRET`
-- `JWT_EXPIRES_IN`
-- Cloudinary credentials
-
-Never commit your real `.env` file or expose its secrets.
-
-### 3. Start the Backend
-
-From `CampusFind/backend`:
-
-```bash
 npm run dev
 ```
 
-The backend uses `http://localhost:5000` by default.
-
-### 4. Configure and Start the Frontend
-
-Open another terminal at the repository root:
+Start the frontend in another terminal:
 
 ```bash
 cd frontend
-npm install
 npm run dev
 ```
 
-The frontend uses the local Vite proxy for `/api` requests by default.
+Vite serves the frontend and proxies `/api` and `/uploads` to `http://localhost:5000`. To use a separately hosted API, set `VITE_API_URL` in the frontend environment. Open the local URL printed by Vite.
 
-For a separately configured API server, set `VITE_API_URL` to the appropriate API base URL in the frontend environment.
+Use a strong, unique JWT secret and never commit `.env` files. Protected requests check the current user account in MongoDB; pending or rejected staff accounts cannot log in.
 
-### 5. Open the Application
+## Checks
 
-Use the local URL printed by Vite in your terminal.
-
-## Testing
-
-### Backend
-
-From `CampusFind/backend`:
+Run these from their respective application directories:
 
 ```bash
+# backend
 npm test
-```
 
-### Frontend
-
-From `CampusFind/frontend`:
-
-```bash
-npm test
+# frontend
+npm test -- --run
 npm run lint
 npm run build
 ```
 
-## API Documentation
+## API documentation
 
-When the backend is running, Swagger documentation is available at:
+With the backend running, open `http://localhost:5000/api-docs`.
 
-`http://localhost:5000/api-docs`
+## Release and project status
 
-## Deployment Architecture
+`v1.0.0` is the first published GitHub release. Its tag points to `ee447b3` (`docs: prepare CampusFind v1.0.0 release`). Later frontend design and authentication improvements are recorded as unreleased changes; they have not been assigned another release tag.
 
-The project deployment architecture uses:
+The configured production architecture is Vercel for the frontend, Render for the backend, MongoDB Atlas for the database, and Cloudinary for image storage. Verify live deployment state before relying on service availability. The current development and roadmap status is in [CURRENT_TASK.md](CURRENT_TASK.md).
 
-- **Frontend:** Vercel
-- **Backend:** Render
-- **Database:** MongoDB Atlas
-- **Image Storage:** Cloudinary
+## Project documents
 
-Backend production URL:
-
-https://campusfind-backend-k16o.onrender.com
-
-Deployment availability and configuration may change; verify live services before relying on them.
-
-## Security Notes
-
-- Keep environment variables and API credentials private.
-- Use a strong, unique JWT secret.
-- Do not commit `.env` files.
-- Public registration is restricted to student and staff roles.
-- Staff accounts require administrator approval.
-- Protected requests validate the current user account against the database.
-
-## Project Documentation
-
-- `PROJECT_CONTEXT.md` — Project architecture and context.
-- `CURRENT_TASK.md` — Current development and roadmap position.
-- `CHANGELOG.md` — Development history.
-- `DECISIONS.md` — Technical decisions.
-
-## Release
-
-**Planned First Release:** `v1.0.0`
-
-[View GitHub Releases](https://github.com/Aditya-Rajput-00/CampusFind/releases)
+- [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) — Architecture and project context.
+- [CURRENT_TASK.md](CURRENT_TASK.md) — Completed work, open review item, and next recommended task.
+- [CHANGELOG.md](CHANGELOG.md) — Release history and unreleased milestones.
+- [DECISIONS.md](DECISIONS.md) — Confirmed technical and project decisions.
 
 ## Repository
 
-https://github.com/Aditya-Rajput-00/CampusFind
+[GitHub: Aditya-Rajput-00/CampusFind](https://github.com/Aditya-Rajput-00/CampusFind)

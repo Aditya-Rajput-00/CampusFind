@@ -209,19 +209,19 @@ Work on one focused task at a time. Do not proceed to the next task until the cu
 
 ## 15. Release Status
 
-**Current roadmap position:** Phase 15 — Final Testing & Deployment.
+**Current roadmap position:** Phase 15 — Final Testing & Deployment closeout.
 
 - Task 88: Completed.
 - Task 89: Completed and pushed.
-- Task 90: GitHub release published; final documentation synchronization in progress.
+- Task 90: Completed. The first GitHub release was published and the project records were synchronized; this documentation audit resolves later drift.
 
-Latest release-preparation commit:
+The first published release remains `v1.0.0`, tagged at:
 
-`ee447b3` — `docs: prepare CampusFind v1.0.0 release`
+`ee447b3b9df0c559f2ae54bd60b5ec3c6a6d84bd`
 
-The release tag and GitHub Release have been verified.
+The release-record synchronization commit is `80b16ce`. Later frontend work, through authentication commit `57a4159`, is unreleased. No later tag is recorded.
 
-The final documentation synchronization changes still require review, commit, and push.
+The next recommended review is the Dropdown popup placement near the bottom of the scrolling Report Item modal on short viewports; change placement only if clipping is confirmed.
 
 ---
 
@@ -236,3 +236,18 @@ The component is implemented without an additional dependency and passes the sel
 **Reason:** A shared component keeps the filter and modal controls visually consistent while providing predictable keyboard and assistive-technology behavior.
 
 **Follow-up:** Verify popup placement near the bottom of the scrolling Report Item modal on short viewports. The current popup opens below its trigger and may need a placement adjustment if clipping is observed.
+
+---
+
+## 17. Responsive Authentication Backgrounds
+
+**Decision:** Use one shared authentication page structure and select a dedicated campus image through CSS breakpoints for Login and Registration.
+
+- Desktop, above 1024px: `/images/auth-campus-background.png`.
+- Tablet, 601–1024px: `/images/auth-tablet.png`.
+- Mobile, 600px and below: `/images/auth-mobile.png`.
+- The mobile image uses centered `cover` sizing so it fills the authentication page while preserving image proportions.
+
+The shared rules preserve the warm ivory page surface and do not alter authentication logic or API behavior.
+
+**Reason:** Dedicated compositions suit the available space at each device class and keep both authentication pages visually consistent.
