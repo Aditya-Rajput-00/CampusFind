@@ -8,6 +8,45 @@ import './ItemForm.css';
 
 const ITEMS_PER_PAGE = 10;
 
+function ItemCardImage({ images, title, onPreview }) {
+    const [hasImageError, setHasImageError] = useState(false);
+    const imageUrl = images?.[0];
+    const altText = title || 'Lost and found item';
+
+    if (!imageUrl || hasImageError) {
+        return (
+            <div className="item-card-media is-fallback">
+                <div className="item-image-fallback" role="img" aria-label="No image available">
+                    <svg viewBox="0 0 48 40" aria-hidden="true" focusable="false">
+                        <rect x="2" y="2" width="44" height="36" rx="4" />
+                        <circle cx="15" cy="13" r="3.5" />
+                        <path d="m5 32 11-10 7 6 7-7 13 11" />
+                    </svg>
+                    <span>No image available</span>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="item-card-media">
+            <button
+                type="button"
+                className="item-image-preview-trigger"
+                aria-label={`Preview ${altText}`}
+                onClick={(event) => onPreview(imageUrl, altText, event.currentTarget)}
+            >
+                <img
+                    src={imageUrl}
+                    alt={altText}
+                    className="item-image"
+                    onError={() => setHasImageError(true)}
+                />
+            </button>
+        </div>
+    );
+}
+
 function Items() {
     const [items, setItems] = useState([]);
     const [pagination, setPagination] = useState(null);
@@ -24,8 +63,11 @@ function Items() {
     const [showForm, setShowForm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [formError, setFormError] = useState('');
+    const [imagePreview, setImagePreview] = useState(null);
 
     const dateInputRef = useRef(null);
+    const imagePreviewTriggerRef = useRef(null);
+    const imagePreviewCloseButtonRef = useRef(null);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -35,6 +77,32 @@ function Items() {
         date: '',
         image: null,
     });
+
+    useEffect(() => {
+        if (!imagePreview) return undefined;
+
+        const previousBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        imagePreviewCloseButtonRef.current?.focus();
+
+        const handlePreviewKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                setImagePreview(null);
+            } else if (event.key === 'Tab') {
+                event.preventDefault();
+                imagePreviewCloseButtonRef.current?.focus();
+            }
+        };
+
+        document.addEventListener('keydown', handlePreviewKeyDown);
+
+        return () => {
+            document.removeEventListener('keydown', handlePreviewKeyDown);
+            document.body.style.overflow = previousBodyOverflow;
+            imagePreviewTriggerRef.current?.focus();
+        };
+    }, [imagePreview]);
 
     // Fetch items whenever filters or search change.
     useEffect(() => {
@@ -339,14 +407,14 @@ function Items() {
                 <div className="items-grid">
                     {items.map((item) => (
                         <div className="item-card" key={item._id}>
-
-                            {item.images?.length > 0 && (
-                                <img
-                                    src={item.images[0]}
-                                    alt={item.title}
-                                    className="item-image"
-                                />
-                            )}
+                            <ItemCardImage
+                                images={item.images}
+                                title={item.title}
+                                onPreview={(src, alt, trigger) => {
+                                    imagePreviewTriggerRef.current = trigger;
+                                    setImagePreview({ src, alt });
+                                }}
+                            />
 
                             <div className="item-card-content">
 
@@ -406,6 +474,41 @@ function Items() {
                         Next
                     </button>
 
+                </div>
+            )}
+
+            {imagePreview && (
+                <div
+                    className="items-image-preview-backdrop"
+                    role="presentation"
+                    onClick={(event) => {
+                        if (event.target === event.currentTarget) {
+                            setImagePreview(null);
+                        }
+                    }}
+                >
+                    <div
+                        className="items-image-preview-dialog"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={`Image preview: ${imagePreview.alt}`}
+                    >
+                        <button
+                            ref={imagePreviewCloseButtonRef}
+                            type="button"
+                            className="items-image-preview-close"
+                            aria-label="Close image preview"
+                            onClick={() => setImagePreview(null)}
+                        >
+                            <span aria-hidden="true">×</span>
+                            <span>Close</span>
+                        </button>
+                        <img
+                            className="items-image-preview-image"
+                            src={imagePreview.src}
+                            alt={imagePreview.alt}
+                        />
+                    </div>
                 </div>
             )}
 

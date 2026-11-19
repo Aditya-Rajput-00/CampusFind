@@ -6,6 +6,22 @@ The format follows a simplified Keep a Changelog structure.
 
 ---
 
+## [Unreleased]
+
+### Frontend Design
+
+- Reworked the Claims, Matches, and Notifications pages to use CampusFind's warm visual system.
+- Redesigned Lost & Found item cards with separated image and information areas, improved image framing, and an accessible full-size image preview.
+- Added focused page tests for Matches and Notifications and expanded Items image-preview coverage.
+
+### Verification
+
+- Frontend tests: 99 passed across 15 test files on 2026-11-19.
+- Frontend lint and production build passed on 2026-11-19.
+- `git diff --check` passed on 2026-11-19.
+
+---
+
 ## [1.0.0] — 2026-11-12
 
 **Status: Published — First Stable Release**

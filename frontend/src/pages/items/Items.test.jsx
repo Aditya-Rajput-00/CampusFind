@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import Items from './Items';
 
 const { createItemMock, getItemsMock } = vi.hoisted(() => ({
@@ -63,6 +63,94 @@ describe('Items page', () => {
             page: 1,
             limit: 10,
         });
+    });
+
+    it('opens the original item image in an accessible preview', async () => {
+        render(<Items />);
+
+        const trigger = await screen.findByRole('button', { name: 'Preview Campus card' });
+        fireEvent.click(trigger);
+
+        const dialog = screen.getByRole('dialog', { name: 'Image preview: Campus card' });
+        const previewImage = within(dialog).getByRole('img', { name: 'Campus card' });
+        const closeButton = screen.getByRole('button', { name: 'Close image preview' });
+
+        expect(previewImage).toHaveAttribute('src', 'https://example.test/campus-card.jpg');
+        expect(previewImage).toHaveClass('items-image-preview-image');
+        expect(document.body.style.overflow).toBe('hidden');
+        expect(document.activeElement).toBe(closeButton);
+
+        fireEvent.keyDown(document, { key: 'Tab' });
+        expect(document.activeElement).toBe(closeButton);
+    });
+
+    it('closes the image preview with its close button and restores focus', async () => {
+        render(<Items />);
+
+        const trigger = await screen.findByRole('button', { name: 'Preview Campus card' });
+        fireEvent.click(trigger);
+        fireEvent.click(screen.getByRole('button', { name: 'Close image preview' }));
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(document.body.style.overflow).toBe('');
+        expect(document.activeElement).toBe(trigger);
+    });
+
+    it('closes the image preview when the backdrop is clicked', async () => {
+        render(<Items />);
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Preview Campus card' }));
+        fireEvent.click(document.querySelector('.items-image-preview-backdrop'));
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('closes the image preview with Escape', async () => {
+        render(<Items />);
+
+        const trigger = await screen.findByRole('button', { name: 'Preview Campus card' });
+        fireEvent.click(trigger);
+        fireEvent.keyDown(document, { key: 'Escape' });
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(document.activeElement).toBe(trigger);
+    });
+
+    it('shows the image fallback when an item has no image', async () => {
+        getItemsMock.mockResolvedValueOnce(createItemsResult([
+            { ...item, images: [] },
+        ]));
+
+        render(<Items />);
+
+        expect(await screen.findByRole('heading', { name: 'Campus card' }))
+            .toBeInTheDocument();
+        expect(screen.getByRole('img', { name: 'No image available' }))
+            .toBeInTheDocument();
+        expect(document.querySelector('.item-card-media'))
+            .toHaveClass('is-fallback');
+        fireEvent.click(screen.getByRole('img', { name: 'No image available' }));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Preview Campus card' }))
+            .not.toBeInTheDocument();
+    });
+
+    it('shows the image fallback when an item image fails to load', async () => {
+        render(<Items />);
+
+        const itemImage = await screen.findByRole('img', { name: 'Campus card' });
+        fireEvent.error(itemImage);
+
+        expect(screen.getByRole('img', { name: 'No image available' }))
+            .toBeInTheDocument();
+        expect(document.querySelector('.item-card-media'))
+            .toHaveClass('is-fallback');
+        expect(screen.queryByRole('img', { name: 'Campus card' }))
+            .not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('img', { name: 'No image available' }));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Preview Campus card' }))
+            .not.toBeInTheDocument();
     });
 
     it('passes current search and filter values to the item service', async () => {

@@ -218,13 +218,103 @@ function Matches() {
 
                         {matches.length === 0 ? (
                             <div className="matches-empty">
-                                <h3>No Matches Found</h3>
+                                <svg
+                                    className="matches-empty__illustration"
+                                    viewBox="0 0 164 132"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <path
+                                        d="M12 111c17-11 32-12 48-4 18-10 38-9 55-1 12-7 24-7 37-1v15H12z"
+                                        fill="var(--brand-soft-taupe)"
+                                        opacity="0.55"
+                                    />
+                                    <path
+                                        d="m99 78 34 34"
+                                        fill="none"
+                                        stroke="var(--brand-muted-cocoa)"
+                                        strokeLinecap="round"
+                                        strokeWidth="14"
+                                    />
+                                    <path
+                                        d="m99 78 34 34"
+                                        fill="none"
+                                        stroke="var(--brand-mocha)"
+                                        strokeLinecap="round"
+                                        strokeWidth="8"
+                                    />
+                                    <defs>
+                                        <clipPath id="matches-campus-lens">
+                                            <circle cx="69" cy="52" r="30" />
+                                        </clipPath>
+                                    </defs>
+                                    <circle
+                                        cx="69"
+                                        cy="52"
+                                        r="36"
+                                        fill="var(--brand-warm-ivory)"
+                                        stroke="var(--brand-mocha)"
+                                        strokeWidth="4"
+                                    />
+                                    <g clipPath="url(#matches-campus-lens)">
+                                        <path
+                                            d="M34 76h70v12H34z"
+                                            fill="var(--brand-muted-cocoa)"
+                                        />
+                                        <path
+                                            d="m38 52 31-21 31 21z"
+                                            fill="var(--brand-mocha)"
+                                        />
+                                        <path
+                                            d="M47 51h44v27H47z"
+                                            fill="var(--brand-soft-taupe)"
+                                        />
+                                        <path
+                                            d="M64 26h10v17H64z"
+                                            fill="var(--brand-muted-cocoa)"
+                                        />
+                                        <path
+                                            d="m61 27 8-9 8 9z"
+                                            fill="var(--brand-dark-brown)"
+                                        />
+                                        <circle
+                                            cx="69"
+                                            cy="29"
+                                            r="3"
+                                            fill="var(--brand-warm-ivory)"
+                                            stroke="var(--brand-dark-brown)"
+                                            strokeWidth="1"
+                                        />
+                                        <path
+                                            d="M54 57h7v8h-7zm22 0h7v8h-7z"
+                                            fill="var(--brand-warm-ivory)"
+                                        />
+                                        <path
+                                            d="M65 62h9v16h-9z"
+                                            fill="var(--brand-mocha)"
+                                        />
+                                    </g>
+                                    <circle
+                                        cx="69"
+                                        cy="52"
+                                        r="36"
+                                        fill="none"
+                                        stroke="var(--brand-mocha)"
+                                        strokeWidth="4"
+                                    />
+                                    <circle cx="23" cy="53" r="2" fill="var(--brand-muted-cocoa)" />
+                                    <circle cx="111" cy="30" r="2.5" fill="var(--brand-muted-cocoa)" />
+                                    <circle cx="121" cy="55" r="1.75" fill="var(--brand-soft-taupe)" />
+                                </svg>
+                                <div className="matches-empty__content">
+                                    <h3>No Matches Found</h3>
 
-                                <p>
-                                    {isStudent
-                                        ? 'No matches have been found for your reported items yet.'
-                                        : 'There are currently no matches to review.'}
-                                </p>
+                                    <p>
+                                        {isStudent
+                                            ? 'No matches have been found for your reported items yet.'
+                                            : 'There are currently no matches to review.'}
+                                    </p>
+                                </div>
                             </div>
                         ) : (
                             <div className="matches-grid">

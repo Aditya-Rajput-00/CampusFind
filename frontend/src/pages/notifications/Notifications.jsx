@@ -138,6 +138,13 @@ function Notifications() {
         return type?.toLowerCase().replace(/_/g, '-') || 'system';
     };
 
+    const getTypeLabel = (type) => {
+        return type
+            ?.replace(/_/g, ' ')
+            .toLowerCase()
+            .replace(/\b\w/g, (character) => character.toUpperCase()) || 'System';
+    };
+
     const formatDate = (date) => {
         if (!date) return 'Date unavailable';
 
@@ -174,19 +181,25 @@ function Notifications() {
             </div>
 
             {error && (
-                <div className="notifications-alert notifications-error">
+                <div
+                    className="notifications-alert notifications-error"
+                    role="alert"
+                >
                     {error}
                 </div>
             )}
 
             {success && (
-                <div className="notifications-alert notifications-success">
+                <div
+                    className="notifications-alert notifications-success"
+                    role="status"
+                >
                     {success}
                 </div>
             )}
 
             {loading ? (
-                <p className="notifications-loading">
+                <p className="notifications-loading" role="status">
                     Loading notifications...
                 </p>
             ) : (
@@ -222,9 +235,49 @@ function Notifications() {
 
                         {notifications.length === 0 ? (
                             <div className="notifications-empty">
-                                <div className="notification-empty-icon">
-                                    ♡
-                                </div>
+                                <svg
+                                    className="notification-empty-icon"
+                                    viewBox="0 0 76 64"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <circle
+                                        cx="38"
+                                        cy="32"
+                                        r="30"
+                                        fill="var(--brand-soft-taupe)"
+                                        opacity="0.4"
+                                    />
+                                    <path
+                                        d="M24 43h28l-3.5-5V28a10.5 10.5 0 0 0-21 0v10z"
+                                        fill="var(--brand-warm-ivory)"
+                                        stroke="var(--brand-mocha)"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2.5"
+                                    />
+                                    <path
+                                        d="M34 47a4 4 0 0 0 8 0"
+                                        fill="none"
+                                        stroke="var(--brand-mocha)"
+                                        strokeLinecap="round"
+                                        strokeWidth="2.5"
+                                    />
+                                    <circle
+                                        cx="51"
+                                        cy="17"
+                                        r="5"
+                                        fill="var(--brand-muted-cocoa)"
+                                        stroke="var(--brand-warm-ivory)"
+                                        strokeWidth="2"
+                                    />
+                                    <path
+                                        d="M18 22h4M54 49h5"
+                                        fill="none"
+                                        stroke="var(--brand-muted-cocoa)"
+                                        strokeLinecap="round"
+                                        strokeWidth="2"
+                                    />
+                                </svg>
 
                                 <h3>No Notifications Yet</h3>
 
@@ -250,10 +303,7 @@ function Notifications() {
                                                         notification.type
                                                     )}`}
                                                 >
-                                                    {notification.type?.replace(
-                                                        /_/g,
-                                                        ' '
-                                                    ) || 'SYSTEM'}
+                                                    {getTypeLabel(notification.type)}
                                                 </span>
 
                                                 {!notification.isRead && (

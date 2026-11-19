@@ -1,5 +1,17 @@
 # CampusFind — Current Development Status
 
+## Frontend Design Checkpoint — 2026-11-19
+
+The following frontend-only redesign work has been verified locally and prepared as a GitHub checkpoint:
+
+- Claims, Matches, and Notifications warm-design refreshes.
+- Lost & Found item-card redesign, image framing improvement, and accessible full-size image preview.
+- Focused Matches and Notifications page tests and expanded Items coverage.
+
+Verification on 2026-11-19: 99 frontend tests passed across 15 files; ESLint, production build, and `git diff --check` passed.
+
+The separate untracked `frontend/campusfind-design-reference.png` is a local visual reference and is not part of the checkpoint. Registration redesign remains the next planned page and has not started.
+
 ## Project
 
 CampusFind
