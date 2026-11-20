@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import Dropdown from './Dropdown';
 
@@ -19,11 +19,90 @@ const renderDropdown = (props = {}) => render(
     />
 );
 
+const createRect = (top, bottom) => ({
+    top,
+    bottom,
+    left: 0,
+    right: 400,
+    width: 400,
+    height: bottom - top,
+    x: 0,
+    y: top,
+    toJSON: () => ({}),
+});
+
+const renderDropdownInScrollableContainer = ({
+    triggerTop = 160,
+    triggerBottom = 208,
+    containerTop = 100,
+    containerBottom = 500,
+    popupHeight = 180,
+} = {}) => {
+    const view = render(
+        <div
+            className="scroll-container"
+            style={{ height: '400px', overflowY: 'auto' }}
+        >
+            <Dropdown
+                id="item-type"
+                label="Item type"
+                value="lost"
+                options={options}
+                onChange={vi.fn()}
+            />
+        </div>
+    );
+
+    const container = view.container.querySelector('.scroll-container');
+    Object.defineProperty(container, 'clientTop', {
+        configurable: true,
+        value: 0,
+    });
+    Object.defineProperty(container, 'clientHeight', {
+        configurable: true,
+        get: () => containerBottom - containerTop,
+    });
+
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function () {
+        if (this.classList?.contains('scroll-container')) {
+            return createRect(containerTop, containerBottom);
+        }
+        if (this.classList?.contains('dropdown-trigger')) {
+            return createRect(triggerTop, triggerBottom);
+        }
+        if (this.classList?.contains('dropdown-listbox')) {
+            return createRect(0, popupHeight);
+        }
+
+        return originalGetBoundingClientRect.call(this);
+    });
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Item type' }));
+
+    return {
+        ...view,
+        container,
+        setTriggerBounds: (top, bottom) => {
+            triggerTop = top;
+            triggerBottom = bottom;
+        },
+        setContainerBounds: (top, bottom) => {
+            containerTop = top;
+            containerBottom = bottom;
+        },
+    };
+};
+
 describe('Dropdown component', () => {
     let onChange;
 
     beforeEach(() => {
         onChange = vi.fn();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('renders the selected option in the trigger', () => {
@@ -46,6 +125,61 @@ describe('Dropdown component', () => {
             expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
         });
         expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('opens downward when the visible container has sufficient space below', async () => {
+        renderDropdownInScrollableContainer();
+
+        const listbox = await screen.findByRole('listbox');
+        expect(listbox).not.toHaveClass('is-above');
+        expect(listbox.style.getPropertyValue('--dropdown-available-height'))
+            .toBe('284px');
+    });
+
+    it('opens upward when space below is insufficient and more space is available above', async () => {
+        renderDropdownInScrollableContainer({
+            triggerTop: 420,
+            triggerBottom: 468,
+        });
+
+        const listbox = await screen.findByRole('listbox');
+        expect(listbox).toHaveClass('is-above');
+        expect(listbox.style.getPropertyValue('--dropdown-available-height'))
+            .toBe('312px');
+    });
+
+    it('caps the popup height to the available space in its scrollable container', async () => {
+        renderDropdownInScrollableContainer({
+            triggerTop: 190,
+            triggerBottom: 238,
+            containerTop: 100,
+            containerBottom: 300,
+        });
+
+        const listbox = await screen.findByRole('listbox');
+        expect(listbox).toHaveClass('is-above');
+        expect(listbox.style.getPropertyValue('--dropdown-available-height'))
+            .toBe('82px');
+    });
+
+    it('repositions after the scrollable container scrolls and the viewport resizes', async () => {
+        const { container, setTriggerBounds, setContainerBounds } =
+            renderDropdownInScrollableContainer();
+        const listbox = await screen.findByRole('listbox');
+
+        expect(listbox).not.toHaveClass('is-above');
+
+        setTriggerBounds(420, 468);
+        fireEvent.scroll(container);
+        await waitFor(() => {
+            expect(listbox).toHaveClass('is-above');
+        });
+
+        setContainerBounds(100, 760);
+        fireEvent(window, new Event('resize'));
+        await waitFor(() => {
+            expect(listbox).not.toHaveClass('is-above');
+        });
     });
 
     it('calls onChange with the exact value when an option is clicked', async () => {

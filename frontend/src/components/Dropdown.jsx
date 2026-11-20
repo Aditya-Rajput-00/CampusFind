@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './Dropdown.css';
 
 function Dropdown({
@@ -19,10 +19,103 @@ function Dropdown({
 
     const [isOpen, setIsOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState(-1);
+    const [popupPlacement, setPopupPlacement] = useState({
+        direction: 'below',
+        availableHeight: null,
+    });
 
     const selectedIndex = options.findIndex((option) => option.value === value);
     const selectedOption = selectedIndex >= 0 ? options[selectedIndex] : null;
     const listboxId = `${id}-listbox`;
+
+    useLayoutEffect(() => {
+        if (!isOpen) return undefined;
+
+        const getVisibleBounds = () => {
+            let top = 0;
+            let bottom = window.innerHeight || document.documentElement.clientHeight;
+            let ancestor = rootRef.current?.parentElement;
+
+            while (
+                ancestor &&
+                ancestor !== document.body &&
+                ancestor !== document.documentElement
+            ) {
+                const { overflowY } = window.getComputedStyle(ancestor);
+
+                if (['auto', 'scroll', 'hidden', 'clip'].includes(overflowY)) {
+                    const bounds = ancestor.getBoundingClientRect();
+                    const visibleTop = bounds.top + ancestor.clientTop;
+                    const visibleBottom = visibleTop + ancestor.clientHeight;
+
+                    top = Math.max(top, visibleTop);
+                    bottom = Math.min(bottom, visibleBottom);
+                }
+
+                ancestor = ancestor.parentElement;
+            }
+
+            return { top, bottom };
+        };
+
+        const updatePosition = () => {
+            const trigger = triggerRef.current;
+            const listbox = listboxRef.current;
+            if (!trigger || !listbox) return;
+
+            const triggerBounds = trigger.getBoundingClientRect();
+            const visibleBounds = getVisibleBounds();
+            const gap = Number.parseFloat(
+                window.getComputedStyle(document.documentElement)
+                    .getPropertyValue('--space-2')
+            ) || 8;
+            const spaceAbove = Math.max(0, triggerBounds.top - visibleBounds.top - gap);
+            const spaceBelow = Math.max(0, visibleBounds.bottom - triggerBounds.bottom - gap);
+            const popupHeight = listbox.getBoundingClientRect().height;
+            const direction = spaceBelow < popupHeight && spaceAbove > spaceBelow
+                ? 'above'
+                : 'below';
+            const availableHeight = Math.floor(
+                direction === 'above' ? spaceAbove : spaceBelow
+            );
+
+            setPopupPlacement((previous) => (
+                previous.direction === direction &&
+                previous.availableHeight === availableHeight
+                    ? previous
+                    : { direction, availableHeight }
+            ));
+        };
+
+        let frameId = null;
+        const schedulePositionUpdate = () => {
+            if (frameId !== null) return;
+
+            const requestFrame = window.requestAnimationFrame || window.setTimeout;
+            frameId = requestFrame(() => {
+                frameId = null;
+                updatePosition();
+            });
+        };
+
+        updatePosition();
+        window.addEventListener('resize', schedulePositionUpdate);
+        window.addEventListener('scroll', schedulePositionUpdate, true);
+        window.visualViewport?.addEventListener('resize', schedulePositionUpdate);
+        window.visualViewport?.addEventListener('scroll', schedulePositionUpdate);
+
+        return () => {
+            window.removeEventListener('resize', schedulePositionUpdate);
+            window.removeEventListener('scroll', schedulePositionUpdate, true);
+            window.visualViewport?.removeEventListener('resize', schedulePositionUpdate);
+            window.visualViewport?.removeEventListener('scroll', schedulePositionUpdate);
+
+            if (frameId !== null) {
+                const cancelFrame = window.cancelAnimationFrame || window.clearTimeout;
+                cancelFrame(frameId);
+            }
+        };
+    }, [isOpen]);
 
     useEffect(() => {
         const listbox = listboxRef.current;
@@ -219,7 +312,12 @@ function Dropdown({
                 <ul
                     ref={listboxRef}
                     id={listboxId}
-                    className="dropdown-listbox"
+                    className={`dropdown-listbox${popupPlacement.direction === 'above' ? ' is-above' : ''}`}
+                    style={{
+                        '--dropdown-available-height': popupPlacement.availableHeight === null
+                            ? undefined
+                            : `${popupPlacement.availableHeight}px`,
+                    }}
                     role="listbox"
                     aria-label={`${label} options`}
                 >
