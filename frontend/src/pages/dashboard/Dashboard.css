@@ -1,15 +1,10 @@
-/* ========================================
-   CAMPUSFIND - STAFF & ADMIN DASHBOARD
-======================================== */
-
+/* Staff and admin dashboard */
 .dashboard-page {
     min-height: 100vh;
     padding: 40px;
-    background: #0b1020;
-    color: #ffffff;
+    background: var(--color-page-background);
+    color: var(--color-text-primary);
 }
-
-/* Dashboard Header */
 
 .dashboard-header {
     display: flex;
@@ -21,62 +16,64 @@
 }
 
 .dashboard-header h1 {
-    font-size: 32px;
-    font-weight: 700;
     margin-bottom: 10px;
+    color: var(--color-text-primary);
+    font-size: 32px;
+    font-weight: var(--font-weight-bold);
 }
 
 .dashboard-header p {
-    color: #9ca3af;
+    color: var(--color-text-secondary);
     font-size: 15px;
-    line-height: 1.6;
+    line-height: var(--line-height-relaxed);
 }
-
-/* Refresh Button */
 
 .dashboard-refresh-button {
     padding: 13px 24px;
-    background: linear-gradient(135deg, #9333ea, #4f46e5);
-    color: #ffffff;
-    border: none;
-    border-radius: 10px;
+    border: 1px solid var(--color-interactive-primary);
+    border-radius: var(--radius-md);
+    background: var(--color-interactive-primary);
+    color: var(--brand-warm-ivory);
     font-size: 14px;
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color var(--duration-normal) ease,
+        border-color var(--duration-normal) ease, box-shadow var(--duration-normal) ease;
 }
 
 .dashboard-refresh-button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 7px 25px rgba(124, 58, 237, 0.35);
+    border-color: var(--color-interactive-primary-hover);
+    background: var(--color-interactive-primary-hover);
+    box-shadow: var(--shadow-md);
+}
+
+.dashboard-refresh-button:focus-visible {
+    outline: 3px solid var(--color-focus-indicator);
+    outline-offset: 2px;
 }
 
 .dashboard-refresh-button:disabled {
-    opacity: 0.5;
+    border-color: var(--color-disabled-border);
+    background: var(--color-disabled-surface);
+    color: var(--color-disabled-text);
     cursor: not-allowed;
 }
 
-/* Loading State */
-
 .dashboard-loading {
     padding: 30px 0;
-    color: #c4b5fd;
+    color: var(--color-text-secondary);
     font-size: 15px;
 }
-
-/* Error Message */
 
 .dashboard-error {
     padding: 15px 18px;
     margin-bottom: 25px;
-    border-radius: 10px;
-    color: #fca5a5;
-    background: rgba(127, 29, 29, 0.35);
-    border: 1px solid rgba(248, 113, 113, 0.3);
+    border: 1px solid var(--color-status-danger);
+    border-radius: var(--radius-md);
+    background: var(--color-status-danger-surface);
+    color: var(--color-status-danger);
     font-size: 14px;
 }
-
-/* Statistics Grid */
 
 .dashboard-stats-grid {
     display: grid;
@@ -85,25 +82,22 @@
     margin-top: 30px;
 }
 
-/* Statistics Cards */
-
 .dashboard-stat-card {
     min-height: 155px;
     padding: 25px;
-    background: rgba(30, 41, 70, 0.45);
-    backdrop-filter: blur(18px);
-    border: 1px solid rgba(139, 92, 246, 0.25);
-    border-radius: 15px;
-    transition: all 0.3s ease;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-card-surface);
+    box-shadow: var(--shadow-sm);
+    transition: border-color var(--duration-normal) ease,
+        box-shadow var(--duration-normal) ease, transform var(--duration-normal) ease;
 }
 
 .dashboard-stat-card:hover {
-    transform: translateY(-5px);
-    border-color: #8b5cf6;
-    box-shadow: 0 10px 30px rgba(124, 58, 237, 0.15);
+    transform: translateY(-2px);
+    border-color: var(--brand-muted-cocoa);
+    box-shadow: var(--shadow-md);
 }
-
-/* Card Heading */
 
 .dashboard-stat-top {
     display: flex;
@@ -119,29 +113,26 @@
     min-width: 52px;
     height: 36px;
     padding: 0 8px;
-    background: rgba(124, 58, 237, 0.18);
-    color: #c4b5fd;
-    border-radius: 8px;
+    border: 1px solid var(--brand-soft-taupe);
+    border-radius: var(--radius-md);
+    background: var(--brand-warm-ivory);
+    color: var(--brand-dark-brown);
     font-size: 10px;
-    font-weight: 800;
+    font-weight: var(--font-weight-bold);
     letter-spacing: 0.4px;
 }
 
 .dashboard-stat-label {
-    color: #9ca3af;
+    color: var(--brand-dark-brown);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
-
-/* Card Number */
 
 .dashboard-stat-card h2 {
-    color: #c4b5fd;
+    color: var(--brand-dark-brown);
     font-size: 34px;
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
 }
-
-/* Responsive Design */
 
 @media (max-width: 1000px) {
     .dashboard-stats-grid {
