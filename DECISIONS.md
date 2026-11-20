@@ -221,7 +221,15 @@ The first published release remains `v1.0.0`, tagged at:
 
 The release-record synchronization commit is `80b16ce`. Later frontend work, through authentication commit `57a4159`, is unreleased. No later tag is recorded.
 
-The next recommended review is the Dropdown popup placement near the bottom of the scrolling Report Item modal on short viewports; change placement only if clipping is confirmed.
+Task 91's Dropdown popup clipping issue was fixed with intelligent upward/downward positioning and pushed in `dec832c`.
+
+### Dashboard list pagination metadata
+
+**Decision:** Keep each existing list endpoint's response shape and consume its own pagination metadata in the frontend. Claims and Matches use their server-provided `pagination.totalRecords`; the Items API provides `pagination.totalItems`, which Dashboard normalizes when displaying a section's record total.
+
+Claims and Matches request 20 records per page and use returned page metadata for navigation. Existing role authorization and claim/match action workflows remain in their current pages. Status summary counts on those pages describe the visible page; the total-record summary comes from the server.
+
+**Reason:** This fixes frontend/backend pagination regressions without changing API contracts or duplicating business logic.
 
 ---
 

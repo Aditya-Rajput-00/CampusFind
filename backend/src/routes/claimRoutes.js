@@ -12,6 +12,7 @@ const {
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
 const { objectIdValidator } = require("../validators/objectIdValidator");
+const createListQueryMiddleware = require("../middleware/listQueryMiddleware");
 const { validationResult } = require("express-validator");
 
 const router = express.Router();
@@ -21,10 +22,24 @@ const router = express.Router();
  * /api/claims:
  *   get:
  *     summary: Get claims
- *     description: Retrieve claims with their associated items and claimant details.
+ *     description: Retrieve paginated claims with associated items and claimant details. Students only see their own claims.
  *     tags: [Claims]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *       - in: query
+ *         name: search
+ *         description: Searches claim proof, item title, claimant name, and claimant email (up to 100 characters).
+ *         schema: { type: string, maxLength: 100 }
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [PENDING, APPROVED, REJECTED, CANCELLED] }
  *     responses:
  *       200:
  *         description: Claims fetched successfully
@@ -33,7 +48,16 @@ const router = express.Router();
  *       500:
  *         description: Failed to fetch claims
  */
-router.get("/", protect, getClaims);
+router.get(
+    "/",
+    protect,
+    createListQueryMiddleware({
+        filters: {
+            status: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
+        },
+    }),
+    getClaims
+);
 
 /**
  * @swagger
@@ -44,6 +68,16 @@ router.get("/", protect, getClaims);
  *     tags: [Claims]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *       - in: query
+ *         name: search
+ *         schema: { type: string, maxLength: 100 }
  *     responses:
  *       200:
  *         description: Pending claims fetched successfully
@@ -58,6 +92,7 @@ router.get(
     "/pending",
     protect,
     authorize("staff", "admin"),
+    createListQueryMiddleware(),
     getPendingClaims
 );
 
@@ -70,6 +105,16 @@ router.get(
  *     tags: [Claims]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *       - in: query
+ *         name: search
+ *         schema: { type: string, maxLength: 100 }
  *     responses:
  *       200:
  *         description: Verification queue fetched successfully
@@ -84,6 +129,7 @@ router.get(
     "/verification-queue",
     protect,
     authorize("staff", "admin"),
+    createListQueryMiddleware(),
     getVerificationQueue
 );
 

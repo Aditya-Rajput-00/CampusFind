@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../context/useAuth.js';
 import { getItems } from '../../services/itemService';
 import {
@@ -10,6 +10,8 @@ import {
 } from '../../services/claimService';
 import './Claims.css';
 
+const CLAIMS_PAGE_SIZE = 20;
+
 function Claims() {
     const { user } = useAuth();
 
@@ -17,6 +19,8 @@ function Claims() {
     const isStaff = user?.role === 'staff' || user?.role === 'admin';
 
     const [claims, setClaims] = useState([]);
+    const [pagination, setPagination] = useState({ page: 1, limit: CLAIMS_PAGE_SIZE, totalRecords: 0, totalPages: 0 });
+    const [page, setPage] = useState(1);
     const [items, setItems] = useState([]);
 
     const [itemId, setItemId] = useState('');
@@ -30,10 +34,14 @@ function Claims() {
     const [actionLoading, setActionLoading] = useState('');
 
     const [verificationNotes, setVerificationNotes] = useState({});
+    const hasLoadedAvailableItems = useRef(false);
 
     // Fetch claims and available items.
-    const loadClaimsData = useCallback(async () => {
-        const claimsResult = await getClaims();
+    const loadClaimsData = useCallback(async (requestedPage) => {
+        const claimsResult = await getClaims({
+            page: requestedPage,
+            limit: CLAIMS_PAGE_SIZE,
+        });
 
         if (!claimsResult.success) {
             throw new Error(
@@ -41,9 +49,9 @@ function Claims() {
             );
         }
 
-        let availableItems = [];
+        let availableItems;
 
-        if (isStudent) {
+        if (isStudent && !hasLoadedAvailableItems.current) {
             const itemsResult = await getItems({
                 type: 'found',
                 status: 'ACTIVE',
@@ -57,6 +65,7 @@ function Claims() {
             }
 
             availableItems = itemsResult.data?.items || [];
+            hasLoadedAvailableItems.current = true;
         }
 
         return {
@@ -64,16 +73,27 @@ function Claims() {
                 ? claimsResult.data
                 : [],
             items: availableItems,
+            pagination: claimsResult.pagination || {
+                page: requestedPage,
+                limit: CLAIMS_PAGE_SIZE,
+                totalRecords: Array.isArray(claimsResult.data) ? claimsResult.data.length : 0,
+                totalPages: 1,
+            },
         };
     }, [isStudent]);
 
     // Refresh claims data after an action.
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (requestedPage = page) => {
+        setLoading(true);
         try {
-            const data = await loadClaimsData();
+            const data = await loadClaimsData(requestedPage);
 
             setClaims(data.claims);
-            setItems(data.items);
+            if (Array.isArray(data.items)) setItems(data.items);
+            setPagination(data.pagination);
+            if (requestedPage > data.pagination.totalPages && data.pagination.totalPages > 0) {
+                setPage(data.pagination.totalPages);
+            }
             setError('');
         } catch (err) {
             console.error('Claims page error:', err);
@@ -86,18 +106,22 @@ function Claims() {
         } finally {
             setLoading(false);
         }
-    }, [loadClaimsData]);
+    }, [loadClaimsData, page]);
 
     // Load claims when the page opens or user role changes.
     useEffect(() => {
         let isActive = true;
 
-        loadClaimsData()
+        loadClaimsData(page)
             .then((data) => {
                 if (!isActive) return;
 
                 setClaims(data.claims);
-                setItems(data.items);
+                if (Array.isArray(data.items)) setItems(data.items);
+                setPagination(data.pagination);
+                if (page > data.pagination.totalPages && data.pagination.totalPages > 0) {
+                    setPage(data.pagination.totalPages);
+                }
                 setError('');
             })
             .catch((err) => {
@@ -120,7 +144,13 @@ function Claims() {
         return () => {
             isActive = false;
         };
-    }, [loadClaimsData]);
+    }, [loadClaimsData, page]);
+
+    const handlePageChange = (nextPage) => {
+        if (nextPage < 1 || nextPage > pagination.totalPages || nextPage === page) return;
+        setLoading(true);
+        setPage(nextPage);
+    };
 
     // Submit a new claim.
     const handleSubmitClaim = async (event) => {
@@ -159,7 +189,11 @@ function Claims() {
             setDescription('');
             setAdditionalDetails('');
 
-            await fetchData();
+            if (page === 1) {
+                await fetchData(1);
+            } else {
+                setPage(1);
+            }
         } catch (err) {
             setError(
                 err.response?.data?.message ||
@@ -292,7 +326,7 @@ function Claims() {
                     <div className="claims-stats">
                         <div className="claim-stat-card">
                             <span>Total Claims</span>
-                            <h2>{claims.length}</h2>
+                            <h2>{pagination.totalRecords}</h2>
                         </div>
 
                         <div className="claim-stat-card">
@@ -310,6 +344,7 @@ function Claims() {
                             <h2>{rejectedClaims.length}</h2>
                         </div>
                     </div>
+                    <p className="claims-page-summary-note">Status counts reflect the claims shown on this page.</p>
 
                     {isStudent && (
                         <section className="claim-form-section">
@@ -409,7 +444,7 @@ function Claims() {
                         </h2>
 
                         <p className="claims-count">
-                            Showing {claims.length} claims
+                            Showing {claims.length ? (page - 1) * pagination.limit + 1 : 0}–{(page - 1) * pagination.limit + claims.length} of {pagination.totalRecords} claims
                         </p>
 
                         {claims.length === 0 ? (
@@ -570,6 +605,26 @@ function Claims() {
                                     </article>
                                 ))}
                             </div>
+                        )}
+
+                        {pagination.totalPages > 1 && (
+                            <nav className="claims-pagination" aria-label="Claim pages">
+                                <button
+                                    type="button"
+                                    onClick={() => handlePageChange(page - 1)}
+                                    disabled={loading || page <= 1}
+                                >
+                                    Previous
+                                </button>
+                                <span>Page {page} of {pagination.totalPages}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => handlePageChange(page + 1)}
+                                    disabled={loading || page >= pagination.totalPages}
+                                >
+                                    Next
+                                </button>
+                            </nav>
                         )}
                     </section>
                 </>

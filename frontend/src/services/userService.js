@@ -1,6 +1,12 @@
 
 import api from './api';
 
+// Fetch a safe, paginated user directory (admin authorization is enforced by the API).
+export const getUsers = async (filters = {}) => {
+    const response = await api.get('/users', { params: filters });
+    return response.data;
+};
+
 // Fetch all staff registrations waiting for admin approval.
 export const getPendingStaff = async () => {
     const response = await api.get('/users/pending-staff');

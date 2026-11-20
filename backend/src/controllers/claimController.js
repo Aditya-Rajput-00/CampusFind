@@ -1,29 +1,62 @@
 
 const Claim = require("../models/Claim");
 const Item = require("../models/Item");
+const User = require("../models/User");
 const Notification = require("../models/Notification");
 const { successResponse } = require("../utils/apiResponse");
+const { escapeRegex, sendPaginatedResponse } = require("../utils/pagination");
+const defaultListQuery = { page: 1, limit: 20, offset: 0, search: "" };
+
+const applyClaimSearch = async (filter, search) => {
+    if (!search) return;
+
+    const expression = new RegExp(escapeRegex(search), "i");
+    const [matchingItems, matchingUsers] = await Promise.all([
+        Item.find({ title: expression }).select("_id").lean(),
+        User.find({ $or: [{ name: expression }, { email: expression }] })
+            .select("_id")
+            .lean(),
+    ]);
+    filter.$and = [{
+        $or: [
+            { "proof.description": expression },
+            { "proof.additionalDetails": expression },
+            { itemId: { $in: matchingItems.map(({ _id }) => _id) } },
+            { claimantId: { $in: matchingUsers.map(({ _id }) => _id) } },
+        ],
+    }];
+};
 
 
 const getClaims = async (req, res, next) => {
     try {
         // Students can only see their own claims.
         // Staff and admins can see all claims.
+        const { page, limit, offset, search, status } = req.listQuery || defaultListQuery;
         const filter =
             req.user.role === "student"
                 ? { claimantId: req.user.userId }
                 : {};
+        if (status) filter.status = status;
 
-        const claims = await Claim.find(filter)
-            .populate("itemId")
-            .populate("claimantId", "name email")
-            .sort({ createdAt: -1 });
+        await applyClaimSearch(filter, search);
 
-        return successResponse(
+        const [claims, totalRecords] = await Promise.all([
+            Claim.find(filter)
+                .populate("itemId")
+                .populate("claimantId", "name email")
+                .sort({ createdAt: -1 })
+                .skip(offset)
+                .limit(limit),
+            Claim.countDocuments(filter),
+        ]);
+
+        return sendPaginatedResponse(
             res,
             200,
             "Claims fetched successfully",
-            claims
+            claims,
+            { page, limit, totalRecords }
         );
     } catch (error) {
         console.error("Get claims error:", error);
@@ -33,16 +66,26 @@ const getClaims = async (req, res, next) => {
 
 const getPendingClaims = async (req, res, next) => {
     try {
-        const claims = await Claim.find({ status: "PENDING" })
-            .populate("itemId")
-            .populate("claimantId", "name email")
-            .sort({ createdAt: -1 });
+        const { page, limit, offset, search } = req.listQuery || defaultListQuery;
+        const filter = { status: "PENDING" };
+        await applyClaimSearch(filter, search);
 
-        return successResponse(
+        const [claims, totalRecords] = await Promise.all([
+            Claim.find(filter)
+                .populate("itemId")
+                .populate("claimantId", "name email")
+                .sort({ createdAt: -1 })
+                .skip(offset)
+                .limit(limit),
+            Claim.countDocuments(filter),
+        ]);
+
+        return sendPaginatedResponse(
             res,
             200,
             "Pending claims fetched successfully",
-            claims
+            claims,
+            { page, limit, totalRecords }
         );
     } catch (error) {
         console.error("Get pending claims error:", error);
@@ -52,19 +95,29 @@ const getPendingClaims = async (req, res, next) => {
 
 const getVerificationQueue = async (req, res, next) => {
     try {
-        const claims = await Claim.find({
+        const { page, limit, offset, search } = req.listQuery || defaultListQuery;
+        const filter = {
             status: "APPROVED",
             "verification.result": { $exists: false },
-        })
-            .populate("itemId")
-            .populate("claimantId", "name email")
-            .sort({ createdAt: -1 });
+        };
+        await applyClaimSearch(filter, search);
 
-        return successResponse(
+        const [claims, totalRecords] = await Promise.all([
+            Claim.find(filter)
+                .populate("itemId")
+                .populate("claimantId", "name email")
+                .sort({ createdAt: -1 })
+                .skip(offset)
+                .limit(limit),
+            Claim.countDocuments(filter),
+        ]);
+
+        return sendPaginatedResponse(
             res,
             200,
             "Verification queue fetched successfully",
-            claims
+            claims,
+            { page, limit, totalRecords }
         );
     } catch (error) {
         console.error("Get verification queue error:", error);

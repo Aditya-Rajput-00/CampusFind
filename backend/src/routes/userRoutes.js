@@ -12,6 +12,7 @@ const {
     updateMyProfile,
     changeMyPassword,
 } = require("../controllers/userController");
+const createListQueryMiddleware = require("../middleware/listQueryMiddleware");
 
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
@@ -65,10 +66,27 @@ router.get("/me", protect, getMyProfile);
  * /api/users:
  *   get:
  *     summary: Get all users
- *     description: Admin-only endpoint to retrieve users.
+ *     description: Admin-only paginated user directory. Only approved user profile fields are returned.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *       - in: query
+ *         name: search
+ *         description: Case-insensitive search in name and email (up to 100 characters).
+ *         schema: { type: string, maxLength: 100 }
+ *       - in: query
+ *         name: role
+ *         schema: { type: string, enum: [student, staff, admin] }
+ *       - in: query
+ *         name: accountStatus
+ *         schema: { type: string, enum: [pending, approved, rejected] }
  *     responses:
  *       200:
  *         description: Users fetched successfully
@@ -77,7 +95,18 @@ router.get("/me", protect, getMyProfile);
  *       403:
  *         description: Admin access required
  */
-router.get("/", protect, authorize("admin"), getUsers);
+router.get(
+    "/",
+    protect,
+    authorize("admin"),
+    createListQueryMiddleware({
+        filters: {
+            role: ["student", "staff", "admin"],
+            accountStatus: ["pending", "approved", "rejected"],
+        },
+    }),
+    getUsers
+);
 
 /**
  * @swagger

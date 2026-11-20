@@ -2,8 +2,10 @@
 import api from './api';
 
 // Fetch all claims
-export const getClaims = async () => {
-    const response = await api.get('/claims');
+export const getClaims = async (filters = {}) => {
+    const response = Object.keys(filters).length
+        ? await api.get('/claims', { params: filters })
+        : await api.get('/claims');
     return response.data;
 };
 

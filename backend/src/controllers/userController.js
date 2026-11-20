@@ -2,12 +2,40 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { successResponse } = require("../utils/apiResponse");
+const { escapeRegex, sendPaginatedResponse } = require("../utils/pagination");
 
 const getUsers = async (req, res, next) => {
     try {
-        const users = await User.find().select("-passwordHash");
+        const { page, limit, offset, search, role, accountStatus } = req.listQuery;
+        const filter = {};
 
-        return successResponse(res, 200, "Users fetched successfully", users);
+        if (search) {
+            const expression = new RegExp(escapeRegex(search), "i");
+            filter.$or = [
+                { name: expression },
+                { email: expression },
+            ];
+        }
+        if (role) filter.role = role;
+        if (accountStatus) filter.accountStatus = accountStatus;
+
+        const [users, totalRecords] = await Promise.all([
+            User.find(filter)
+                .select("name email role accountStatus department createdAt -_id")
+                .sort({ createdAt: -1, _id: -1 })
+                .skip(offset)
+                .limit(limit)
+                .lean(),
+            User.countDocuments(filter),
+        ]);
+
+        return sendPaginatedResponse(
+            res,
+            200,
+            "Users fetched successfully",
+            users,
+            { page, limit, totalRecords }
+        );
     } catch (error) {
         console.error("Get users error:", error);
         return next(error);

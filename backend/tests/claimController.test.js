@@ -51,6 +51,12 @@ const createClaimQuery = (expectedClaims) => ({
         return this;
     },
     sort() {
+        return this;
+    },
+    skip() {
+        return this;
+    },
+    limit() {
         return Promise.resolve(expectedClaims);
     },
 });
@@ -59,10 +65,12 @@ const createClaimQuery = (expectedClaims) => ({
 
 test("getClaims returns all claims", async () => {
     const originalFind = Claim.find;
+    const originalCountDocuments = Claim.countDocuments;
 
     try {
         const expectedClaims = [{ _id: "claim-1" }];
         Claim.find = () => createClaimQuery(expectedClaims);
+        Claim.countDocuments = async () => expectedClaims.length;
 
         const res = createResponse();
         const { next, state } = createNext();
@@ -79,11 +87,13 @@ test("getClaims returns all claims", async () => {
         assert.deepEqual(res.body.data, expectedClaims);
     } finally {
         restoreMethod(Claim, "find", originalFind);
+        restoreMethod(Claim, "countDocuments", originalCountDocuments);
     }
 });
 
 test("getPendingClaims fetches only pending claims", async () => {
     const originalFind = Claim.find;
+    const originalCountDocuments = Claim.countDocuments;
 
     try {
         const expectedClaims = [{ _id: "claim-1", status: "PENDING" }];
@@ -93,6 +103,7 @@ test("getPendingClaims fetches only pending claims", async () => {
             capturedFilter = filter;
             return createClaimQuery(expectedClaims);
         };
+        Claim.countDocuments = async () => expectedClaims.length;
 
         const res = createResponse();
         const { next, state } = createNext();
@@ -105,11 +116,13 @@ test("getPendingClaims fetches only pending claims", async () => {
         assert.deepEqual(res.body.data, expectedClaims);
     } finally {
         restoreMethod(Claim, "find", originalFind);
+        restoreMethod(Claim, "countDocuments", originalCountDocuments);
     }
 });
 
 test("getVerificationQueue fetches approved claims awaiting verification", async () => {
     const originalFind = Claim.find;
+    const originalCountDocuments = Claim.countDocuments;
 
     try {
         const expectedClaims = [{ _id: "claim-1", status: "APPROVED" }];
@@ -119,6 +132,7 @@ test("getVerificationQueue fetches approved claims awaiting verification", async
             capturedFilter = filter;
             return createClaimQuery(expectedClaims);
         };
+        Claim.countDocuments = async () => expectedClaims.length;
 
         const res = createResponse();
         const { next, state } = createNext();
@@ -134,20 +148,29 @@ test("getVerificationQueue fetches approved claims awaiting verification", async
         assert.deepEqual(res.body.data, expectedClaims);
     } finally {
         restoreMethod(Claim, "find", originalFind);
+        restoreMethod(Claim, "countDocuments", originalCountDocuments);
     }
 });
 
 test("getClaims forwards database errors to next", async () => {
     const originalFind = Claim.find;
+    const originalCountDocuments = Claim.countDocuments;
 
     try {
         const expectedError = new Error("Database error");
+        Claim.countDocuments = async () => 0;
 
         Claim.find = () => ({
             populate() {
                 return this;
             },
             sort() {
+                return this;
+            },
+            skip() {
+                return this;
+            },
+            limit() {
                 return Promise.reject(expectedError);
             },
         });
@@ -165,6 +188,7 @@ test("getClaims forwards database errors to next", async () => {
         assert.equal(state.error, expectedError);
     } finally {
         restoreMethod(Claim, "find", originalFind);
+        restoreMethod(Claim, "countDocuments", originalCountDocuments);
     }
 });
 
@@ -598,14 +622,22 @@ test("verifyClaim records successful verification and notifies the claimant", as
 
 test("getPendingClaims forwards database errors to next", async () => {
     const originalFind = Claim.find;
+    const originalCountDocuments = Claim.countDocuments;
     const expectedError = new Error("Pending claims database error");
 
     try {
+        Claim.countDocuments = async () => 0;
         Claim.find = () => ({
             populate() {
                 return this;
             },
             sort() {
+                return this;
+            },
+            skip() {
+                return this;
+            },
+            limit() {
                 return Promise.reject(expectedError);
             },
         });
@@ -619,19 +651,28 @@ test("getPendingClaims forwards database errors to next", async () => {
         assert.equal(state.error, expectedError);
     } finally {
         restoreMethod(Claim, "find", originalFind);
+        restoreMethod(Claim, "countDocuments", originalCountDocuments);
     }
 });
 
 test("getVerificationQueue forwards database errors to next", async () => {
     const originalFind = Claim.find;
+    const originalCountDocuments = Claim.countDocuments;
     const expectedError = new Error("Verification queue database error");
 
     try {
+        Claim.countDocuments = async () => 0;
         Claim.find = () => ({
             populate() {
                 return this;
             },
             sort() {
+                return this;
+            },
+            skip() {
+                return this;
+            },
+            limit() {
                 return Promise.reject(expectedError);
             },
         });
@@ -645,6 +686,7 @@ test("getVerificationQueue forwards database errors to next", async () => {
         assert.equal(state.error, expectedError);
     } finally {
         restoreMethod(Claim, "find", originalFind);
+        restoreMethod(Claim, "countDocuments", originalCountDocuments);
     }
 });
 

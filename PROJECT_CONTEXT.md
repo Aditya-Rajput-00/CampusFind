@@ -228,7 +228,7 @@ These commits document project history. Their test results apply only where a ve
 
 **Branch:** `main`
 
-**Latest recorded application commit:** `57a4159` — `Complete responsive authentication design`
+**Branch HEAD before current uncommitted work:** `3034b78`. Dashboard management and backend pagination, including current frontend regression fixes, are in the worktree and have not been committed.
 
 **Roadmap position:** Phase 15 — Final Testing & Deployment closeout.
 
@@ -251,9 +251,9 @@ These are historical results from Task 89, not a fresh backend run during the cu
 
 **Status: Complete.** The first stable release, `v1.0.0`, was published on 2026-11-12. Its tag points to `ee447b3b9df0c559f2ae54bd60b5ec3c6a6d84bd`; the release records were synchronized in `80b16ce`. This documentation audit corrects stale status and history records without creating another release.
 
-Subsequent frontend design work is recorded under Unreleased in `CHANGELOG.md`. The latest frontend verification passed 100 tests across 15 files, ESLint, production build, and `git diff --check`; the developer manually verified the responsive authentication layouts.
+Subsequent frontend work is recorded under Unreleased in `CHANGELOG.md`. The current worktree verification passed 120 frontend tests across 17 files, 187 backend tests, frontend ESLint, production build, and `git diff --check`.
 
-The next recommended review is Dropdown popup placement near the bottom of the scrolling Report Item modal on short viewports. The popup opens below its trigger; adjust only if clipping is observed.
+Task 91's Dropdown popup clipping issue was fixed with intelligent upward/downward positioning and pushed in `dec832c`. Current uncommitted work adds Dashboard management and paginated backend lists, plus Claims/Matches frontend pagination and Dashboard Items metadata regression fixes.
 
 ## 11. Development Rules
 

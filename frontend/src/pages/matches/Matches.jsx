@@ -7,6 +7,8 @@ import {
 } from '../../services/matchService';
 import './Matches.css';
 
+const MATCHES_PAGE_SIZE = 20;
+
 function Matches() {
     const { user } = useAuth();
 
@@ -14,14 +16,19 @@ function Matches() {
     const isStaff = user?.role === 'staff' || user?.role === 'admin';
 
     const [matches, setMatches] = useState([]);
+    const [pagination, setPagination] = useState({ page: 1, limit: MATCHES_PAGE_SIZE, totalRecords: 0, totalPages: 0 });
+    const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [actionLoading, setActionLoading] = useState('');
 
     // Fetch matches from the backend.
-    const loadMatchesData = useCallback(async () => {
-        const result = await getMatches();
+    const loadMatchesData = useCallback(async (requestedPage) => {
+        const result = await getMatches({
+            page: requestedPage,
+            limit: MATCHES_PAGE_SIZE,
+        });
 
         if (!result.success) {
             throw new Error(
@@ -29,15 +36,28 @@ function Matches() {
             );
         }
 
-        return Array.isArray(result.data) ? result.data : [];
+        return {
+            matches: Array.isArray(result.data) ? result.data : [],
+            pagination: result.pagination || {
+                page: requestedPage,
+                limit: MATCHES_PAGE_SIZE,
+                totalRecords: Array.isArray(result.data) ? result.data.length : 0,
+                totalPages: 1,
+            },
+        };
     }, []);
 
     // Refresh matches after an action.
-    const fetchMatches = useCallback(async () => {
+    const fetchMatches = useCallback(async (requestedPage = page) => {
+        setLoading(true);
         try {
-            const data = await loadMatchesData();
+            const data = await loadMatchesData(requestedPage);
 
-            setMatches(data);
+            setMatches(data.matches);
+            setPagination(data.pagination);
+            if (requestedPage > data.pagination.totalPages && data.pagination.totalPages > 0) {
+                setPage(data.pagination.totalPages);
+            }
             setError('');
         } catch (err) {
             console.error('Matches page error:', err);
@@ -50,17 +70,21 @@ function Matches() {
         } finally {
             setLoading(false);
         }
-    }, [loadMatchesData]);
+    }, [loadMatchesData, page]);
 
     // Load matches when the page opens or user role changes.
     useEffect(() => {
         let isActive = true;
 
-        loadMatchesData()
+        loadMatchesData(page)
             .then((data) => {
                 if (!isActive) return;
 
-                setMatches(data);
+                setMatches(data.matches);
+                setPagination(data.pagination);
+                if (page > data.pagination.totalPages && data.pagination.totalPages > 0) {
+                    setPage(data.pagination.totalPages);
+                }
                 setError('');
             })
             .catch((err) => {
@@ -83,7 +107,13 @@ function Matches() {
         return () => {
             isActive = false;
         };
-    }, [loadMatchesData, user?.role]);
+    }, [loadMatchesData, page, user?.role]);
+
+    const handlePageChange = (nextPage) => {
+        if (nextPage < 1 || nextPage > pagination.totalPages || nextPage === page) return;
+        setLoading(true);
+        setPage(nextPage);
+    };
 
     // Confirm or reject a match.
     const handleStatusUpdate = async (id, status) => {
@@ -186,7 +216,7 @@ function Matches() {
                     <div className="matches-stats">
                         <div className="match-stat-card">
                             <span>Total Matches</span>
-                            <h2>{matches.length}</h2>
+                            <h2>{pagination.totalRecords}</h2>
                         </div>
 
                         <div className="match-stat-card">
@@ -204,6 +234,7 @@ function Matches() {
                             <h2>{rejectedMatches.length}</h2>
                         </div>
                     </div>
+                    <p className="matches-page-summary-note">Status counts reflect the matches shown on this page.</p>
 
                     <section className="matches-list-section">
                         <h2>
@@ -213,7 +244,7 @@ function Matches() {
                         </h2>
 
                         <p className="matches-count">
-                            Showing {matches.length} matches
+                            Showing {matches.length ? (page - 1) * pagination.limit + 1 : 0}–{(page - 1) * pagination.limit + matches.length} of {pagination.totalRecords} matches
                         </p>
 
                         {matches.length === 0 ? (
@@ -427,6 +458,26 @@ function Matches() {
                                     );
                                 })}
                             </div>
+                        )}
+
+                        {pagination.totalPages > 1 && (
+                            <nav className="matches-pagination" aria-label="Match pages">
+                                <button
+                                    type="button"
+                                    onClick={() => handlePageChange(page - 1)}
+                                    disabled={loading || page <= 1}
+                                >
+                                    Previous
+                                </button>
+                                <span>Page {page} of {pagination.totalPages}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => handlePageChange(page + 1)}
+                                    disabled={loading || page >= pagination.totalPages}
+                                >
+                                    Next
+                                </button>
+                            </nav>
                         )}
                     </section>
                 </>

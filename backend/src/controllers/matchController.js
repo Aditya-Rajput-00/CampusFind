@@ -3,9 +3,28 @@ const Match = require("../models/Match");
 const Item = require("../models/Item");
 const Notification = require("../models/Notification");
 const { successResponse } = require("../utils/apiResponse");
+const { escapeRegex, sendPaginatedResponse } = require("../utils/pagination");
+const defaultListQuery = { page: 1, limit: 20, offset: 0, search: "" };
+
+const addMatchSearch = async (filter, search) => {
+    if (!search) return;
+
+    const expression = new RegExp(escapeRegex(search), "i");
+    const matchingItems = await Item.find({ title: expression })
+        .select("_id")
+        .lean();
+    const itemIds = matchingItems.map(({ _id }) => _id);
+    filter.$and = [{
+        $or: [
+            { lostItemId: { $in: itemIds } },
+            { foundItemId: { $in: itemIds } },
+        ],
+    }];
+};
 
 const getMatches = async (req, res, next) => {
     try {
+        const { page, limit, offset, search, status } = req.listQuery || defaultListQuery;
         let filter = {};
 
         if (req.user.role === "student") {
@@ -29,16 +48,25 @@ const getMatches = async (req, res, next) => {
             });
         }
 
-        const matches = await Match.find(filter)
-            .populate("lostItemId")
-            .populate("foundItemId")
-            .sort({ createdAt: -1 });
+        if (status) filter.status = status;
+        await addMatchSearch(filter, search);
 
-        return successResponse(
+        const [matches, totalRecords] = await Promise.all([
+            Match.find(filter)
+                .populate("lostItemId")
+                .populate("foundItemId")
+                .sort({ createdAt: -1 })
+                .skip(offset)
+                .limit(limit),
+            Match.countDocuments(filter),
+        ]);
+
+        return sendPaginatedResponse(
             res,
             200,
             "Matches fetched successfully",
-            matches
+            matches,
+            { page, limit, totalRecords }
         );
     } catch (error) {
         console.error("Get matches error:", error);
@@ -48,16 +76,26 @@ const getMatches = async (req, res, next) => {
 
 const getPendingMatches = async (req, res, next) => {
     try {
-        const matches = await Match.find({ status: "PENDING" })
-            .populate("lostItemId")
-            .populate("foundItemId")
-            .sort({ createdAt: -1 });
+        const { page, limit, offset, search } = req.listQuery || defaultListQuery;
+        const filter = { status: "PENDING" };
+        await addMatchSearch(filter, search);
 
-        return successResponse(
+        const [matches, totalRecords] = await Promise.all([
+            Match.find(filter)
+                .populate("lostItemId")
+                .populate("foundItemId")
+                .sort({ createdAt: -1 })
+                .skip(offset)
+                .limit(limit),
+            Match.countDocuments(filter),
+        ]);
+
+        return sendPaginatedResponse(
             res,
             200,
             "Pending matches fetched successfully",
-            matches
+            matches,
+            { page, limit, totalRecords }
         );
     } catch (error) {
         console.error("Get pending matches error:", error);

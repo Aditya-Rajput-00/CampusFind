@@ -34,7 +34,11 @@ const match = {
     },
 };
 
-const matchesResult = (data = []) => ({ success: true, data });
+const matchesResult = (data = [], page = 1, totalRecords = data.length, totalPages = 1) => ({
+    success: true,
+    data,
+    pagination: { page, limit: 20, totalRecords, totalPages },
+});
 
 describe('Matches page', () => {
     beforeEach(() => {
@@ -88,10 +92,42 @@ describe('Matches page', () => {
         expect(screen.getByRole('heading', { name: 'Blue backpack' }))
             .toBeInTheDocument();
         expect(screen.getByText('92')).toBeInTheDocument();
-        expect(screen.getByText('Showing 1 matches')).toBeInTheDocument();
+        expect(screen.getByText('Showing 1–1 of 1 matches')).toBeInTheDocument();
         expect(screen.getByText('PENDING')).toHaveClass('pending');
         expect(screen.queryByRole('button', { name: 'Confirm Match' }))
             .not.toBeInTheDocument();
+    });
+
+    it('loads server pages and keeps staff match actions available', async () => {
+        const laterMatch = {
+            ...match,
+            _id: 'match-21',
+            lostItemId: { ...match.lostItemId, title: 'Later lost item' },
+            foundItemId: { ...match.foundItemId, title: 'Later found item' },
+        };
+        getMatchesMock
+            .mockResolvedValueOnce(matchesResult([match], 1, 21, 2))
+            .mockResolvedValueOnce(matchesResult([laterMatch], 2, 21, 2))
+            .mockResolvedValueOnce(matchesResult([{ ...laterMatch, status: 'CONFIRMED' }], 2, 21, 2));
+        useAuthMock.mockReturnValue({ user: { role: 'staff' } });
+
+        render(<Matches />);
+
+        expect(await screen.findByRole('heading', { name: 'Canvas backpack' }))
+            .toBeInTheDocument();
+        expect(screen.getByText('Showing 1–1 of 21 matches')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+        expect(await screen.findByRole('heading', { name: 'Later lost item' }))
+            .toBeInTheDocument();
+        expect(getMatchesMock).toHaveBeenLastCalledWith({ page: 2, limit: 20 });
+        expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+        fireEvent.click(screen.getByRole('button', { name: 'Confirm Match' }));
+        await waitFor(() => expect(updateMatchStatusMock).toHaveBeenCalledWith('match-21', 'CONFIRMED'));
+        expect(await screen.findByText('Match confirmed successfully.')).toBeInTheDocument();
+        expect(getMatchesMock).toHaveBeenLastCalledWith({ page: 2, limit: 20 });
     });
 
     it('keeps staff match confirmation available and refreshes the results', async () => {

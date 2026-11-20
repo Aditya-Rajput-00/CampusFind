@@ -11,6 +11,7 @@ const TEST_SECRET = "campusfind-test-secret";
 const TEST_USER_IDS = {
     student: "64b000000000000000000001",
     admin: "64b000000000000000000002",
+    staff: "64b000000000000000000006",
 };
 
 function createToken(role) {
@@ -117,6 +118,133 @@ test("GET /api/users denies an authenticated student", async (t) => {
         message: "Access denied",
         errors: [],
     });
+});
+
+test("GET /api/users denies an authenticated staff member", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "staff");
+
+    const token = createToken("staff");
+    const response = await makeRequest("/api/users", {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 403);
+    assert.equal(body.message, "Access denied");
+});
+
+test("GET /api/users returns safe filtered records with pagination for an admin", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "admin");
+
+    const originalFind = User.find;
+    const originalCountDocuments = User.countDocuments;
+    const safeUsers = [{
+        name: "Sam Student",
+        email: "sam@example.com",
+        role: "staff",
+        accountStatus: "pending",
+        department: "Library Services",
+        createdAt: "2026-10-01T00:00:00.000Z",
+    }];
+    let capturedFilter;
+
+    User.find = (filter) => {
+        capturedFilter = filter;
+        const query = {
+            select: (fields) => {
+                assert.equal(
+                    fields,
+                    "name email role accountStatus department createdAt -_id"
+                );
+                return query;
+            },
+            sort: (sort) => {
+                assert.deepEqual(sort, { createdAt: -1, _id: -1 });
+                return query;
+            },
+            skip: (skip) => {
+                assert.equal(skip, 10);
+                return query;
+            },
+            limit: (limit) => {
+                assert.equal(limit, 10);
+                return query;
+            },
+            lean: async () => safeUsers,
+        };
+        return query;
+    };
+    User.countDocuments = async (filter) => {
+        assert.deepEqual(filter, capturedFilter);
+        return 23;
+    };
+
+    t.after(() => {
+        User.find = originalFind;
+        User.countDocuments = originalCountDocuments;
+    });
+
+    const token = createToken("admin");
+    const response = await makeRequest(
+        "/api/users?search=Sam&role=staff&accountStatus=pending&page=2&limit=10",
+        { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(capturedFilter, {
+        $or: [{ name: /Sam/i }, { email: /Sam/i }],
+        role: "staff",
+        accountStatus: "pending",
+    });
+    assert.deepEqual(body.data, safeUsers);
+    assert.deepEqual(body.pagination, {
+        page: 2,
+        limit: 10,
+        totalRecords: 23,
+        totalPages: 3,
+    });
+    assert.equal(JSON.stringify(body).includes("passwordHash"), false);
+    assert.equal(JSON.stringify(body).includes("phone"), false);
+});
+
+test("GET /api/users rejects invalid filters and excessive pagination", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "admin");
+
+    const token = createToken("admin");
+    const response = await makeRequest(
+        "/api/users?page=0&limit=101&role=owner&accountStatus=locked",
+        { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(
+        body.errors.map(({ path }) => path).sort(),
+        ["accountStatus", "limit", "page", "role"]
+    );
+});
+
+test("GET /api/users bounds search length and calculated page offset", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "admin");
+
+    const token = createToken("admin");
+    const query = new URLSearchParams({
+        search: "x".repeat(101),
+        page: "10002",
+        limit: "100",
+    });
+    const response = await makeRequest(`/api/users?${query}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(body.errors.map(({ path }) => path).sort(), ["page", "search"]);
 });
 
 // Test 3: Admin can view pending staff registrations

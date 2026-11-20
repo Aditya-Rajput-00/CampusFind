@@ -11,6 +11,7 @@ const authorize = require("../middleware/roleMiddleware");
 const { createMatchValidator } = require("../validators/matchValidator");
 const { validationResult } = require("express-validator");
 const { objectIdValidator } = require("../validators/objectIdValidator");
+const createListQueryMiddleware = require("../middleware/listQueryMiddleware");
 
 const router = express.Router();
 
@@ -26,10 +27,24 @@ const router = express.Router();
  * /api/matches:
  *   get:
  *     summary: Get all matches
- *     description: Retrieve matches for the authenticated user session.
+ *     description: Retrieve paginated matches for the authenticated user session. Students only see matches involving their items.
  *     tags: [Matches]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *       - in: query
+ *         name: search
+ *         description: Searches related item titles (up to 100 characters).
+ *         schema: { type: string, maxLength: 100 }
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [PENDING, CONFIRMED, REJECTED] }
  *     responses:
  *       200:
  *         description: Matches fetched successfully
@@ -38,7 +53,16 @@ const router = express.Router();
  *       500:
  *         description: Failed to fetch matches
  */
-router.get("/", protect, getMatches);
+router.get(
+    "/",
+    protect,
+    createListQueryMiddleware({
+        filters: {
+            status: ["PENDING", "CONFIRMED", "REJECTED"],
+        },
+    }),
+    getMatches
+);
 
 /**
  * @swagger
@@ -49,6 +73,16 @@ router.get("/", protect, getMatches);
  *     tags: [Matches]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *       - in: query
+ *         name: search
+ *         schema: { type: string, maxLength: 100 }
  *     responses:
  *       200:
  *         description: Pending matches fetched successfully
@@ -63,6 +97,7 @@ router.get(
     "/pending",
     protect,
     authorize("staff", "admin"),
+    createListQueryMiddleware(),
     getPendingMatches
 );
 

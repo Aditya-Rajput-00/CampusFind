@@ -18,10 +18,12 @@ Notable project changes are recorded here. The project has one published release
 - Added dedicated desktop, tablet, and mobile campus backgrounds to Login and Registration (`57a4159`).
 - Improved item image framing and added an accessible full-size image preview.
 - Added focused page tests for Matches and Notifications and expanded Items and Registration coverage.
+- Added server-backed pagination to Claims and Matches using existing pagination metadata; status summaries describe the visible page while record totals use the server total.
+- Normalized the Dashboard item total from the Items API's `pagination.totalItems` field and added regression coverage for the response shape.
 
 ### Verification
 
-- The latest frontend run passed 100 tests across 15 files; ESLint, production build, and `git diff --check` passed.
+- The current worktree verification passed 120 frontend tests across 17 files and 187 backend tests; frontend ESLint, production build, and `git diff --check` passed.
 - The developer manually verified Login and Registration at the requested laptop, tablet, and mobile viewports.
 
 ## [1.0.0] — 2026-11-12

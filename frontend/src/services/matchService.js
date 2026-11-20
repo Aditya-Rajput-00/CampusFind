@@ -2,8 +2,10 @@
 import api from './api';
 
 // Fetch matches for the logged-in user.
-export const getMatches = async () => {
-    const response = await api.get('/matches');
+export const getMatches = async (filters = {}) => {
+    const response = Object.keys(filters).length
+        ? await api.get('/matches', { params: filters })
+        : await api.get('/matches');
     return response.data;
 };
 

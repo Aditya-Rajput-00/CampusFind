@@ -49,17 +49,27 @@ const createMatchQuery = (expectedMatches) => ({
     },
 
     sort() {
+        return this;
+    },
+
+    skip() {
+        return this;
+    },
+
+    limit() {
         return Promise.resolve(expectedMatches);
     },
 });
 
 test("getMatches returns all matches", async () => {
     const originalFind = Match.find;
+    const originalCountDocuments = Match.countDocuments;
 
     try {
         const expectedMatches = [{ _id: "match-1" }];
 
         Match.find = () => createMatchQuery(expectedMatches);
+        Match.countDocuments = async () => expectedMatches.length;
 
         const res = createResponse();
         const { next, state } = createNext();
@@ -77,11 +87,13 @@ test("getMatches returns all matches", async () => {
         assert.deepEqual(res.body.data, expectedMatches);
     } finally {
         restoreMethod(Match, "find", originalFind);
+        restoreMethod(Match, "countDocuments", originalCountDocuments);
     }
 });
 
 test("getPendingMatches fetches only pending matches", async () => {
     const originalFind = Match.find;
+    const originalCountDocuments = Match.countDocuments;
 
     try {
         const expectedMatches = [
@@ -93,6 +105,7 @@ test("getPendingMatches fetches only pending matches", async () => {
             capturedFilter = filter;
             return createMatchQuery(expectedMatches);
         };
+        Match.countDocuments = async () => expectedMatches.length;
 
         const res = createResponse();
         const { next, state } = createNext();
@@ -105,22 +118,25 @@ test("getPendingMatches fetches only pending matches", async () => {
         assert.deepEqual(res.body.data, expectedMatches);
     } finally {
         restoreMethod(Match, "find", originalFind);
+        restoreMethod(Match, "countDocuments", originalCountDocuments);
     }
 });
 
 test("getMatches forwards database errors to next", async () => {
     const originalFind = Match.find;
+    const originalCountDocuments = Match.countDocuments;
 
     try {
         const expectedError = new Error("Database error");
+        Match.countDocuments = async () => 0;
 
         Match.find = () => ({
             populate() {
                 return this;
             },
-            sort() {
-                return Promise.reject(expectedError);
-            },
+            sort() { return this; },
+            skip() { return this; },
+            limit() { return Promise.reject(expectedError); },
         });
 
         const res = createResponse();
@@ -137,6 +153,7 @@ test("getMatches forwards database errors to next", async () => {
         assert.equal(state.error, expectedError);
     } finally {
         restoreMethod(Match, "find", originalFind);
+        restoreMethod(Match, "countDocuments", originalCountDocuments);
     }
 });
 
@@ -552,17 +569,19 @@ test("updateMatchStatus rejects a match and notifies both reporters", async () =
 
 test("getPendingMatches forwards database errors to next", async () => {
     const originalFind = Match.find;
+    const originalCountDocuments = Match.countDocuments;
 
     try {
         const expectedError = new Error("Database error");
+        Match.countDocuments = async () => 0;
 
         Match.find = () => ({
             populate() {
                 return this;
             },
-            sort() {
-                return Promise.reject(expectedError);
-            },
+            sort() { return this; },
+            skip() { return this; },
+            limit() { return Promise.reject(expectedError); },
         });
 
         const res = createResponse();
@@ -574,6 +593,7 @@ test("getPendingMatches forwards database errors to next", async () => {
         assert.equal(state.error, expectedError);
     } finally {
         restoreMethod(Match, "find", originalFind);
+        restoreMethod(Match, "countDocuments", originalCountDocuments);
     }
 });
 
