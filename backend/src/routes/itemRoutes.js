@@ -229,6 +229,7 @@ router.get("/", getItems);
  *               - description
  *               - category
  *               - type
+ *               - location
  *               - date
  *             properties:
  *               title:
@@ -245,8 +246,8 @@ router.get("/", getItems);
  *                 enum: [lost, found]
  *               location:
  *                 type: string
- *                 description: JSON-encoded location object containing building, floor, and area
- *                 example: '{"building":"Library","floor":2,"area":"Reading room"}'
+ *                 description: JSON-encoded location object. building is required; area and floor are optional.
+ *                 example: '{"building":"Library","area":"Reading room"}'
  *               date:
  *                 type: string
  *                 format: date

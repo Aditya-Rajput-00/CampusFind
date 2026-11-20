@@ -53,6 +53,7 @@ describe('Items page', () => {
             .toBeInTheDocument();
         expect(screen.getByText('Category: Documents')).toBeInTheDocument();
         expect(screen.getByText('Status: ACTIVE')).toBeInTheDocument();
+        expect(screen.queryByText(/^Location:/)).not.toBeInTheDocument();
         expect(screen.getByRole('img', { name: 'Campus card' }))
             .toHaveAttribute('src', 'https://example.test/campus-card.jpg');
         expect(getItemsMock).toHaveBeenCalledWith({
@@ -278,5 +279,127 @@ describe('Items page', () => {
             .toBeInTheDocument();
         expect(screen.getByText('Try changing your search or filters.'))
             .toBeInTheDocument();
+    });
+
+    it('displays available location details and remains compatible with items without a location', async () => {
+        getItemsMock.mockResolvedValueOnce(createItemsResult([
+            { ...item, location: { building: 'Library', floor: 2, area: 'Reading room' } },
+            { ...item, _id: 'item-2', title: 'Older item', location: undefined },
+        ]));
+
+        render(<Items />);
+
+        expect(await screen.findByText('Location: Library, Floor 2, Reading room'))
+            .toBeInTheDocument();
+        const olderItemCard = screen.getByRole('heading', { name: 'Older item' })
+            .closest('.item-card');
+        expect(olderItemCard).toBeInTheDocument();
+        expect(within(olderItemCard).queryByText(/^Location:/)).not.toBeInTheDocument();
+    });
+
+    it('requires a campus location before submitting an item', async () => {
+        render(<Items />);
+        fireEvent.click(await screen.findByRole('button', { name: /Report Item/ }));
+
+        fireEvent.change(screen.getByLabelText('Item Title *'), {
+            target: { value: 'Lost keys' },
+        });
+        fireEvent.change(screen.getByLabelText('Description *'), {
+            target: { value: 'Keys near the library' },
+        });
+        fireEvent.change(screen.getByLabelText('Date *'), {
+            target: { value: '2026-10-16' },
+        });
+        await chooseDropdownOption('Category', 'Accessories');
+        fireEvent.submit(screen.getByRole('button', { name: 'Submit Item' }).closest('form'));
+
+        expect(await screen.findByText('Please fill in all required fields.'))
+            .toBeInTheDocument();
+        expect(createItemMock).not.toHaveBeenCalled();
+    });
+
+    it('requires a non-blank custom location when Other is selected', async () => {
+        render(<Items />);
+        fireEvent.click(await screen.findByRole('button', { name: /Report Item/ }));
+        await chooseDropdownOption('Campus Location', 'Other');
+
+        const customLocation = screen.getByLabelText('Enter Location *');
+        expect(customLocation).toBeRequired();
+
+        fireEvent.change(screen.getByLabelText('Item Title *'), {
+            target: { value: 'Lost keys' },
+        });
+        fireEvent.change(screen.getByLabelText('Description *'), {
+            target: { value: 'Keys near the library' },
+        });
+        fireEvent.change(customLocation, { target: { value: '   ' } });
+        fireEvent.change(screen.getByLabelText('Date *'), {
+            target: { value: '2026-10-16' },
+        });
+        await chooseDropdownOption('Category', 'Accessories');
+        fireEvent.submit(screen.getByRole('button', { name: 'Submit Item' }).closest('form'));
+
+        expect(await screen.findByText('Please fill in all required fields.'))
+            .toBeInTheDocument();
+        expect(createItemMock).not.toHaveBeenCalled();
+    });
+
+    it('submits trimmed custom location and optional landmark in the location payload', async () => {
+        createItemMock.mockResolvedValueOnce({ success: true, data: { item } });
+        render(<Items />);
+        fireEvent.click(await screen.findByRole('button', { name: /Report Item/ }));
+
+        fireEvent.change(screen.getByLabelText('Item Title *'), {
+            target: { value: 'Lost keys' },
+        });
+        fireEvent.change(screen.getByLabelText('Description *'), {
+            target: { value: 'Keys near the library' },
+        });
+        fireEvent.change(screen.getByLabelText('Date *'), {
+            target: { value: '2026-10-16' },
+        });
+        await chooseDropdownOption('Category', 'Accessories');
+        await chooseDropdownOption('Campus Location', 'Other');
+        fireEvent.change(screen.getByLabelText('Enter Location *'), {
+            target: { value: '  North Annex  ' },
+        });
+        fireEvent.change(screen.getByLabelText('Specific Landmark (Optional)'), {
+            target: { value: '  West entrance  ' },
+        });
+
+        fireEvent.submit(screen.getByRole('button', { name: 'Submit Item' }).closest('form'));
+
+        await waitFor(() => expect(createItemMock).toHaveBeenCalledTimes(1));
+        const submittedData = createItemMock.mock.calls[0][0];
+        expect(JSON.parse(submittedData.get('location'))).toEqual({
+            building: 'North Annex',
+            area: 'West entrance',
+        });
+    });
+
+    it('submits a predefined location without requiring an optional landmark', async () => {
+        createItemMock.mockResolvedValueOnce({ success: true, data: { item } });
+        render(<Items />);
+        fireEvent.click(await screen.findByRole('button', { name: /Report Item/ }));
+
+        fireEvent.change(screen.getByLabelText('Item Title *'), {
+            target: { value: 'Lost keys' },
+        });
+        fireEvent.change(screen.getByLabelText('Description *'), {
+            target: { value: 'Keys near the library' },
+        });
+        fireEvent.change(screen.getByLabelText('Date *'), {
+            target: { value: '2026-10-16' },
+        });
+        await chooseDropdownOption('Category', 'Accessories');
+        await chooseDropdownOption('Campus Location', 'Library');
+
+        fireEvent.submit(screen.getByRole('button', { name: 'Submit Item' }).closest('form'));
+
+        await waitFor(() => expect(createItemMock).toHaveBeenCalledTimes(1));
+        const submittedData = createItemMock.mock.calls[0][0];
+        expect(JSON.parse(submittedData.get('location'))).toEqual({
+            building: 'Library',
+        });
     });
 });

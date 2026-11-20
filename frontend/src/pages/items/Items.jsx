@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getItems, createItem } from '../../services/itemService';
 import Dropdown from '../../components/Dropdown';
+import { CAMPUS_LOCATIONS } from '../../config/campusLocations';
 import campusHeroImage from '../../assets/campus-hero.png';
 
 import './Items.css';
@@ -74,6 +75,9 @@ function Items() {
         description: '',
         category: '',
         type: 'lost',
+        locationBuilding: '',
+        customLocation: '',
+        locationArea: '',
         date: '',
         image: null,
     });
@@ -197,6 +201,9 @@ function Items() {
             description: '',
             category: '',
             type: 'lost',
+            locationBuilding: '',
+            customLocation: '',
+            locationArea: '',
             date: '',
             image: null,
         });
@@ -222,6 +229,8 @@ function Items() {
             !formData.title.trim() ||
             !formData.description.trim() ||
             !formData.category ||
+            !formData.locationBuilding ||
+            (formData.locationBuilding === 'Other' && !formData.customLocation.trim()) ||
             !formData.date
         ) {
             setFormError('Please fill in all required fields.');
@@ -235,6 +244,14 @@ function Items() {
         data.append('category', formData.category);
         data.append('type', formData.type);
         data.append('date', formData.date);
+        data.append('location', JSON.stringify({
+            building: formData.locationBuilding === 'Other'
+                ? formData.customLocation.trim()
+                : formData.locationBuilding,
+            ...(formData.locationArea.trim()
+                ? { area: formData.locationArea.trim() }
+                : {}),
+        }));
 
         if (formData.image) {
             data.append('image', formData.image);
@@ -430,6 +447,20 @@ function Items() {
                                     <span>
                                         Category: {item.category}
                                     </span>
+
+                                    {item.location && (
+                                        item.location.building ||
+                                        Number.isFinite(item.location.floor) ||
+                                        item.location.area
+                                    ) && (
+                                        <span>
+                                            Location: {[
+                                                item.location.building,
+                                                Number.isFinite(item.location.floor) && `Floor ${item.location.floor}`,
+                                                item.location.area,
+                                            ].filter(Boolean).join(', ')}
+                                        </span>
+                                    )}
 
                                     <span>
                                         Status: {item.status}
@@ -629,6 +660,67 @@ function Items() {
                                     />
                                 </div>
 
+                            </div>
+
+                            {/* Campus Location */}
+                            <div className="form-group">
+                                <label htmlFor="campus-location">
+                                    Campus Location *
+                                </label>
+
+                                <Dropdown
+                                    id="campus-location"
+                                    label="Campus Location"
+                                    value={formData.locationBuilding}
+                                    options={[
+                                        { value: '', label: 'Select campus location' },
+                                        ...CAMPUS_LOCATIONS.map((location) => ({
+                                            value: location,
+                                            label: location,
+                                        })),
+                                    ]}
+                                    onChange={(value) => setFormData((previousData) => ({
+                                        ...previousData,
+                                        locationBuilding: value,
+                                        customLocation: value === 'Other'
+                                            ? previousData.customLocation
+                                            : '',
+                                    }))}
+                                    required
+                                />
+                            </div>
+
+                            {formData.locationBuilding === 'Other' && (
+                                <div className="form-group">
+                                    <label htmlFor="custom-location">
+                                        Enter Location *
+                                    </label>
+
+                                    <input
+                                        id="custom-location"
+                                        name="customLocation"
+                                        type="text"
+                                        value={formData.customLocation}
+                                        onChange={handleFormChange}
+                                        autoComplete="off"
+                                        required
+                                    />
+                                </div>
+                            )}
+
+                            <div className="form-group">
+                                <label htmlFor="location-area">
+                                    Specific Landmark (Optional)
+                                </label>
+
+                                <input
+                                    id="location-area"
+                                    name="locationArea"
+                                    type="text"
+                                    value={formData.locationArea}
+                                    onChange={handleFormChange}
+                                    autoComplete="off"
+                                />
                             </div>
 
                             {/* Date Picker */}

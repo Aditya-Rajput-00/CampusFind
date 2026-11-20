@@ -182,6 +182,19 @@ test("getItems forwards database errors to next", async () => {
 
 // CREATE ITEM TESTS
 
+test("Item schema accepts existing records without a location", async () => {
+    const legacyItem = new Item({
+        type: "lost",
+        title: "Old wallet",
+        description: "Brown wallet",
+        category: "Accessories",
+        date: "2026-10-16",
+        reportedBy: "64b000000000000000000001",
+    });
+
+    await assert.doesNotReject(() => legacyItem.validate());
+});
+
 test("createItem rejects missing required fields", async () => {
     const req = { body: {}, user: { userId: "user-1" } };
     const res = createResponse();
@@ -233,7 +246,7 @@ test("createItem creates an item with a Cloudinary image URL", async () => {
                 description: "Black wallet",
                 category: "Accessories",
                 type: "LOST",
-                location: { building: "Library" },
+                location: { building: "North Annex", area: "West entrance" },
                 date: "2026-10-16",
             },
             user: { userId: "user-123" },
@@ -252,6 +265,10 @@ test("createItem creates an item with a Cloudinary image URL", async () => {
         assert.equal(res.statusCode, 201);
         assert.equal(res.body.success, true);
         assert.equal(savedData.reportedBy, "user-123");
+        assert.deepEqual(savedData.location, {
+            building: "North Annex",
+            area: "West entrance",
+        });
         assert.deepEqual(savedData.images, [cloudinaryUrl]);
         assert.equal(res.body.data.item._id, "item-123");
         assert.deepEqual(uploadedBuffer, imageBuffer);
@@ -286,6 +303,7 @@ test("createItem creates an item without an image", async () => {
                 description: "Keys near the library",
                 category: "Accessories",
                 type: "LOST",
+                location: { building: "Library" },
                 date: "2026-10-16",
             },
             user: { userId: "user-123" },
@@ -322,6 +340,7 @@ test("createItem forwards Cloudinary upload errors to next", async () => {
                 description: "Black wallet",
                 category: "Accessories",
                 type: "LOST",
+                location: { building: "Library" },
                 date: "2026-10-16",
             },
             user: { userId: "user-1" },
@@ -655,6 +674,7 @@ test("createItem forwards database errors to next", async () => {
                 description: "Black wallet",
                 category: "Accessories",
                 type: "LOST",
+                location: { building: "Library" },
                 date: "2026-10-16",
             },
             user: { userId: "user-1" },
