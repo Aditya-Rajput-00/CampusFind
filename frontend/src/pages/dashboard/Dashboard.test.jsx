@@ -34,6 +34,31 @@ describe('Dashboard management view', () => {
         for (const label of ['Total Users', 'Total Items', 'Lost Items', 'Found Items', 'Active Items', 'Returned Items', 'Pending Claims', 'Pending Matches']) {
             expect(await screen.findByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
         }
+        expect(screen.getByRole('heading', { name: 'Campus activity' })).toBeInTheDocument();
+    });
+
+    it('shows an accessible Lost versus Found comparison using actual statistic values', async () => {
+        render(<Dashboard />);
+
+        expect(await screen.findByRole('img', {
+            name: /Lost versus Found comparison\. 11 lost items and 14 found items/,
+        })).toBeInTheDocument();
+        expect(screen.getByText('Lost items')).toBeInTheDocument();
+        expect(screen.getByText('Found items')).toBeInTheDocument();
+    });
+
+    it('renders zero counts with zero-width bars when no items are reported', async () => {
+        getStats.mockResolvedValueOnce({
+            success: true,
+            data: { ...stats, lostItems: 0, foundItems: 0 },
+        });
+        const { container } = render(<Dashboard />);
+
+        expect(await screen.findByRole('img', {
+            name: /0 lost items and 0 found items/,
+        })).toBeInTheDocument();
+        expect(container.querySelector('.dashboard-comparison-bar.lost')).toHaveStyle({ width: '0%' });
+        expect(container.querySelector('.dashboard-comparison-bar.found')).toHaveStyle({ width: '0%' });
     });
 
     it('loads the selected item section using its server filter and can return to overview', async () => {
@@ -103,7 +128,21 @@ describe('Dashboard management view', () => {
     it('refreshes dashboard statistics', async () => {
         render(<Dashboard />);
         await screen.findByRole('button', { name: /Total Items/ });
-        fireEvent.click(screen.getByRole('button', { name: 'Refresh statistics' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Refresh dashboard' }));
         await waitFor(() => expect(getStats).toHaveBeenCalledTimes(2));
+        expect(await screen.findByText(/Last refreshed on this device at/)).toBeInTheDocument();
+    });
+
+    it('refreshes the selected management records along with the statistics', async () => {
+        render(<Dashboard />);
+        fireEvent.click(await screen.findByRole('button', { name: /Total Items/ }));
+        await waitFor(() => expect(getItems).toHaveBeenCalledTimes(1));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Refresh dashboard' }));
+
+        await waitFor(() => {
+            expect(getStats).toHaveBeenCalledTimes(2);
+            expect(getItems).toHaveBeenCalledTimes(2);
+        });
     });
 });

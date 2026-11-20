@@ -55,6 +55,8 @@ function Dashboard() {
     const [accountStatus, setAccountStatus] = useState('');
     const [status, setStatus] = useState('');
     const [page, setPage] = useState(1);
+    const [recordsRefreshKey, setRecordsRefreshKey] = useState(0);
+    const [lastRefreshedAt, setLastRefreshedAt] = useState(null);
 
     const loadStats = useCallback(async () => {
         setLoading(true);
@@ -63,6 +65,7 @@ function Dashboard() {
             const result = await getDashboardStats();
             if (!result.success || !result.data) throw new Error(result.message || 'Unable to fetch dashboard statistics');
             setStats(result.data);
+            setLastRefreshedAt(new Date());
         } catch (err) {
             setError(messageFor(err));
         } finally {
@@ -123,7 +126,7 @@ function Dashboard() {
             }
         }, search ? 250 : 0);
         return () => { active = false; window.clearTimeout(timer); };
-    }, [section, page, search, role, accountStatus, status, isAdmin]);
+    }, [section, page, search, role, accountStatus, status, isAdmin, recordsRefreshKey]);
 
     const selectSection = (nextSection) => {
         setSection(nextSection);
@@ -136,8 +139,26 @@ function Dashboard() {
 
     const handleRefresh = async () => {
         await loadStats();
-        if (section) setPage((current) => current);
+        if (section) setRecordsRefreshKey((current) => current + 1);
     };
+
+    const userName = typeof user?.name === 'string' ? user.name.trim().split(/\s+/)[0] : '';
+    const currentDate = new Intl.DateTimeFormat(undefined, {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(new Date());
+    const lastRefreshedLabel = lastRefreshedAt
+        ? new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(lastRefreshedAt)
+        : '';
+    const lostCount = Number(stats?.lostItems) || 0;
+    const foundCount = Number(stats?.foundItems) || 0;
+    const largestItemCount = Math.max(lostCount, foundCount);
+    const lostBarWidth = largestItemCount ? `${(lostCount / largestItemCount) * 100}%` : '0%';
+    const foundBarWidth = largestItemCount ? `${(foundCount / largestItemCount) * 100}%` : '0%';
+    const recordStart = records.length ? ((page - 1) * (pagination.limit || PAGE_SIZE)) + 1 : 0;
+    const recordEnd = Math.min((page - 1) * (pagination.limit || PAGE_SIZE) + records.length, pagination.totalRecords);
 
     const renderRows = () => {
         if (section === 'users') return records.map((record, index) => <tr key={record._id || `${record.email}-${index}`}><td>{record.name || '—'}</td><td>{record.email || '—'}</td><td>{record.role || '—'}</td><td><span className={`dashboard-status ${String(record.accountStatus || '').toLowerCase()}`}>{record.accountStatus || '—'}</span></td><td>{record.department || '—'}</td><td>{formatDate(record.createdAt)}</td></tr>);
@@ -152,18 +173,52 @@ function Dashboard() {
                 : ['Lost item', 'Found item', 'Match score', 'Status', 'Created'];
 
     return <main className="dashboard-page">
-        <div className="dashboard-header">
-            <div><p className="dashboard-eyebrow">CampusFind management</p><h1>Staff &amp; Admin Dashboard</h1><p>Monitor users, items, claims and matches across campus.</p></div>
-            <button type="button" className="dashboard-refresh-button" onClick={handleRefresh} disabled={loading}>{loading ? 'Loading…' : 'Refresh statistics'}</button>
-        </div>
+        <header className="dashboard-header">
+            <div className="dashboard-welcome">
+                <p className="dashboard-eyebrow">CampusFind management</p>
+                <h1>Staff &amp; Admin Dashboard</h1>
+                <p className="dashboard-welcome-message">Welcome back{userName ? `, ${userName}` : ''}. Here's your campus overview.</p>
+            </div>
+            <div className="dashboard-header-actions">
+                <p className="dashboard-current-date">{currentDate}</p>
+                <button type="button" className="dashboard-refresh-button" onClick={handleRefresh} disabled={loading}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 7v5h-5M4.8 9A7.5 7.5 0 0 1 18 6l2 2M4 17v-5h5m10.2 3A7.5 7.5 0 0 1 6 18l-2-2" /></svg>
+                    {loading ? 'Refreshing…' : 'Refresh dashboard'}
+                </button>
+            </div>
+        </header>
+        {lastRefreshedLabel && <p className="dashboard-last-refreshed" aria-live="polite">Last refreshed on this device at {lastRefreshedLabel}</p>}
         {error && <div className="dashboard-error" role="alert">{error}</div>}
-        {loading ? <p className="dashboard-loading" role="status">Loading dashboard statistics…</p> : stats ? <div className="dashboard-stats-grid" aria-label="Dashboard statistics">
+        {loading && !stats ? <p className="dashboard-loading" role="status">Loading dashboard statistics…</p> : stats ? <>
+        {loading && <p className="dashboard-refresh-status" role="status">Refreshing dashboard data…</p>}
+        <div className="dashboard-overview-heading"><div><p className="dashboard-eyebrow">At a glance</p><h2>Campus activity</h2></div><p>Choose a statistic to open its records.</p></div>
+        <div className="dashboard-stats-grid" role="group" aria-label="Dashboard statistics">
             {statisticCards.map((card) => <button type="button" className={`dashboard-stat-card${section === card.section ? ' is-selected' : ''}`} key={card.key} onClick={() => selectSection(card.section)} aria-pressed={section === card.section}>
                 <span className="dashboard-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">{statIconPaths[card.icon].map((path) => <path key={path} d={path} />)}</svg></span><span className="dashboard-stat-label">{card.label}</span><strong>{stats[card.key] ?? 0}</strong><span className="dashboard-stat-link">View records <span aria-hidden="true">→</span></span>
             </button>)}
-        </div> : !error ? <p className="dashboard-loading">No dashboard data available.</p> : null}
-        {section && <section className="dashboard-records" aria-labelledby="dashboard-records-title">
-            <div className="dashboard-records-heading"><div><p className="dashboard-eyebrow">Management records</p><h2 id="dashboard-records-title">{sectionTitles[section]}</h2><p>{pagination.totalRecords || 0} records</p></div><button type="button" className="dashboard-back-button" onClick={() => setSection('')}>Back to overview</button></div>
+        </div>
+        <section className="dashboard-analytics" aria-labelledby="dashboard-analytics-title">
+            <div className="dashboard-analytics-heading">
+                <div><p className="dashboard-eyebrow">Item reports</p><h2 id="dashboard-analytics-title">Lost vs Found</h2></div>
+                <p>Reported item totals</p>
+            </div>
+            <div className="dashboard-comparison-chart" role="img" aria-label={`Lost versus Found comparison. ${lostCount} lost items and ${foundCount} found items. Each bar is scaled to the larger count.`}>
+                <div className="dashboard-comparison-row">
+                    <div className="dashboard-comparison-label"><span>Lost items</span><strong>{lostCount}</strong></div>
+                    <div className="dashboard-comparison-track"><span className="dashboard-comparison-bar lost" style={{ width: lostBarWidth }} /></div>
+                </div>
+                <div className="dashboard-comparison-row">
+                    <div className="dashboard-comparison-label"><span>Found items</span><strong>{foundCount}</strong></div>
+                    <div className="dashboard-comparison-track"><span className="dashboard-comparison-bar found" style={{ width: foundBarWidth }} /></div>
+                </div>
+            </div>
+        </section>
+        </> : !error ? <p className="dashboard-loading">No dashboard data available.</p> : null}
+        {section && <section className="dashboard-records" aria-labelledby="dashboard-records-title" aria-busy={recordsLoading}>
+            <div className="dashboard-records-heading"><div><p className="dashboard-eyebrow">Management records</p><h2 id="dashboard-records-title">{sectionTitles[section]}</h2><p className="dashboard-record-total">{pagination.totalRecords || 0} records</p></div><button type="button" className="dashboard-back-button" onClick={() => setSection('')}>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m14 5-7 7 7 7M7 12h14" /></svg>
+                Back to overview
+            </button></div>
             {!(section === 'users' && !isAdmin) && <div className="dashboard-record-filters">
                 <label className="dashboard-search">Search<input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder={section === 'users' ? 'Name or email' : 'Search records'} /></label>
                 {section === 'users' && <><label>Role<select value={role} onChange={(event) => { setRole(event.target.value); setPage(1); }}><option value="">All roles</option><option value="student">Student</option><option value="staff">Staff</option><option value="admin">Admin</option></select></label><label>Account status<select value={accountStatus} onChange={(event) => { setAccountStatus(event.target.value); setPage(1); }}><option value="">All statuses</option><option value="approved">Approved</option><option value="pending">Pending</option><option value="rejected">Rejected</option></select></label></>}
@@ -171,8 +226,8 @@ function Dashboard() {
             </div>}
             {section === 'users' && !isAdmin ? <div className="dashboard-error" role="alert">The user directory is available to administrators only.</div> : <>
                 {recordsError && <div className="dashboard-error" role="alert">{recordsError}</div>}
-                {recordsLoading ? <p className="dashboard-loading" role="status">Loading records…</p> : recordsError ? null : records.length === 0 ? <div className="dashboard-empty"><h3>No records found</h3><p>Try adjusting your search or filters.</p></div> : <div className="dashboard-table-wrap"><table className="dashboard-table"><thead><tr>{headers.map((header) => <th key={header} scope="col">{header}</th>)}</tr></thead><tbody>{renderRows()}</tbody></table></div>}
-                {!recordsError && <nav className="dashboard-pagination" aria-label="Record pages"><span>Page {pagination.page || page} of {Math.max(1, pagination.totalPages || 1)}</span><div><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1 || recordsLoading}>Previous</button><button type="button" onClick={() => setPage((current) => current + 1)} disabled={recordsLoading || page >= (pagination.totalPages || 1)}>Next</button></div></nav>}
+                {recordsLoading ? <p className="dashboard-loading" role="status">Loading records…</p> : recordsError ? null : records.length === 0 ? <div className="dashboard-empty"><span className="dashboard-empty-mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="10.8" cy="10.8" r="6.2" /><path d="m15.5 15.5 4.2 4.2M8.5 10.8h4.6" /></svg></span><h3>No records found</h3><p>Try adjusting your search or filters.</p></div> : <div className="dashboard-table-wrap" role="region" tabIndex={0} aria-label={`${sectionTitles[section]} table. Scroll horizontally to see all columns.`}><table className="dashboard-table"><caption className="dashboard-visually-hidden">{sectionTitles[section]} records</caption><thead><tr>{headers.map((header) => <th key={header} scope="col">{header}</th>)}</tr></thead><tbody>{renderRows()}</tbody></table></div>}
+                {!recordsError && <nav className="dashboard-pagination" aria-label="Record pages"><span>Showing {recordStart}–{recordEnd} of {pagination.totalRecords || 0} records <span className="dashboard-page-indicator">Page {pagination.page || page} of {Math.max(1, pagination.totalPages || 1)}</span></span><div><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1 || recordsLoading}>Previous</button><button type="button" onClick={() => setPage((current) => current + 1)} disabled={recordsLoading || page >= (pagination.totalPages || 1)}>Next</button></div></nav>}
             </>}
         </section>}
     </main>;

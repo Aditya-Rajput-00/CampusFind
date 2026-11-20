@@ -228,7 +228,9 @@ These commits document project history. Their test results apply only where a ve
 
 **Branch:** `main`
 
-**Branch HEAD before current uncommitted work:** `3034b78`. Dashboard management and backend pagination, including current frontend regression fixes, are in the worktree and have not been committed.
+**Latest verified commit:** `3d7802c` — `Fix dashboard counts and claims matches pagination`.
+
+The premium Dashboard frontend redesign is verified in the current worktree and remains uncommitted pending review.
 
 **Roadmap position:** Phase 15 — Final Testing & Deployment closeout.
 
@@ -251,9 +253,9 @@ These are historical results from Task 89, not a fresh backend run during the cu
 
 **Status: Complete.** The first stable release, `v1.0.0`, was published on 2026-11-12. Its tag points to `ee447b3b9df0c559f2ae54bd60b5ec3c6a6d84bd`; the release records were synchronized in `80b16ce`. This documentation audit corrects stale status and history records without creating another release.
 
-Subsequent frontend work is recorded under Unreleased in `CHANGELOG.md`. The current worktree verification passed 120 frontend tests across 17 files, 187 backend tests, frontend ESLint, production build, and `git diff --check`.
+Subsequent frontend work is recorded under Unreleased in `CHANGELOG.md`. The Dashboard redesign verification passed 123 frontend tests across 17 files, frontend ESLint, production build, and `git diff --check`. The backend pagination work was previously verified by 187 passing backend tests. Browser-based viewport verification for the current redesign was unavailable in this environment.
 
-Task 91's Dropdown popup clipping issue was fixed with intelligent upward/downward positioning and pushed in `dec832c`. Current uncommitted work adds Dashboard management and paginated backend lists, plus Claims/Matches frontend pagination and Dashboard Items metadata regression fixes.
+Task 91's Dropdown popup clipping issue was fixed with intelligent upward/downward positioning and pushed in `dec832c`. Commit `3d7802c` contains the Dashboard management foundation, backend list pagination, Claims/Matches frontend pagination, and Dashboard Items metadata fix. The current uncommitted work is the premium Dashboard frontend redesign.
 
 ## 11. Development Rules
 
@@ -305,4 +307,4 @@ If information is missing, ask the developer rather than inventing details.
 
 ## Last Updated
 
-2026-11-20
+2026-11-21

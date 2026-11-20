@@ -231,6 +231,14 @@ Claims and Matches request 20 records per page and use returned page metadata fo
 
 **Reason:** This fixes frontend/backend pagination regressions without changing API contracts or duplicating business logic.
 
+### Premium Dashboard analytics and refresh display
+
+**Decision:** Dashboard analytics must use only values supplied by the existing statistics API. The Lost vs Found comparison uses the current lost/found totals, scales both bars against the larger count, and renders zero-width bars when both counts are zero. Do not present monthly or historical trends without API support.
+
+The last-refreshed label records the client-side time when statistics were successfully fetched and identifies it as local device time. Refreshing while a management section is open also triggers that section's existing list API.
+
+**Reason:** This adds useful dashboard context without inventing data, expanding backend exposure, or implying server data freshness.
+
 ---
 
 ## 16. Reusable Frontend Dropdown
@@ -243,7 +251,7 @@ The component is implemented without an additional dependency and passes the sel
 
 **Reason:** A shared component keeps the filter and modal controls visually consistent while providing predictable keyboard and assistive-technology behavior.
 
-**Follow-up:** Verify popup placement near the bottom of the scrolling Report Item modal on short viewports. The current popup opens below its trigger and may need a placement adjustment if clipping is observed.
+**Resolution:** Task 91 fixed popup clipping with measured upward/downward positioning and the fix was pushed in `dec832c`.
 
 ---
 

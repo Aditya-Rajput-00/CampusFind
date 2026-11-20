@@ -20,10 +20,13 @@ Notable project changes are recorded here. The project has one published release
 - Added focused page tests for Matches and Notifications and expanded Items and Registration coverage.
 - Added server-backed pagination to Claims and Matches using existing pagination metadata; status summaries describe the visible page while record totals use the server total.
 - Normalized the Dashboard item total from the Items API's `pagination.totalItems` field and added regression coverage for the response shape.
+- Refined the Staff & Admin Dashboard with a welcome header, client-local refresh timestamp, responsive statistic cards, accessible Lost vs Found comparison, and clearer management tables and states.
+- Refreshing the Dashboard now refreshes the selected management records as well as the statistics.
 
 ### Verification
 
-- The current worktree verification passed 120 frontend tests across 17 files and 187 backend tests; frontend ESLint, production build, and `git diff --check` passed.
+- Dashboard redesign verification passed 123 frontend tests across 17 files; frontend ESLint, production build, and `git diff --check` passed. The 187-test backend result belongs to the preceding pagination verification.
+- Browser-based viewport verification for the Dashboard redesign was unavailable; responsive breakpoints were reviewed in CSS.
 - The developer manually verified Login and Registration at the requested laptop, tablet, and mobile viewports.
 
 ## [1.0.0] — 2026-11-12
