@@ -162,11 +162,13 @@
     width: 100%;
 }
 
-.login-card--login .login-password-field input {
+.login-card--login .login-password-field input,
+.login-card--register .login-password-field input {
     padding-right: 52px;
 }
 
-.login-card--login .login-password-toggle {
+.login-card--login .login-password-toggle,
+.login-card--register .login-password-toggle {
     position: absolute;
     top: 50%;
     right: var(--space-2);
@@ -186,13 +188,15 @@
         color var(--duration-fast) ease;
 }
 
-.login-card--login .login-password-toggle:hover {
+.login-card--login .login-password-toggle:hover,
+.login-card--register .login-password-toggle:hover {
     background: var(--brand-soft-taupe);
     color: var(--brand-dark-brown);
     opacity: 1;
 }
 
-.login-card--login .login-password-toggle:focus-visible {
+.login-card--login .login-password-toggle:focus-visible,
+.login-card--register .login-password-toggle:focus-visible {
     outline: 2px solid var(--color-focus-indicator);
     outline-offset: 2px;
 }

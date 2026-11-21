@@ -5,9 +5,13 @@ import campusfindLogo from '../../assets/brand/campusfind-logo-512.png';
 import './Login.css';
 
 function Register({ onLoginClick }) {
+    const passwordMismatchMessage = 'Passwords do not match. Please enter matching passwords.';
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [role, setRole] = useState('student');
 
     const [loading, setLoading] = useState(false);
@@ -16,6 +20,11 @@ function Register({ onLoginClick }) {
 
     const handleRegister = async (event) => {
         event.preventDefault();
+
+        if (password !== confirmPassword) {
+            setError(passwordMismatchMessage);
+            return;
+        }
 
         setError('');
         setSuccess('');
@@ -46,6 +55,7 @@ function Register({ onLoginClick }) {
             setName('');
             setEmail('');
             setPassword('');
+            setConfirmPassword('');
         } catch (error) {
             setError(
                 error.response?.data?.message ||
@@ -112,14 +122,78 @@ function Register({ onLoginClick }) {
                         />
 
                         <label htmlFor="register-password">Password</label>
-                        <input
-                            id="register-password"
-                            type="password"
-                            placeholder="Create a password"
-                            value={password}
-                            onChange={(event) => setPassword(event.target.value)}
-                            required
-                        />
+                        <div className="login-password-field">
+                            <input
+                                id="register-password"
+                                type={showPassword ? 'text' : 'password'}
+                                autoComplete="new-password"
+                                placeholder="Create a password"
+                                value={password}
+                                onChange={(event) => {
+                                    const nextPassword = event.target.value;
+                                    setPassword(nextPassword);
+                                    if (
+                                        error === passwordMismatchMessage &&
+                                        nextPassword === confirmPassword
+                                    ) {
+                                        setError('');
+                                    }
+                                }}
+                                required
+                            />
+                            <button
+                                className="login-password-toggle"
+                                type="button"
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                aria-pressed={showPassword}
+                                aria-controls="register-password"
+                                onClick={() => setShowPassword((isVisible) => !isVisible)}
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                    {showPassword && <path d="m3 3 18 18" />}
+                                </svg>
+                            </button>
+                        </div>
+
+                        <label htmlFor="register-confirm-password">Confirm Password</label>
+                        <div className="login-password-field">
+                            <input
+                                id="register-confirm-password"
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                autoComplete="new-password"
+                                placeholder="Confirm your password"
+                                value={confirmPassword}
+                                onChange={(event) => {
+                                    const nextConfirmPassword = event.target.value;
+                                    setConfirmPassword(nextConfirmPassword);
+                                    if (
+                                        error === passwordMismatchMessage &&
+                                        password === nextConfirmPassword
+                                    ) {
+                                        setError('');
+                                    }
+                                }}
+                                required
+                            />
+                            <button
+                                className="login-password-toggle"
+                                type="button"
+                                aria-label={showConfirmPassword
+                                    ? 'Hide confirm password'
+                                    : 'Show confirm password'}
+                                aria-pressed={showConfirmPassword}
+                                aria-controls="register-confirm-password"
+                                onClick={() => setShowConfirmPassword((isVisible) => !isVisible)}
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                    {showConfirmPassword && <path d="m3 3 18 18" />}
+                                </svg>
+                            </button>
+                        </div>
 
                         <label htmlFor="register-role">Register As</label>
                         <select

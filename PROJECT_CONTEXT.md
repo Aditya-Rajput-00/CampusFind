@@ -156,6 +156,7 @@ Confirmed registration policy:
 - Staff registrations remain pending until an admin approves them.
 - Pending or rejected staff accounts cannot log in.
 - Public registration cannot create admin accounts.
+- The Registration form provides independent password visibility controls and confirms that Password and Confirm Password match before submitting. Confirmation remains client-side and is not included in the registration API payload.
 - Admin-only endpoints manage pending staff approvals.
 - Provision the first administrator from `backend/` with `npm run bootstrap`. The CLI prompts interactively for name, email, and password; password input is hidden. It normalizes and validates email, enforces a strong password, hashes it with bcryptjs at cost 10, and creates an approved admin.
 - The command claims the unique `_id` `first-admin` in MongoDB's `adminBootstrapGuards` collection before inserting the user. MongoDB's unique `_id` serializes concurrent attempts and works with the standalone local MongoDB URI in `.env.example`; transactions are not required. It refuses if an admin exists or the guard is already claimed.
@@ -232,9 +233,9 @@ These commits document project history. Their test results apply only where a ve
 
 **Branch:** `main`
 
-**Latest verified commit:** `c401f51` — `feat: redesign premium admin dashboard`.
+**Latest verified commit:** `d2cd367` — `feat: add CampusFind graduation cap branding`.
 
-The Staff Approval Dashboard Phase 5 corrections and approved graduation-cap logo color treatments are implemented and reviewed. Login and Registration retain the original Dark Brown and Mocha/Gold logo; the in-app header uses its Warm Ivory treatment. Authentication middleware, like login, treats a missing or null account status as approved for legacy accounts; pending and rejected accounts remain blocked.
+The Staff Approval Dashboard Phase 5 corrections and approved graduation-cap logo color treatments are implemented and reviewed. Login and Registration retain the original Dark Brown and Mocha/Gold logo; the in-app header uses its Warm Ivory treatment. Registration password visibility and confirmation improvements are implemented and verified; confirmation is omitted from the existing API payload. Authentication middleware, like login, treats a missing or null account status as approved for legacy accounts; pending and rejected accounts remain blocked.
 
 **Roadmap position:** Phase 15 — Final Testing & Deployment closeout.
 

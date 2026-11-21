@@ -28,6 +28,10 @@ describe('Register Component Tests', () => {
             target: { value: 'password123' },
         });
 
+        fireEvent.change(screen.getByLabelText('Confirm Password'), {
+            target: { value: 'password123' },
+        });
+
         fireEvent.change(screen.getByLabelText('Register As'), {
             target: { value: role },
         });
@@ -39,6 +43,10 @@ describe('Register Component Tests', () => {
         expect(screen.getByLabelText('Full Name')).toBeRequired();
         expect(screen.getByLabelText('Email Address')).toBeRequired();
         expect(screen.getByLabelText('Password')).toBeRequired();
+        expect(screen.getByLabelText('Confirm Password')).toBeRequired();
+        expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'password');
+        expect(screen.getByLabelText('Confirm Password'))
+            .toHaveAttribute('type', 'password');
 
         const roleSelect = screen.getByLabelText('Register As');
         expect(roleSelect).toBeRequired();
@@ -47,6 +55,33 @@ describe('Register Component Tests', () => {
         expect(roleSelect).not.toHaveAttribute('style');
         expect(screen.getByRole('button', { name: 'Login here' }))
             .toHaveClass('register-login-link');
+    });
+
+    it('shows and hides each password field independently', () => {
+        render(<Register onLoginClick={onLoginClick} />);
+
+        const passwordInput = screen.getByLabelText('Password');
+        const confirmPasswordInput = screen.getByLabelText('Confirm Password');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+
+        expect(passwordInput).toHaveAttribute('type', 'text');
+        expect(confirmPasswordInput).toHaveAttribute('type', 'password');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Show confirm password' }));
+
+        expect(passwordInput).toHaveAttribute('type', 'text');
+        expect(confirmPasswordInput).toHaveAttribute('type', 'text');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+
+        expect(passwordInput).toHaveAttribute('type', 'password');
+        expect(confirmPasswordInput).toHaveAttribute('type', 'text');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Hide confirm password' }));
+
+        expect(passwordInput).toHaveAttribute('type', 'password');
+        expect(confirmPasswordInput).toHaveAttribute('type', 'password');
     });
 
     it('registers a student successfully', async () => {
@@ -70,6 +105,54 @@ describe('Register Component Tests', () => {
             });
         });
 
+        expect(await screen.findByRole('status'))
+            .toHaveTextContent('Student account registered successfully');
+    });
+
+    it('blocks registration when passwords do not match', async () => {
+        render(<Register onLoginClick={onLoginClick} />);
+
+        fillRegistrationForm();
+        fireEvent.change(screen.getByLabelText('Confirm Password'), {
+            target: { value: 'different-password' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+        expect(await screen.findByRole('alert'))
+            .toHaveTextContent('Passwords do not match');
+        expect(registerUser).not.toHaveBeenCalled();
+    });
+
+    it('clears the mismatch error when corrected and sends no confirmation password', async () => {
+        registerUser.mockResolvedValue({
+            success: true,
+            message: 'Student account registered successfully',
+        });
+
+        render(<Register onLoginClick={onLoginClick} />);
+
+        fillRegistrationForm();
+        fireEvent.change(screen.getByLabelText('Confirm Password'), {
+            target: { value: 'different-password' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+        expect(await screen.findByRole('alert')).toHaveTextContent('Passwords do not match');
+
+        fireEvent.change(screen.getByLabelText('Confirm Password'), {
+            target: { value: 'password123' },
+        });
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+        await waitFor(() => {
+            expect(registerUser).toHaveBeenCalledWith({
+                name: 'Test User',
+                email: 'test@example.com',
+                password: 'password123',
+                role: 'student',
+            });
+        });
         expect(await screen.findByRole('status'))
             .toHaveTextContent('Student account registered successfully');
     });

@@ -305,3 +305,11 @@ The endpoint returns the established `{ success, message, data, pagination }` sh
 The authenticated header pairs the ivory logo with the existing CampusFind wordmark on the existing dark-brown background. No logo badge or container is added. The document title and favicon use CampusFind branding, while the existing warm brown and taupe palette remains unchanged.
 
 **Reason:** Separate color treatments make the same approved cap visible on the warm authentication surfaces and dark application navbar without changing its design.
+
+---
+
+## 21. Registration Password Confirmation
+
+**Decision:** Keep password confirmation and independent show/hide state in the frontend Registration form. Compare the two values before calling the existing registration service and submit only the established name, email, password, and role fields.
+
+**Reason:** Confirmation helps users catch password-entry mistakes without changing the registration API contract or backend behavior.
