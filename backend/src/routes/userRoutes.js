@@ -4,6 +4,7 @@ const express = require("express");
 const {
     getUsers,
     getPendingStaff,
+    getStaff,
     approveStaff,
     rejectStaff,
     updateUser,
@@ -130,6 +131,46 @@ router.get(
     protect,
     authorize("admin"),
     getPendingStaff
+);
+
+/**
+ * @swagger
+ * /api/users/staff:
+ *   get:
+ *     summary: Get staff accounts
+ *     description: Admin-only searchable and paginated staff directory with safe profile fields.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema: { type: string, maxLength: 100 }
+ *       - in: query
+ *         name: accountStatus
+ *         schema: { type: string, enum: [pending, approved, rejected] }
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *     responses:
+ *       200:
+ *         description: Staff accounts fetched successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ */
+router.get(
+    "/staff",
+    protect,
+    authorize("admin"),
+    createListQueryMiddleware({
+        filters: { accountStatus: ["pending", "approved", "rejected"] },
+    }),
+    getStaff
 );
 
 /**

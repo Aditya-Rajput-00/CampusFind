@@ -228,9 +228,9 @@ These commits document project history. Their test results apply only where a ve
 
 **Branch:** `main`
 
-**Latest verified commit:** `3d7802c` — `Fix dashboard counts and claims matches pagination`.
+**Latest verified commit:** `c401f51` — `feat: redesign premium admin dashboard`.
 
-The premium Dashboard frontend redesign is verified in the current worktree and remains uncommitted pending review.
+The Staff Approval Dashboard Phase 3 corrections are in the current worktree and remain uncommitted pending review. Authentication middleware, like login, treats a missing or null account status as approved for legacy accounts; pending and rejected accounts remain blocked.
 
 **Roadmap position:** Phase 15 — Final Testing & Deployment closeout.
 
@@ -304,6 +304,12 @@ Before starting a new development conversation:
 7. Continue from the last verified task.
 
 If information is missing, ask the developer rather than inventing details.
+
+## Staff Approval Dashboard
+
+`GET /api/users/staff` is an authenticated, admin-only paginated staff directory. It accepts `search` (name/email), `accountStatus` (`pending`, `approved`, `rejected`), `page`, and `limit`. The server always applies `role: "staff"` and returns `_id`, name, email, role, account status, department, phone, and `createdAt` when available. The response follows the shared `{ success, message, data, pagination }` format; pagination includes `totalRecords` and `totalPages`. The endpoint uses an explicit field allowlist and does not return password hashes, tokens, or internal fields.
+
+The admin Staff Approvals page provides total/pending/approved/rejected counts using `GET /api/users` pagination totals, a searchable status-filtered paginated staff list, account details, and confirmed approval/rejection actions. Older records without `accountStatus` are treated as approved, matching login behavior. Approval and rejection continue to use the existing admin-only endpoints and business logic.
 
 ## Last Updated
 

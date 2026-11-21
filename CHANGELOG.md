@@ -6,12 +6,18 @@ Notable project changes are recorded here. The project has one published release
 
 ### Backend
 
+- Authentication middleware now treats missing or null account status as approved for legacy users, consistent with login; pending and rejected users remain blocked.
+- Added an admin-only `GET /api/users/staff` endpoint with server-side staff scoping, safe profile fields, name/email search, status filtering, and pagination metadata.
+- Staff statistics include legacy accounts without an explicit status under Approved, matching existing login behavior.
 - Added an operator-run first-admin bootstrap CLI with hidden password entry, bcrypt hashing, and a unique MongoDB guard against concurrent initial administrator creation.
 - Successfully created the initial administrator and verified admin login and access to an admin-protected API endpoint.
 - Verified the deployed staff API workflow end to end: registration as pending, pending-login denial, admin listing and approval, and successful staff login after approval.
 
 ### Frontend
 
+- Staff Approvals now ignores out-of-order list/statistics responses, reconciles 409 action conflicts with fresh data, keeps pagination disabled during loads, and restores focus after closing account details.
+- Added regression coverage for action failures, refreshes, conflict handling, stale list responses, loading pagination, and modal focus.
+- Expanded Staff Approvals with backend-derived status statistics, searchable status filters, paginated account records, responsive layouts, a safe details modal, and confirmation before approval or rejection.
 - Added a reusable keyboard-accessible Dropdown for item filters and the Report Item form.
 - Improved responsive header and user controls.
 - Applied the warm visual system to authentication, item cards, Claims, Matches, and Notifications.
@@ -25,6 +31,8 @@ Notable project changes are recorded here. The project has one published release
 
 ### Verification
 
+- Phase 3 correction verification passed 194 backend tests and 137 frontend tests across 17 files; frontend ESLint, Vite production build, and `git diff --check` passed. Focused authentication middleware tests passed 13/13.
+- Staff Approval Dashboard verification passed 192 backend tests, 129 frontend tests across 17 files, frontend ESLint, Vite production build, and `git diff --check`.
 - Dashboard redesign verification passed 123 frontend tests across 17 files; frontend ESLint, production build, and `git diff --check` passed. The 187-test backend result belongs to the preceding pagination verification.
 - Browser-based viewport verification for the Dashboard redesign was unavailable; responsive breakpoints were reviewed in CSS.
 - The developer manually verified Login and Registration at the requested laptop, tablet, and mobile viewports.

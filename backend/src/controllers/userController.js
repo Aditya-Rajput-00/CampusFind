@@ -9,15 +9,23 @@ const getUsers = async (req, res, next) => {
         const { page, limit, offset, search, role, accountStatus } = req.listQuery;
         const filter = {};
 
+        const conditions = [];
         if (search) {
             const expression = new RegExp(escapeRegex(search), "i");
-            filter.$or = [
-                { name: expression },
-                { email: expression },
-            ];
+            conditions.push({ $or: [{ name: expression }, { email: expression }] });
         }
         if (role) filter.role = role;
-        if (accountStatus) filter.accountStatus = accountStatus;
+        if (accountStatus === "approved") {
+            // Older records without accountStatus are treated as approved at login.
+            conditions.push({ $or: [{ accountStatus: "approved" }, { accountStatus: null }] });
+        } else if (accountStatus) {
+            filter.accountStatus = accountStatus;
+        }
+        if (conditions.length === 1) {
+            Object.assign(filter, conditions[0]);
+        } else if (conditions.length > 1) {
+            filter.$and = conditions;
+        }
 
         const [users, totalRecords] = await Promise.all([
             User.find(filter)
@@ -29,11 +37,16 @@ const getUsers = async (req, res, next) => {
             User.countDocuments(filter),
         ]);
 
+        const normalizedUsers = users.map((user) => ({
+            ...user,
+            accountStatus: user.accountStatus || "approved",
+        }));
+
         return sendPaginatedResponse(
             res,
             200,
             "Users fetched successfully",
-            users,
+            normalizedUsers,
             { page, limit, totalRecords }
         );
     } catch (error) {
@@ -58,6 +71,56 @@ const getPendingStaff = async (req, res, next) => {
         );
     } catch (error) {
         console.error("Get pending staff error:", error);
+        return next(error);
+    }
+};
+
+// Get a safe, searchable, paginated list of staff accounts for administrators.
+const getStaff = async (req, res, next) => {
+    try {
+        const { page, limit, offset, search, accountStatus } = req.listQuery;
+        const filter = { role: "staff" };
+
+        const conditions = [];
+        if (search) {
+            const expression = new RegExp(escapeRegex(search), "i");
+            conditions.push({ $or: [{ name: expression }, { email: expression }] });
+        }
+        if (accountStatus === "approved") {
+            conditions.push({ $or: [{ accountStatus: "approved" }, { accountStatus: null }] });
+        } else if (accountStatus) {
+            filter.accountStatus = accountStatus;
+        }
+        if (conditions.length === 1) {
+            Object.assign(filter, conditions[0]);
+        } else if (conditions.length > 1) {
+            filter.$and = conditions;
+        }
+
+        const [users, totalRecords] = await Promise.all([
+            User.find(filter)
+                .select("_id name email role accountStatus department phone createdAt")
+                .sort({ createdAt: -1, _id: -1 })
+                .skip(offset)
+                .limit(limit)
+                .lean(),
+            User.countDocuments(filter),
+        ]);
+
+        const normalizedUsers = users.map((user) => ({
+            ...user,
+            accountStatus: user.accountStatus || "approved",
+        }));
+
+        return sendPaginatedResponse(
+            res,
+            200,
+            "Staff accounts fetched successfully",
+            normalizedUsers,
+            { page, limit, totalRecords }
+        );
+    } catch (error) {
+        console.error("Get staff error:", error);
         return next(error);
     }
 };
@@ -370,6 +433,7 @@ const changeMyPassword = async (req, res, next) => {
 module.exports = {
     getUsers,
     getPendingStaff,
+    getStaff,
     approveStaff,
     rejectStaff,
     updateUser,

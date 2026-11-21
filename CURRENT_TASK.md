@@ -4,9 +4,9 @@
 
 **Branch:** `main`
 
-**Latest verified commit:** `3d7802c` — `Fix dashboard counts and claims matches pagination`.
+**Latest verified commit:** `c401f51` - `feat: redesign premium admin dashboard`
 
-**Current work:** Premium Dashboard frontend redesign, verified locally and awaiting review; not staged or committed.
+**Current work:** Staff Approval Dashboard Phase 5 review corrections are implemented and verified, awaiting final review. No commit or push is authorized.
 
 ## Project and release status
 
@@ -73,3 +73,11 @@ Implemented: run the backend bootstrap command from `backend/` with `npm run boo
 - The deployed staff workflow was verified end to end: staff registration, pending status, pending-login denial, admin pending-staff listing, approval, and successful staff login after approval.
 
 These deployed API checks are real service verification and are distinct from the automated backend test results above.
+
+## Active task: Staff Approval Dashboard Phase 5 corrections
+
+Implemented an admin-only `GET /api/users/staff` endpoint with server-enforced staff scoping, safe fields, validated search/status filters, and pagination. The Staff Approvals page now presents backend-derived status counts, a searchable and filterable staff directory, pagination, account details, and confirmation before approval or rejection. Existing approval and rejection endpoints remain unchanged.
+
+Phase 3 adds request-order protection for the staff list and four statistics requests, 409 conflict reconciliation, middleware support for legacy users whose account status is missing/null, expanded regression tests, and details-modal focus restoration. The four statistics remain separate requests and can briefly reflect different database snapshots during concurrent updates; request ordering prevents an older statistics batch from replacing a newer batch. Verification: backend tests 194/194 passed; frontend tests 137/137 passed across 17 files; focused authentication middleware tests 13/13 passed; frontend ESLint, Vite production build, and `git diff --check` passed. No backend lint script is defined. The existing untracked design reference, auth illustration, and workflow script are preserved. Do not commit or push without explicit review approval.
+
+Phase 5 closes the final review findings: search results and pagination are held in an updating state until they match the debounced query; list and statistics request IDs are invalidated during effect cleanup and unmount; HTTP 409 feedback reports complete or incomplete refresh based on both loader results; and tests cover updated manual-refresh records and rejection conflicts. Verification: backend tests 194/194 passed; frontend tests 142/142 passed across 17 files; focused Staff Approvals tests 26/26 passed; frontend ESLint, Vite production build, and `git diff --check` passed. Existing Items tests emit React `act(...)` warnings; no test failures occurred. No commit or push was made.

@@ -247,6 +247,189 @@ test("GET /api/users bounds search length and calculated page offset", async (t)
     assert.deepEqual(body.errors.map(({ path }) => path).sort(), ["page", "search"]);
 });
 
+test("GET /api/users/staff returns safe, searched and paginated staff for admins", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "admin");
+
+    const originalFind = User.find;
+    const originalCountDocuments = User.countDocuments;
+    const records = [{
+        _id: "64b000000000000000000003",
+        name: "Sam Staff",
+        email: "sam@example.com",
+        role: "staff",
+        accountStatus: "pending",
+        department: "Library Services",
+        phone: "555-0100",
+        createdAt: "2026-10-01T00:00:00.000Z",
+    }];
+    let capturedFilter;
+
+    User.find = (filter) => {
+        capturedFilter = filter;
+        const query = {
+            select: (fields) => {
+                assert.equal(fields, "_id name email role accountStatus department phone createdAt");
+                return query;
+            },
+            sort: (sort) => {
+                assert.deepEqual(sort, { createdAt: -1, _id: -1 });
+                return query;
+            },
+            skip: (skip) => {
+                assert.equal(skip, 5);
+                return query;
+            },
+            limit: (limit) => {
+                assert.equal(limit, 5);
+                return query;
+            },
+            lean: async () => records,
+        };
+        return query;
+    };
+    User.countDocuments = async (filter) => {
+        assert.deepEqual(filter, capturedFilter);
+        return 12;
+    };
+    t.after(() => {
+        User.find = originalFind;
+        User.countDocuments = originalCountDocuments;
+    });
+
+    const token = createToken("admin");
+    const response = await makeRequest(
+        "/api/users/staff?search=Sam&accountStatus=pending&page=2&limit=5",
+        { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(capturedFilter, {
+        role: "staff",
+        $or: [{ name: /Sam/i }, { email: /Sam/i }],
+        accountStatus: "pending",
+    });
+    assert.deepEqual(body.data, records);
+    assert.deepEqual(body.pagination, {
+        page: 2,
+        limit: 5,
+        totalRecords: 12,
+        totalPages: 3,
+    });
+    assert.equal(JSON.stringify(body).includes("passwordHash"), false);
+    assert.equal(JSON.stringify(body).includes("token"), false);
+});
+
+test("GET /api/users/staff denies non-admin users", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "staff");
+    const token = createToken("staff");
+    const response = await makeRequest("/api/users/staff", {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await response.json();
+    assert.equal(response.status, 403);
+    assert.equal(body.message, "Access denied");
+});
+
+test("GET /api/users/staff includes legacy accounts in approved results", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "admin");
+    const originalFind = User.find;
+    const originalCountDocuments = User.countDocuments;
+    const legacyStaff = {
+        _id: "64b000000000000000000007",
+        name: "Legacy Staff",
+        email: "legacy@example.com",
+        role: "staff",
+    };
+    User.find = (filter) => {
+        assert.deepEqual(filter, {
+            role: "staff",
+            $and: [
+                { $or: [{ name: /Legacy/i }, { email: /Legacy/i }] },
+                { $or: [{ accountStatus: "approved" }, { accountStatus: null }] },
+            ],
+        });
+        const query = {
+            select: () => query,
+            sort: () => query,
+            skip: () => query,
+            limit: () => query,
+            lean: async () => [legacyStaff],
+        };
+        return query;
+    };
+    User.countDocuments = async () => 1;
+    t.after(() => {
+        User.find = originalFind;
+        User.countDocuments = originalCountDocuments;
+    });
+
+    const token = createToken("admin");
+    const response = await makeRequest(
+        "/api/users/staff?search=Legacy&accountStatus=approved",
+        { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(body.pagination.totalRecords, 1);
+    assert.equal(body.data[0].accountStatus, "approved");
+});
+
+test("GET /api/users/staff rejects unsupported filters and pagination", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "admin");
+    const token = createToken("admin");
+    const response = await makeRequest(
+        "/api/users/staff?accountStatus=locked&page=0&limit=101&role=student",
+        { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const body = await response.json();
+    assert.equal(response.status, 400);
+    assert.deepEqual(body.errors.map(({ path }) => path).sort(), [
+        "accountStatus", "limit", "page", "role",
+    ]);
+});
+
+test("GET /api/users counts legacy accounts without a status as approved", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "admin");
+    const originalFind = User.find;
+    const originalCountDocuments = User.countDocuments;
+    const legacyUser = { name: "Legacy Staff", email: "legacy@example.com" };
+    User.find = (filter) => {
+        assert.deepEqual(filter, {
+            role: "staff",
+            $or: [{ accountStatus: "approved" }, { accountStatus: null }],
+        });
+        const query = {
+            select: () => query,
+            sort: () => query,
+            skip: () => query,
+            limit: () => query,
+            lean: async () => [legacyUser],
+        };
+        return query;
+    };
+    User.countDocuments = async () => 1;
+    t.after(() => {
+        User.find = originalFind;
+        User.countDocuments = originalCountDocuments;
+    });
+
+    const token = createToken("admin");
+    const response = await makeRequest(
+        "/api/users?role=staff&accountStatus=approved&limit=1",
+        { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(body.pagination.totalRecords, 1);
+    assert.equal(body.data[0].accountStatus, "approved");
+});
+
 // Test 3: Admin can view pending staff registrations
 test("GET /api/users/pending-staff allows admin access", async (t) => {
     restoreEnvironment(t);

@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import api from './api';
 import {
     getPendingStaff,
+    getStaffAccounts,
     approveStaff,
     rejectStaff,
 } from './userService';
@@ -42,6 +43,27 @@ describe('userService', () => {
 
         expect(api.get).toHaveBeenCalledWith('/users/pending-staff');
         expect(result.data).toEqual(mockData);
+    });
+
+    it('fetches staff accounts with server-side query parameters', async () => {
+        const mockResponse = {
+            success: true,
+            data: [{ _id: 'staff123', name: 'Test Staff', role: 'staff' }],
+            pagination: { page: 2, limit: 10, totalRecords: 11, totalPages: 2 },
+        };
+        api.get.mockResolvedValue({ data: mockResponse });
+
+        const result = await getStaffAccounts({
+            search: 'Test',
+            accountStatus: 'pending',
+            page: 2,
+            limit: 10,
+        });
+
+        expect(api.get).toHaveBeenCalledWith('/users/staff', {
+            params: { search: 'Test', accountStatus: 'pending', page: 2, limit: 10 },
+        });
+        expect(result).toEqual(mockResponse);
     });
 
     it('approves a pending staff account', async () => {

@@ -103,6 +103,23 @@ test("accepts a valid JWT and attaches current database user details", async (t)
     });
 });
 
+for (const [label, accountStatus] of [["missing", undefined], ["null", null]]) {
+    test(`accepts a legacy user with ${label} accountStatus`, async (t) => {
+        const legacyUser = { _id: TEST_USER_ID, role: "staff" };
+        if (accountStatus !== undefined) legacyUser.accountStatus = accountStatus;
+        mockUserLookup(t, legacyUser);
+        const req = createRequest(createToken());
+        const res = createResponse();
+        let nextCalled = false;
+
+        await protect(req, res, () => { nextCalled = true; });
+
+        assert.equal(nextCalled, true);
+        assert.equal(res.statusCode, null);
+        assert.equal(req.user.role, "staff");
+    });
+}
+
 test("rejects an expired JWT token", async () => {
     const token = jwt.sign(
         { userId: TEST_USER_ID, role: "student" },

@@ -50,7 +50,7 @@ The main models are:
 - Passwords are hashed using bcryptjs.
 - JWTs are verified by authentication middleware.
 - The current user is retrieved from MongoDB.
-- Deleted users and accounts that are not approved are rejected.
+- Deleted users and accounts explicitly marked pending or rejected are rejected. Legacy users whose account status is missing or null are treated as approved, matching login behavior.
 - The current database role is used for authorization decisions.
 - Public registration permits student and staff accounts only.
 - Student accounts are automatically approved.
@@ -281,3 +281,17 @@ The shared rules preserve the warm ivory page surface and do not alter authentic
 - Existing admin or guard state refuses the operation. Pre-insertion failures release the guard only after a successful no-admin check. Once a user write is attempted, any error leaves the guard for operator inspection because the write outcome may be ambiguous.
 
 **Reason:** Public registration intentionally excludes admins, and staff approval requires an admin. A guarded operator-only command resolves initial provisioning without weakening route authorization.
+
+---
+
+## 19. Staff Approval Dashboard Data
+
+**Decision:** Use a dedicated admin-only `GET /api/users/staff` endpoint for the Staff Approvals directory. It always scopes queries to `role: "staff"`, validates `search`, `accountStatus`, `page`, and `limit` through the shared list-query middleware, and selects only `_id`, name, email, role, account status, department, phone, and `createdAt`.
+
+The endpoint returns the established `{ success, message, data, pagination }` shape. Statistics reuse the existing admin user-list endpoint with `role=staff`, status filters, and `limit=1`, reading `pagination.totalRecords` instead of downloading the full directory. Legacy records without an explicit account status count as approved and are normalized as approved, matching login behavior. Approval and rejection continue through the existing endpoints and status-validation logic. The frontend asks for confirmation before either action and refreshes the directory and counts after success.
+
+**Reason:** A dedicated staff list provides the identifier and safe contact fields needed for actions and details without broadening the general user directory response. Reusing pagination totals avoids an unnecessary statistics endpoint.
+
+**Phase 3 correction:** The frontend assigns monotonically increasing request IDs to list and statistics loads, so only each latest request can update its data or loading/error state. Statistics continue to use four separate API calls; these calls can briefly represent different database snapshots during concurrent updates, and no aggregate endpoint is added. A 409 action conflict reloads the current list and all four counts and displays an informational error instead of a success notice. The details dialog restores focus to its opener when closed.
+
+**Legacy authentication:** Authentication middleware treats a missing or null `accountStatus` as approved, consistent with login. Explicit pending and rejected values continue to fail authentication; no migration is required.

@@ -13,6 +13,12 @@ export const getPendingStaff = async () => {
     return response.data;
 };
 
+// Fetch a safe, paginated staff directory (admin authorization is enforced by the API).
+export const getStaffAccounts = async (filters = {}) => {
+    const response = await api.get('/users/staff', { params: filters });
+    return response.data;
+};
+
 // Approve a pending staff account.
 export const approveStaff = async (id) => {
     const response = await api.patch(`/users/${id}/approve`);
