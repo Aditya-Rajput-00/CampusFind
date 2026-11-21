@@ -295,3 +295,13 @@ The endpoint returns the established `{ success, message, data, pagination }` sh
 **Phase 3 correction:** The frontend assigns monotonically increasing request IDs to list and statistics loads, so only each latest request can update its data or loading/error state. Statistics continue to use four separate API calls; these calls can briefly represent different database snapshots during concurrent updates, and no aggregate endpoint is added. A 409 action conflict reloads the current list and all four counts and displays an informational error instead of a success notice. The details dialog restores focus to its opener when closed.
 
 **Legacy authentication:** Authentication middleware treats a missing or null `accountStatus` as approved, consistent with login. Explicit pending and rejected values continue to fail authentication; no migration is required.
+
+---
+
+## 20. Official CampusFind Logo
+
+**Decision:** Use `frontend/src/assets/brand/campusfind-logo.png` as the approved graduation-cap master artwork. Keep the source file unchanged. Login and Registration use the original Dark Brown and Mocha/Gold artwork; the authenticated application header uses a separate Warm Ivory (`#F8F4E9`) recolor of the same symbol.
+
+The authenticated header pairs the ivory logo with the existing CampusFind wordmark on the existing dark-brown background. No logo badge or container is added. The document title and favicon use CampusFind branding, while the existing warm brown and taupe palette remains unchanged.
+
+**Reason:** Separate color treatments make the same approved cap visible on the warm authentication surfaces and dark application navbar without changing its design.

@@ -21,10 +21,22 @@
 }
 
 .login-card h1 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     color: #a78bfa;
     font-size: 30px;
-    text-align: center;
+    white-space: nowrap;
     margin-bottom: 30px;
+}
+
+.auth-brand-logo {
+    display: block;
+    width: 48px;
+    height: 32px;
+    flex: 0 0 auto;
+    object-fit: contain;
 }
 
 .login-card h2 {
@@ -476,6 +488,11 @@
 
     .login-card--register {
         padding: var(--space-6);
+    }
+
+    .auth-brand-logo {
+        width: 42px;
+        height: 28px;
     }
 }
 

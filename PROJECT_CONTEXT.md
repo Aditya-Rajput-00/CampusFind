@@ -143,6 +143,10 @@ Frontend service modules include authentication, claims, dashboard, items, match
 
 Inspect actual source files before documenting additional functionality or API behavior.
 
+### Frontend Branding
+
+The official logo is the graduation-cap artwork in `frontend/src/assets/brand/campusfind-logo.png`. Login and Registration use its original Dark Brown and Mocha/Gold colors. The authenticated application header uses the same symbol recolored Warm Ivory (`#F8F4E9`) beside the existing CampusFind wordmark; no background badge is used. The favicon uses the approved artwork. Keep the master source unchanged when preparing derivatives.
+
 ## 7. Authentication and Registration Policy
 
 Confirmed registration policy:
@@ -230,7 +234,7 @@ These commits document project history. Their test results apply only where a ve
 
 **Latest verified commit:** `c401f51` — `feat: redesign premium admin dashboard`.
 
-The Staff Approval Dashboard Phase 3 corrections are in the current worktree and remain uncommitted pending review. Authentication middleware, like login, treats a missing or null account status as approved for legacy accounts; pending and rejected accounts remain blocked.
+The Staff Approval Dashboard Phase 5 corrections and approved graduation-cap logo color treatments are implemented and reviewed. Login and Registration retain the original Dark Brown and Mocha/Gold logo; the in-app header uses its Warm Ivory treatment. Authentication middleware, like login, treats a missing or null account status as approved for legacy accounts; pending and rejected accounts remain blocked.
 
 **Roadmap position:** Phase 15 — Final Testing & Deployment closeout.
 

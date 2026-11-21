@@ -9,6 +9,7 @@ import Matches from './pages/matches/Matches';
 import Notifications from './pages/notifications/Notifications';
 import Dashboard from './pages/dashboard/Dashboard';
 import StaffApprovals from './pages/admin/StaffApprovals';
+import campusfindLogo from './assets/brand/campusfind-logo-ivory.png';
 
 import { useAuth } from './context/useAuth.js';
 import './App.css';
@@ -48,6 +49,11 @@ function App() {
             {/* Application Header */}
             <header className="app-header">
                 <h2 className="app-header__brand">
+                    <img
+                        className="app-header__logo"
+                        src={campusfindLogo}
+                        alt="CampusFind graduation cap logo"
+                    />
                     CampusFind
                 </h2>
 

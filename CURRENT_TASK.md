@@ -6,7 +6,7 @@
 
 **Latest verified commit:** `c401f51` - `feat: redesign premium admin dashboard`
 
-**Current work:** Staff Approval Dashboard Phase 5 review corrections are implemented and verified, awaiting final review. No commit or push is authorized.
+**Current work:** Staff Approval Dashboard Phase 5 review corrections and the approved CampusFind graduation-cap logo integration are implemented and reviewed. Final verification and the authorized branding commit/push are in progress.
 
 ## Project and release status
 
@@ -81,3 +81,5 @@ Implemented an admin-only `GET /api/users/staff` endpoint with server-enforced s
 Phase 3 adds request-order protection for the staff list and four statistics requests, 409 conflict reconciliation, middleware support for legacy users whose account status is missing/null, expanded regression tests, and details-modal focus restoration. The four statistics remain separate requests and can briefly reflect different database snapshots during concurrent updates; request ordering prevents an older statistics batch from replacing a newer batch. Verification: backend tests 194/194 passed; frontend tests 137/137 passed across 17 files; focused authentication middleware tests 13/13 passed; frontend ESLint, Vite production build, and `git diff --check` passed. No backend lint script is defined. The existing untracked design reference, auth illustration, and workflow script are preserved. Do not commit or push without explicit review approval.
 
 Phase 5 closes the final review findings: search results and pagination are held in an updating state until they match the debounced query; list and statistics request IDs are invalidated during effect cleanup and unmount; HTTP 409 feedback reports complete or incomplete refresh based on both loader results; and tests cover updated manual-refresh records and rejection conflicts. Verification: backend tests 194/194 passed; frontend tests 142/142 passed across 17 files; focused Staff Approvals tests 26/26 passed; frontend ESLint, Vite production build, and `git diff --check` passed. Existing Items tests emit React `act(...)` warnings; no test failures occurred. No commit or push was made.
+
+The official graduation-cap artwork from `frontend/src/assets/brand/campusfind-logo.png` is integrated on Login and Registration with its original Dark Brown and Mocha/Gold colors, and in the app header with a separate Warm Ivory (`#F8F4E9`) treatment. The source artwork is unchanged. Logo refinement verification passed 142 frontend tests across 17 files, ESLint, the production build, and `git diff --check`; desktop/mobile CSS breakpoints were reviewed. Browser viewport inspection was unavailable because the browser access host could not attach to the minimized Chrome windows. No commit or push was made.

@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { registerUser } from '../../services/authService';
+import campusfindLogo from '../../assets/brand/campusfind-logo-512.png';
 import './Login.css';
 
 function Register({ onLoginClick }) {
@@ -59,7 +60,14 @@ function Register({ onLoginClick }) {
     return (
         <div className="login-page login-page--register">
             <div className="login-card login-card--register">
-                <h1>CampusFind</h1>
+                <h1 aria-label="CampusFind">
+                    <img
+                        className="auth-brand-logo"
+                        src={campusfindLogo}
+                        alt="CampusFind graduation cap logo"
+                    />
+                    CampusFind
+                </h1>
                 <h2>Create Your Account</h2>
                 <p>Join CampusFind to help reunite people with their belongings.</p>
 
