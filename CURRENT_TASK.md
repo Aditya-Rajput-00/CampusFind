@@ -4,9 +4,9 @@
 
 **Branch:** `main`
 
-**Latest verified commit:** `d2cd367` - `feat: add CampusFind graduation cap branding`
+**Latest verified commit:** `eeecb20` - `feat: improve registration password validation`
 
-**Current work:** CampusFind Registration password visibility and confirmation improvements are implemented and verified, awaiting review. No commit or push is authorized.
+**Current work:** Dashboard Total Users directory validation failure is fixed and verified, awaiting review. No commit or push is authorized.
 
 ## Project and release status
 
@@ -84,8 +84,14 @@ Phase 5 closes the final review findings: search results and pagination are held
 
 The official graduation-cap artwork from `frontend/src/assets/brand/campusfind-logo.png` is integrated on Login and Registration with its original Dark Brown and Mocha/Gold colors, and in the app header with a separate Warm Ivory (`#F8F4E9`) treatment. The source artwork is unchanged. Logo refinement verification passed 142 frontend tests across 17 files, ESLint, the production build, and `git diff --check`; desktop/mobile CSS breakpoints were reviewed. Browser viewport inspection was unavailable because the browser access host could not attach to the minimized Chrome windows. No commit or push was made.
 
-## Active task: Registration password improvements
+## Completed task: Registration password improvements
 
 Registration provides independent show/hide controls for Password and Confirm Password, compares the values on submit, clears a mismatch alert when corrected, and sends only name, email, password, and role to the existing API. No backend changes are needed.
 
 Verification: Registration-focused tests passed 10/10; the full frontend suite passed 145 tests across 17 files; ESLint, the Vite production build, and `git diff --check` passed. No commit or push was made.
+
+## Active task: Dashboard Total Users directory validation failure
+
+Root cause: the Dashboard always sent empty `role` and `accountStatus` query parameters when no filters were selected. The shared list-query middleware permits only `student`, `staff`, or `admin` for `role`, and `pending`, `approved`, or `rejected` for `accountStatus`; empty strings fail those rules and produce HTTP 400 `Validation failed`. The Dashboard now omits unselected filters. Directory errors include backend validation details, and failed loads clear stale rows and totals. The existing admin-only `/api/users` route and safe response field allowlist are unchanged.
+
+Verification: focused Dashboard tests passed 15/15; user API integration tests passed 18/18; full frontend suite passed 149/149 across 17 files; full backend suite passed 196/196; frontend ESLint, production build, and `git diff --check` passed. No commit or push was made.

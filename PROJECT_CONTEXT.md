@@ -233,9 +233,9 @@ These commits document project history. Their test results apply only where a ve
 
 **Branch:** `main`
 
-**Latest verified commit:** `d2cd367` — `feat: add CampusFind graduation cap branding`.
+**Latest verified commit:** `eeecb20` — `feat: improve registration password validation`.
 
-The Staff Approval Dashboard Phase 5 corrections and approved graduation-cap logo color treatments are implemented and reviewed. Login and Registration retain the original Dark Brown and Mocha/Gold logo; the in-app header uses its Warm Ivory treatment. Registration password visibility and confirmation improvements are implemented and verified; confirmation is omitted from the existing API payload. Authentication middleware, like login, treats a missing or null account status as approved for legacy accounts; pending and rejected accounts remain blocked.
+The Staff Approval Dashboard Phase 5 corrections and approved graduation-cap logo color treatments are implemented and reviewed. Login and Registration retain the original Dark Brown and Mocha/Gold logo; the in-app header uses its Warm Ivory treatment. Registration password visibility and confirmation improvements are implemented and verified; confirmation is omitted from the existing API payload. The Dashboard user directory omits empty role/status query filters to meet backend validation. Authentication middleware, like login, treats a missing or null account status as approved for legacy accounts; pending and rejected accounts remain blocked.
 
 **Roadmap position:** Phase 15 — Final Testing & Deployment closeout.
 

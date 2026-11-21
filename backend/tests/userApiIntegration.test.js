@@ -97,6 +97,18 @@ test("GET /api/users/me rejects requests without authentication", async () => {
     });
 });
 
+test("GET /api/users rejects requests without authentication", async () => {
+    const response = await makeRequest("/api/users");
+    const body = await response.json();
+
+    assert.equal(response.status, 401);
+    assert.deepEqual(body, {
+        success: false,
+        message: "Authentication required",
+        errors: [],
+    });
+});
+
 // Test 2: Students cannot access admin user list
 test("GET /api/users denies an authenticated student", async (t) => {
     restoreEnvironment(t);
@@ -226,6 +238,24 @@ test("GET /api/users rejects invalid filters and excessive pagination", async (t
         body.errors.map(({ path }) => path).sort(),
         ["accountStatus", "limit", "page", "role"]
     );
+});
+
+test("GET /api/users identifies empty role and accountStatus filters as invalid", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "admin");
+
+    const token = createToken("admin");
+    const response = await makeRequest("/api/users?role=&accountStatus=", {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(
+        body.errors.map(({ path }) => path).sort(),
+        ["accountStatus", "role"]
+    );
+    assert.ok(body.errors.every(({ msg }) => msg.includes("unsupported value")));
 });
 
 test("GET /api/users bounds search length and calculated page offset", async (t) => {

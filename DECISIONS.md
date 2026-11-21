@@ -313,3 +313,13 @@ The authenticated header pairs the ivory logo with the existing CampusFind wordm
 **Decision:** Keep password confirmation and independent show/hide state in the frontend Registration form. Compare the two values before calling the existing registration service and submit only the established name, email, password, and role fields.
 
 **Reason:** Confirmation helps users catch password-entry mistakes without changing the registration API contract or backend behavior.
+
+---
+
+## 22. Dashboard User Directory Filters
+
+**Decision:** The Dashboard user directory omits unselected `role` and `accountStatus` parameters from requests to the existing admin-only `/api/users` endpoint. Valid selected filters, search, and pagination continue through the shared user-list service.
+
+The list-query middleware rejects empty filter values because its allowlists contain only the supported roles and account statuses. The directory displays backend validation details and clears stale rows and totals after a failed request. The endpoint's safe field selection and authorization remain unchanged.
+
+**Reason:** Omitted optional filters mean “all” while preserving strict backend validation and the existing safe, paginated user-list implementation.

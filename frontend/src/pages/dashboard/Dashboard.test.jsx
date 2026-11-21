@@ -15,7 +15,7 @@ vi.mock('../../services/userService', () => ({ getUsers }));
 import Dashboard from './Dashboard';
 
 const stats = { totalUsers: 18, totalItems: 25, lostItems: 11, foundItems: 14, activeItems: 16, returnedItems: 3, pendingClaims: 4, pendingMatches: 2 };
-const paged = (data = []) => ({ success: true, data, pagination: { page: 1, limit: 10, totalRecords: data.length, totalPages: 1 } });
+const paged = (data = [], pagination = {}) => ({ success: true, data, pagination: { page: 1, limit: 10, totalRecords: data.length, totalPages: 1, ...pagination } });
 const itemPage = (items = []) => ({ success: true, data: { items, pagination: { page: 1, limit: 10, totalItems: items.length, totalPages: 1 } } });
 
 describe('Dashboard management view', () => {
@@ -79,15 +79,85 @@ describe('Dashboard management view', () => {
         await waitFor(() => expect(getMatches).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 10, status: 'PENDING' })));
     });
 
-    it('shows safe user records and supports role/status filters for administrators', async () => {
+    it('opens Total Users and lists safe directory records without empty filters', async () => {
         getUsers.mockResolvedValue(paged([{ name: 'Asha Rao', email: 'asha@example.test', role: 'staff', accountStatus: 'approved', department: 'Library', createdAt: '2026-01-10' }]));
         render(<Dashboard />);
         fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
         expect(await screen.findByText('asha@example.test')).toBeInTheDocument();
         expect(screen.getByText('Library')).toBeInTheDocument();
+        expect(screen.getByText('1 record')).toBeInTheDocument();
+        expect(getUsers).toHaveBeenCalledWith({ page: 1, limit: 10, search: '' });
+    });
+
+    it('searches user records by name or email', async () => {
+        render(<Dashboard />);
+        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
+
+        fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'asha' } });
+
+        await waitFor(() => expect(getUsers).toHaveBeenLastCalledWith({
+            page: 1,
+            limit: 10,
+            search: 'asha',
+        }));
+    });
+
+    it('applies role and account-status filters only when selected', async () => {
+        render(<Dashboard />);
+        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
         fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'staff' } });
+        await waitFor(() => expect(getUsers).toHaveBeenLastCalledWith({
+            page: 1,
+            limit: 10,
+            search: '',
+            role: 'staff',
+        }));
+
         fireEvent.change(screen.getByLabelText('Account status'), { target: { value: 'approved' } });
-        await waitFor(() => expect(getUsers).toHaveBeenLastCalledWith(expect.objectContaining({ role: 'staff', accountStatus: 'approved' })));
+        await waitFor(() => expect(getUsers).toHaveBeenLastCalledWith({
+            page: 1,
+            limit: 10,
+            search: '',
+            role: 'staff',
+            accountStatus: 'approved',
+        }));
+    });
+
+    it('paginates the user directory with the server page metadata', async () => {
+        getUsers.mockImplementation(({ page }) => Promise.resolve(paged(
+            [{ name: `User ${page}`, email: `user${page}@example.test`, role: 'student', accountStatus: 'approved' }],
+            { page, totalRecords: 21, totalPages: 3 },
+        )));
+        render(<Dashboard />);
+        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
+        expect(await screen.findByText('User 1')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+        expect(await screen.findByText('User 2')).toBeInTheDocument();
+        expect(screen.getByText(/Page 2 of 3/)).toBeInTheDocument();
+        expect(getUsers).toHaveBeenLastCalledWith({ page: 2, limit: 10, search: '' });
+    });
+
+    it('shows backend validation details instead of a misleading empty directory', async () => {
+        getUsers.mockRejectedValueOnce({
+            response: {
+                status: 400,
+                data: {
+                    success: false,
+                    message: 'Validation failed',
+                    errors: [{ path: 'role', msg: 'role has an unsupported value' }],
+                },
+            },
+        });
+        render(<Dashboard />);
+        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
+
+        expect(await screen.findByRole('alert'))
+            .toHaveTextContent('Validation failed: role: role has an unsupported value');
+        expect(screen.queryByRole('heading', { name: 'No records found' }))
+            .not.toBeInTheDocument();
+        expect(screen.getByText('Record count unavailable')).toBeInTheDocument();
     });
 
     it('does not request the user directory for staff, even when its card is selected', async () => {

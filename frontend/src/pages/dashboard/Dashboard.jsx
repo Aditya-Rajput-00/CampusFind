@@ -35,7 +35,20 @@ const sectionTitles = {
     active: 'Active items', returned: 'Returned items', claims: 'Claims', matches: 'Matches',
 };
 
-const messageFor = (error) => error.response?.data?.message || error.message || 'Something went wrong.';
+const messageFor = (error) => {
+    const responseData = error.response?.data;
+    const validationDetails = Array.isArray(responseData?.errors)
+        ? responseData.errors
+            .map(({ path, msg }) => path && msg ? `${path}: ${msg}` : '')
+            .filter(Boolean)
+            .join('; ')
+        : '';
+
+    if (responseData?.message && validationDetails) {
+        return `${responseData.message}: ${validationDetails}`;
+    }
+    return responseData?.message || error.message || 'Something went wrong.';
+};
 const formatDate = (value) => value ? new Date(value).toLocaleDateString() : '—';
 const personName = (person) => person?.name || person?.email || '—';
 
@@ -83,7 +96,10 @@ function Dashboard() {
             setRecordsLoading(true);
             setRecordsError('');
             const filters = { page, limit: PAGE_SIZE, search: search.trim() };
-            if (section === 'users') Object.assign(filters, { role, accountStatus });
+            if (section === 'users') {
+                if (role) filters.role = role;
+                if (accountStatus) filters.accountStatus = accountStatus;
+            }
             if (section === 'claims' || section === 'matches') Object.assign(filters, { status });
             if (['items', 'lost', 'found', 'active', 'returned'].includes(section)) {
                 if (section === 'lost' || section === 'found') filters.type = section;
@@ -113,14 +129,21 @@ function Dashboard() {
                     pageInfo = result.pagination;
                 }
                 if (!result?.success) throw new Error(result?.message || `Unable to load ${sectionTitles[section].toLowerCase()}.`);
+                if (!Array.isArray(data) || !pageInfo) {
+                    throw new Error(result.message || `Unable to load ${sectionTitles[section].toLowerCase()}.`);
+                }
                 if (!active) return;
-                setRecords(Array.isArray(data) ? data : []);
-                setPagination(pageInfo ? {
+                setRecords(data);
+                setPagination({
                     ...pageInfo,
                     totalRecords: pageInfo.totalRecords ?? pageInfo.totalItems ?? 0,
-                } : { page, limit: PAGE_SIZE, totalRecords: 0, totalPages: 1 });
+                });
             } catch (err) {
-                if (active) setRecordsError(messageFor(err));
+                if (active) {
+                    setRecords([]);
+                    setPagination({ page, limit: PAGE_SIZE, totalRecords: 0, totalPages: 1 });
+                    setRecordsError(messageFor(err));
+                }
             } finally {
                 if (active) setRecordsLoading(false);
             }
@@ -157,6 +180,10 @@ function Dashboard() {
     const largestItemCount = Math.max(lostCount, foundCount);
     const lostBarWidth = largestItemCount ? `${(lostCount / largestItemCount) * 100}%` : '0%';
     const foundBarWidth = largestItemCount ? `${(foundCount / largestItemCount) * 100}%` : '0%';
+    const totalRecords = pagination.totalRecords ?? 0;
+    const recordCountLabel = recordsError
+        ? 'Record count unavailable'
+        : `${totalRecords} ${totalRecords === 1 ? 'record' : 'records'}`;
     const recordStart = records.length ? ((page - 1) * (pagination.limit || PAGE_SIZE)) + 1 : 0;
     const recordEnd = Math.min((page - 1) * (pagination.limit || PAGE_SIZE) + records.length, pagination.totalRecords);
 
@@ -215,7 +242,7 @@ function Dashboard() {
         </section>
         </> : !error ? <p className="dashboard-loading">No dashboard data available.</p> : null}
         {section && <section className="dashboard-records" aria-labelledby="dashboard-records-title" aria-busy={recordsLoading}>
-            <div className="dashboard-records-heading"><div><p className="dashboard-eyebrow">Management records</p><h2 id="dashboard-records-title">{sectionTitles[section]}</h2><p className="dashboard-record-total">{pagination.totalRecords || 0} records</p></div><button type="button" className="dashboard-back-button" onClick={() => setSection('')}>
+            <div className="dashboard-records-heading"><div><p className="dashboard-eyebrow">Management records</p><h2 id="dashboard-records-title">{sectionTitles[section]}</h2><p className="dashboard-record-total">{recordCountLabel}</p></div><button type="button" className="dashboard-back-button" onClick={() => setSection('')}>
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m14 5-7 7 7 7M7 12h14" /></svg>
                 Back to overview
             </button></div>
