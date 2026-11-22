@@ -147,6 +147,72 @@
     color: var(--color-status-danger);
 }
 
+.dashboard-success {
+    padding: 13px 16px;
+    margin: 18px 0;
+    border: 1px solid var(--color-status-success);
+    border-radius: var(--radius-md);
+    background: var(--color-status-success-surface);
+    color: var(--color-status-success);
+}
+
+.dashboard-delete-button,
+.dashboard-dialog-cancel,
+.dashboard-dialog-confirm {
+    min-height: 38px;
+    padding: 8px 13px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.dashboard-delete-button,
+.dashboard-dialog-confirm {
+    border-color: var(--color-status-danger);
+    background: var(--color-status-danger);
+    color: white;
+}
+
+.dashboard-delete-button:hover:not(:disabled),
+.dashboard-dialog-confirm:hover:not(:disabled) { filter: brightness(.92); }
+
+.dashboard-delete-button:focus-visible,
+.dashboard-dialog-cancel:focus-visible,
+.dashboard-dialog-confirm:focus-visible {
+    outline: 3px solid var(--color-focus-indicator);
+    outline-offset: 2px;
+}
+
+.dashboard-delete-button:disabled,
+.dashboard-dialog-cancel:disabled,
+.dashboard-dialog-confirm:disabled { opacity: .6; cursor: not-allowed; }
+
+.dashboard-dialog-backdrop {
+    position: fixed;
+    z-index: 1100;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgb(42 29 20 / 52%);
+}
+
+.dashboard-delete-dialog {
+    width: min(100%, 520px);
+    padding: 26px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background: var(--color-card-surface);
+    box-shadow: var(--shadow-lg);
+}
+
+.dashboard-delete-dialog h2 { margin: 0 0 12px; font-size: var(--font-size-xl); }
+.dashboard-delete-dialog > p:not(.dashboard-eyebrow) { margin-bottom: 20px; color: var(--color-text-secondary); line-height: var(--line-height-relaxed); }
+.dashboard-delete-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.dashboard-dialog-cancel { background: var(--brand-soft-taupe); color: var(--brand-dark-brown); }
+.dashboard-table.admin-user-table td:last-child { white-space: nowrap; }
+
 .dashboard-overview-heading {
     margin: 28px 0 16px;
 }
@@ -543,6 +609,8 @@
     .dashboard-record-filters label,
     .dashboard-record-filters .dashboard-search { width: 100%; min-width: 0; }
     .dashboard-pagination { align-items: flex-start; flex-direction: column; }
+    .dashboard-delete-actions { flex-direction: column-reverse; }
+    .dashboard-delete-actions button { width: 100%; }
     .dashboard-page-indicator { display: block; margin: 5px 0 0; }
 }
 

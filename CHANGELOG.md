@@ -6,6 +6,9 @@ Notable project changes are recorded here. The project has one published release
 
 ### Backend
 
+- Added admin-only `DELETE /api/users/:id` for student/staff account soft deletion, ID validation, self/admin protection, credential/profile anonymization, and authentication/list exclusion while retaining related history.
+- Added `GET /api/users/students`, a staff/admin-authorized, paginated directory limited to approved students and the name, email, and department fields; the existing admin-only `GET /api/users` authorization is unchanged.
+- Added the aggregate `totalStudents` dashboard statistic, matching only `{ role: "student", accountStatus: "approved" }` regardless of directory pagination.
 - Authentication middleware now treats missing or null account status as approved for legacy users, consistent with login; pending and rejected users remain blocked.
 - Added an admin-only `GET /api/users/staff` endpoint with server-side staff scoping, safe profile fields, name/email search, status filtering, and pagination metadata.
 - Staff statistics include legacy accounts without an explicit status under Approved, matching existing login behavior.
@@ -15,6 +18,8 @@ Notable project changes are recorded here. The project has one published release
 
 ### Frontend
 
+- Added an admin-only Dashboard Delete action with target-specific confirmation, duplicate-submit protection, success/error feedback, and directory/statistics refresh.
+- Renamed the dashboard card to Total Students and show the independent approved-student count; the staff directory retains its search and pagination behavior.
 - Integrated the approved graduation-cap logo in Login and Registration using its original colors and in the responsive application header using a Warm Ivory recolor; replaced the Vite favicon and default page title with CampusFind branding.
 - Added independent show/hide controls for Registration Password and Confirm Password fields, blocks mismatched passwords with a clear error, and keeps confirmation out of the existing API payload.
 - Fixed the Dashboard Total Users directory by omitting empty role and account-status filters rejected by backend list-query validation; surfaced validation details in errors and reset stale record totals after failed requests.
@@ -34,6 +39,9 @@ Notable project changes are recorded here. The project has one published release
 
 ### Verification
 
+- Account deletion tests cover student/staff deletion, staff/student and unauthenticated denial, invalid IDs, self/admin protection, retained related records, list/count refresh, and existing directory behavior. Full suite/lint/build results will be recorded after verification.
+- Staff Dashboard student directory verification passed 152 frontend tests across 17 files and 200 backend tests, including staff listing, fixed approved-student scope, safe fields, search, pagination, validation errors, staff authorization, unauthenticated access, and continued protection of the admin-only user endpoint. Frontend ESLint and Vite production build passed.
+- Dashboard Total Students verification passed the full 152-test frontend suite across 17 files and 200 backend tests. Regression checks verify exact role/status matching excludes pending, rejected, null/missing statuses, admin, and staff accounts; card totals are independent of paginated directory results. Frontend ESLint, Vite production build, and `git diff --check` passed.
 - Dashboard user-directory fix passed 149 frontend tests across 17 files and 196 backend tests, including filter omission, search, role/status filtering, pagination, validation details, safe user fields, and authorization. Frontend ESLint, Vite production build, and `git diff --check` passed.
 - Registration password improvements passed 145 frontend tests across 17 files, including independent visibility toggles, mismatch blocking, correction, and payload checks; frontend ESLint, Vite production build, and `git diff --check` passed.
 - Logo color refinement verification passed 142 frontend tests across 17 files, frontend ESLint, Vite production build, and `git diff --check`. Desktop, mobile, and narrow-mobile header/logo CSS was reviewed; interactive browser viewport inspection remains unavailable because the browser access host cannot attach to the minimized Chrome windows.

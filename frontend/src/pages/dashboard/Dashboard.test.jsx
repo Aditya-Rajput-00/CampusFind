@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const { getStats, getItems, getClaims, getMatches, getUsers, useAuth } = vi.hoisted(() => ({
-    getStats: vi.fn(), getItems: vi.fn(), getClaims: vi.fn(), getMatches: vi.fn(), getUsers: vi.fn(), useAuth: vi.fn(),
+const { getStats, getItems, getClaims, getMatches, getUsers, getApprovedStudents, deleteUserAccount, useAuth } = vi.hoisted(() => ({
+    getStats: vi.fn(), getItems: vi.fn(), getClaims: vi.fn(), getMatches: vi.fn(), getUsers: vi.fn(), getApprovedStudents: vi.fn(), deleteUserAccount: vi.fn(), useAuth: vi.fn(),
 }));
 
 vi.mock('../../context/useAuth.js', () => ({ useAuth }));
@@ -10,11 +10,11 @@ vi.mock('../../services/dashboardService', () => ({ getDashboardStats: getStats 
 vi.mock('../../services/itemService', () => ({ getItems }));
 vi.mock('../../services/claimService', () => ({ getClaims }));
 vi.mock('../../services/matchService', () => ({ getMatches }));
-vi.mock('../../services/userService', () => ({ getUsers }));
+vi.mock('../../services/userService', () => ({ getUsers, getApprovedStudents, deleteUserAccount }));
 
 import Dashboard from './Dashboard';
 
-const stats = { totalUsers: 18, totalItems: 25, lostItems: 11, foundItems: 14, activeItems: 16, returnedItems: 3, pendingClaims: 4, pendingMatches: 2 };
+const stats = { totalUsers: 18, totalStudents: 42, totalItems: 25, lostItems: 11, foundItems: 14, activeItems: 16, returnedItems: 3, pendingClaims: 4, pendingMatches: 2 };
 const paged = (data = [], pagination = {}) => ({ success: true, data, pagination: { page: 1, limit: 10, totalRecords: data.length, totalPages: 1, ...pagination } });
 const itemPage = (items = []) => ({ success: true, data: { items, pagination: { page: 1, limit: 10, totalItems: items.length, totalPages: 1 } } });
 
@@ -27,13 +27,16 @@ describe('Dashboard management view', () => {
         getClaims.mockResolvedValue(paged());
         getMatches.mockResolvedValue(paged());
         getUsers.mockResolvedValue(paged());
+        getApprovedStudents.mockResolvedValue(paged());
+        deleteUserAccount.mockResolvedValue({ success: true, message: 'Account deleted successfully' });
     });
 
     it('renders all eight statistics as accessible controls', async () => {
         render(<Dashboard />);
-        for (const label of ['Total Users', 'Total Items', 'Lost Items', 'Found Items', 'Active Items', 'Returned Items', 'Pending Claims', 'Pending Matches']) {
+        for (const label of ['Total Students', 'Total Items', 'Lost Items', 'Found Items', 'Active Items', 'Returned Items', 'Pending Claims', 'Pending Matches']) {
             expect(await screen.findByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
         }
+        expect(screen.getByRole('button', { name: /Total Students/ })).toHaveTextContent('42');
         expect(screen.getByRole('heading', { name: 'Campus activity' })).toBeInTheDocument();
     });
 
@@ -79,19 +82,20 @@ describe('Dashboard management view', () => {
         await waitFor(() => expect(getMatches).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 10, status: 'PENDING' })));
     });
 
-    it('opens Total Users and lists safe directory records without empty filters', async () => {
-        getUsers.mockResolvedValue(paged([{ name: 'Asha Rao', email: 'asha@example.test', role: 'staff', accountStatus: 'approved', department: 'Library', createdAt: '2026-01-10' }]));
+    it('opens Total Students and lists safe directory records without empty filters', async () => {
+        getUsers.mockResolvedValue(paged([{ _id: 'staff-1', name: 'Asha Rao', email: 'asha@example.test', role: 'staff', accountStatus: 'approved', department: 'Library', createdAt: '2026-01-10' }]));
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
+        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
         expect(await screen.findByText('asha@example.test')).toBeInTheDocument();
         expect(screen.getByText('Library')).toBeInTheDocument();
         expect(screen.getByText('1 record')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Total Students/ })).toHaveTextContent('42');
         expect(getUsers).toHaveBeenCalledWith({ page: 1, limit: 10, search: '' });
     });
 
     it('searches user records by name or email', async () => {
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
+        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
 
         fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'asha' } });
 
@@ -104,7 +108,7 @@ describe('Dashboard management view', () => {
 
     it('applies role and account-status filters only when selected', async () => {
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
+        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
         fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'staff' } });
         await waitFor(() => expect(getUsers).toHaveBeenLastCalledWith({
             page: 1,
@@ -129,7 +133,7 @@ describe('Dashboard management view', () => {
             { page, totalRecords: 21, totalPages: 3 },
         )));
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
+        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
         expect(await screen.findByText('User 1')).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -151,7 +155,7 @@ describe('Dashboard management view', () => {
             },
         });
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
+        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
 
         expect(await screen.findByRole('alert'))
             .toHaveTextContent('Validation failed: role: role has an unsupported value');
@@ -160,11 +164,107 @@ describe('Dashboard management view', () => {
         expect(screen.getByText('Record count unavailable')).toBeInTheDocument();
     });
 
-    it('does not request the user directory for staff, even when its card is selected', async () => {
-        useAuth.mockReturnValue({ user: { role: 'staff' } });
+    it('confirms admin deletion, refreshes the directory and refreshes the student total', async () => {
+        const student = { _id: 'student-1', name: 'Asha Rao', email: 'asha@example.test', role: 'student', accountStatus: 'approved', department: 'Science', createdAt: '2026-01-10' };
+        getStats
+            .mockResolvedValueOnce({ success: true, data: stats })
+            .mockResolvedValueOnce({ success: true, data: { ...stats, totalStudents: 41, totalUsers: 17 } });
+        getUsers
+            .mockResolvedValueOnce(paged([student]))
+            .mockResolvedValueOnce(paged([]));
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
-        expect(await screen.findByRole('alert')).toHaveTextContent('administrators only');
+        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+        fireEvent.click(await screen.findByRole('button', { name: 'Delete Asha Rao' }));
+
+        const dialog = screen.getByRole('dialog', { name: 'Delete account?' });
+        expect(dialog).toHaveTextContent('Asha Rao');
+        expect(dialog).toHaveTextContent('asha@example.test');
+        fireEvent.click(screen.getByRole('button', { name: 'Delete account' }));
+
+        await waitFor(() => expect(deleteUserAccount).toHaveBeenCalledWith('student-1'));
+        expect(await screen.findByText('Asha Rao was deleted. Account history has been retained.')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Total Students/ })).toHaveTextContent('41');
+        expect(await screen.findByRole('heading', { name: 'No records found' })).toBeInTheDocument();
+        expect(getUsers).toHaveBeenCalledTimes(2);
+        expect(getStats).toHaveBeenCalledTimes(2);
+    });
+
+    it('prevents duplicate account deletion submissions and shows deletion errors', async () => {
+        let resolveDeletion;
+        deleteUserAccount.mockReturnValueOnce(new Promise((resolve) => { resolveDeletion = resolve; }));
+        getUsers.mockResolvedValue(paged([{ _id: 'staff-1', name: 'Sam Staff', email: 'sam@example.test', role: 'staff', accountStatus: 'approved' }]));
+        render(<Dashboard />);
+        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+        fireEvent.click(await screen.findByRole('button', { name: 'Delete Sam Staff' }));
+        const confirmButton = screen.getByRole('button', { name: 'Delete account' });
+
+        fireEvent.click(confirmButton);
+        expect(screen.getByRole('button', { name: 'Deleting…' })).toBeDisabled();
+        fireEvent.click(screen.getByRole('button', { name: 'Deleting…' }));
+        expect(deleteUserAccount).toHaveBeenCalledTimes(1);
+
+        resolveDeletion({ success: false, message: 'Unable to delete this account.' });
+        expect(await screen.findByRole('alert')).toHaveTextContent('Unable to delete this account.');
+        expect(screen.getByRole('dialog', { name: 'Delete account?' })).toBeInTheDocument();
+    });
+
+    it('loads the approved student directory for staff with only safe fields', async () => {
+        useAuth.mockReturnValue({ user: { role: 'staff' } });
+        getApprovedStudents.mockResolvedValue(paged([{ name: 'Asha Rao', email: 'asha@example.test', department: 'Library' }]));
+        render(<Dashboard />);
+        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+        expect(await screen.findByRole('heading', { name: 'Student directory' })).toBeInTheDocument();
+        expect(await screen.findByText('asha@example.test')).toBeInTheDocument();
+        expect(screen.getByText('Library')).toBeInTheDocument();
+        expect(screen.queryByRole('columnheader', { name: 'Role' })).not.toBeInTheDocument();
+        expect(screen.queryByLabelText('Role')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Delete/ })).not.toBeInTheDocument();
+        expect(getApprovedStudents).toHaveBeenCalledWith({ page: 1, limit: 10, search: '' });
+        expect(getUsers).not.toHaveBeenCalled();
+    });
+
+    it('searches and paginates the staff-visible student directory', async () => {
+        useAuth.mockReturnValue({ user: { role: 'staff' } });
+        getApprovedStudents.mockImplementation(({ page }) => Promise.resolve(paged(
+            [{ name: `Student ${page}`, email: `student${page}@example.test`, department: 'Science' }],
+            { page, totalRecords: 21, totalPages: 3 },
+        )));
+        render(<Dashboard />);
+        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+
+        fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'asha' } });
+        await waitFor(() => expect(getApprovedStudents).toHaveBeenLastCalledWith({
+            page: 1,
+            limit: 10,
+            search: 'asha',
+        }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+        expect(await screen.findByText('Student 2')).toBeInTheDocument();
+        expect(screen.getByText(/Page 2 of 3/)).toBeInTheDocument();
+    });
+
+    it('shows staff directory validation errors and empty state', async () => {
+        useAuth.mockReturnValue({ user: { role: 'staff' } });
+        getApprovedStudents.mockRejectedValueOnce({
+            response: { data: { message: 'Validation failed', errors: [{ path: 'page', msg: 'page must be positive' }] } },
+        });
+        render(<Dashboard />);
+        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+        expect(await screen.findByRole('alert')).toHaveTextContent('Validation failed: page: page must be positive');
+
+        getApprovedStudents.mockResolvedValueOnce(paged([]));
+        fireEvent.click(screen.getByRole('button', { name: 'Back to overview' }));
+        fireEvent.click(screen.getByRole('button', { name: /Total Students/ }));
+        expect(await screen.findByRole('heading', { name: 'No records found' })).toBeInTheDocument();
+    });
+
+    it('does not request a staff directory for students', async () => {
+        useAuth.mockReturnValue({ user: { role: 'student' } });
+        render(<Dashboard />);
+        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+        expect(await screen.findByRole('alert')).toHaveTextContent('staff and administrators only');
+        expect(getApprovedStudents).not.toHaveBeenCalled();
         expect(getUsers).not.toHaveBeenCalled();
     });
 

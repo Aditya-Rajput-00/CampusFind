@@ -6,12 +6,14 @@ import {
     getStaffAccounts,
     approveStaff,
     rejectStaff,
+    deleteUserAccount,
 } from './userService';
 
 vi.mock('./api', () => ({
     default: {
         get: vi.fn(),
         patch: vi.fn(),
+        delete: vi.fn(),
     },
 }));
 
@@ -113,6 +115,16 @@ describe('userService', () => {
         expect(api.patch).toHaveBeenCalledWith(
             '/users/staff123/reject'
         );
+        expect(result).toEqual(mockResponse);
+    });
+
+    it('deletes a user account through the admin account endpoint', async () => {
+        const mockResponse = { success: true, message: 'Account deleted successfully' };
+        api.delete.mockResolvedValue({ data: mockResponse });
+
+        const result = await deleteUserAccount('student123');
+
+        expect(api.delete).toHaveBeenCalledWith('/users/student123');
         expect(result).toEqual(mockResponse);
     });
 });

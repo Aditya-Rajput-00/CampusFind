@@ -235,6 +235,24 @@ test("rejects a rejected user account", async (t) => {
     assert.equal(res.statusCode, 401);
 });
 
+test("rejects an anonymized account even when its token is otherwise valid", async (t) => {
+    mockUserLookup(t, {
+        _id: TEST_USER_ID,
+        role: "student",
+        accountStatus: "rejected",
+        deletedAt: new Date(),
+    });
+
+    const req = createRequest(createToken());
+    const res = createResponse();
+
+    await protect(req, res, () => {
+        assert.fail("next() should not be called");
+    });
+
+    assert.equal(res.statusCode, 401);
+});
+
 test("passes database errors to centralized error handling", async (t) => {
     const originalFindById = User.findById;
     const databaseError = new Error("Database unavailable");

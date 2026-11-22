@@ -40,8 +40,12 @@ const router = express.Router();
  *                   properties:
  *                     totalUsers:
  *                       type: integer
- *                       description: Total number of registered users
+ *                       description: Total number of active registered users
  *                       example: 120
+ *                     totalStudents:
+ *                       type: integer
+ *                       description: Number of active student accounts with approved account status
+ *                       example: 42
  *                     totalItems:
  *                       type: integer
  *                       description: Total number of reported items

@@ -69,7 +69,7 @@ const createStaffUser = (overrides = {}) => ({
 // GET PENDING STAFF TESTS
 // ==========================================
 
-test("getPendingStaff should return pending staff accounts", async () => {
+test("getPendingStaff should return pending staff accounts excluding deleted accounts", async () => {
     const users = [
         createStaffUser(),
         createStaffUser({
@@ -101,6 +101,7 @@ test("getPendingStaff should return pending staff accounts", async () => {
     assert.deepEqual(receivedFilter, {
         role: "staff",
         accountStatus: "pending",
+        deletedAt: null,
     });
 
     assert.equal(receivedSelect, "-passwordHash");

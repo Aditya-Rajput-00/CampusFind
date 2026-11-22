@@ -4,12 +4,12 @@ import { getDashboardStats } from '../../services/dashboardService';
 import { getItems } from '../../services/itemService';
 import { getClaims } from '../../services/claimService';
 import { getMatches } from '../../services/matchService';
-import { getUsers } from '../../services/userService';
+import { deleteUserAccount, getApprovedStudents, getUsers } from '../../services/userService';
 import './Dashboard.css';
 
 const PAGE_SIZE = 10;
 const statisticCards = [
-    { key: 'totalUsers', label: 'Total Users', icon: 'users', section: 'users' },
+    { key: 'totalStudents', label: 'Total Students', icon: 'users', section: 'users' },
     { key: 'totalItems', label: 'Total Items', icon: 'items', section: 'items' },
     { key: 'lostItems', label: 'Lost Items', icon: 'lost', section: 'lost' },
     { key: 'foundItems', label: 'Found Items', icon: 'found', section: 'found' },
@@ -63,6 +63,10 @@ function Dashboard() {
     const [pagination, setPagination] = useState({ page: 1, limit: PAGE_SIZE, totalRecords: 0, totalPages: 1 });
     const [recordsLoading, setRecordsLoading] = useState(false);
     const [recordsError, setRecordsError] = useState('');
+    const [recordsMessage, setRecordsMessage] = useState('');
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
     const [search, setSearch] = useState('');
     const [role, setRole] = useState('');
     const [accountStatus, setAccountStatus] = useState('');
@@ -79,8 +83,10 @@ function Dashboard() {
             if (!result.success || !result.data) throw new Error(result.message || 'Unable to fetch dashboard statistics');
             setStats(result.data);
             setLastRefreshedAt(new Date());
+            return true;
         } catch (err) {
             setError(messageFor(err));
+            return false;
         } finally {
             setLoading(false);
         }
@@ -90,7 +96,7 @@ function Dashboard() {
 
     useEffect(() => {
         if (!section) return undefined;
-        if (section === 'users' && !isAdmin) return undefined;
+        if (section === 'users' && !['admin', 'staff'].includes(user?.role)) return undefined;
         let active = true;
         const timer = window.setTimeout(async () => {
             setRecordsLoading(true);
@@ -112,7 +118,7 @@ function Dashboard() {
                 let data;
                 let pageInfo;
                 if (section === 'users') {
-                    result = await getUsers(filters);
+                    result = isAdmin ? await getUsers(filters) : await getApprovedStudents(filters);
                     data = result.data;
                     pageInfo = result.pagination;
                 } else if (['items', 'lost', 'found', 'active', 'returned'].includes(section)) {
@@ -149,7 +155,7 @@ function Dashboard() {
             }
         }, search ? 250 : 0);
         return () => { active = false; window.clearTimeout(timer); };
-    }, [section, page, search, role, accountStatus, status, isAdmin, recordsRefreshKey]);
+    }, [section, page, search, role, accountStatus, status, isAdmin, user?.role, recordsRefreshKey]);
 
     const selectSection = (nextSection) => {
         setSection(nextSection);
@@ -158,11 +164,40 @@ function Dashboard() {
         setAccountStatus('');
         setStatus(nextSection === 'claims' || nextSection === 'matches' ? 'PENDING' : '');
         setPage(1);
+        setRecordsMessage('');
     };
 
     const handleRefresh = async () => {
         await loadStats();
         if (section) setRecordsRefreshKey((current) => current + 1);
+    };
+
+    const handleDeleteAccount = async () => {
+        if (!deleteTarget || deleteLoading) return;
+        setDeleteLoading(true);
+        setDeleteError('');
+
+        try {
+            const result = await deleteUserAccount(deleteTarget._id);
+            if (!result?.success) throw new Error(result?.message || 'Unable to delete this account.');
+
+            const deletedName = deleteTarget.name || deleteTarget.email;
+            setDeleteTarget(null);
+            setRecordsMessage(`${deletedName} was deleted. Account history has been retained.`);
+            setRecords((current) => current.filter((record) => record._id !== deleteTarget._id));
+            setPagination((current) => ({ ...current, totalRecords: Math.max(0, current.totalRecords - 1) }));
+            if (records.length === 1 && page > 1) setPage((current) => Math.max(1, current - 1));
+            setRecordsRefreshKey((current) => current + 1);
+
+            const refreshed = await loadStats();
+            if (!refreshed) {
+                setRecordsMessage(`${deletedName} was deleted, but dashboard statistics could not refresh. Use Refresh dashboard to retry.`);
+            }
+        } catch (err) {
+            setDeleteError(messageFor(err));
+        } finally {
+            setDeleteLoading(false);
+        }
     };
 
     const userName = typeof user?.name === 'string' ? user.name.trim().split(/\s+/)[0] : '';
@@ -186,15 +221,16 @@ function Dashboard() {
         : `${totalRecords} ${totalRecords === 1 ? 'record' : 'records'}`;
     const recordStart = records.length ? ((page - 1) * (pagination.limit || PAGE_SIZE)) + 1 : 0;
     const recordEnd = Math.min((page - 1) * (pagination.limit || PAGE_SIZE) + records.length, pagination.totalRecords);
+    const currentSectionTitle = section === 'users' && !isAdmin ? 'Student directory' : sectionTitles[section];
 
     const renderRows = () => {
-        if (section === 'users') return records.map((record, index) => <tr key={record._id || `${record.email}-${index}`}><td>{record.name || '—'}</td><td>{record.email || '—'}</td><td>{record.role || '—'}</td><td><span className={`dashboard-status ${String(record.accountStatus || '').toLowerCase()}`}>{record.accountStatus || '—'}</span></td><td>{record.department || '—'}</td><td>{formatDate(record.createdAt)}</td></tr>);
+        if (section === 'users') return records.map((record, index) => <tr key={record._id || `${record.email}-${index}`}><td>{record.name || '—'}</td><td>{record.email || '—'}</td>{isAdmin && <><td>{record.role || '—'}</td><td><span className={`dashboard-status ${String(record.accountStatus || '').toLowerCase()}`}>{record.accountStatus || '—'}</span></td></>}<td>{record.department || '—'}</td>{isAdmin && <><td>{formatDate(record.createdAt)}</td><td>{['student', 'staff'].includes(record.role) ? <button type="button" className="dashboard-delete-button" onClick={() => { setDeleteTarget(record); setDeleteError(''); }} disabled={deleteLoading} aria-label={`Delete ${record.name || record.email}`}>Delete</button> : <span>Protected account</span>}</td></>}</tr>);
         if (['items', 'lost', 'found', 'active', 'returned'].includes(section)) return records.map((record, index) => <tr key={record._id || index}><td>{record.title || '—'}</td><td>{record.category || '—'}</td><td>{record.type || '—'}</td><td>{[record.location?.building, record.location?.area].filter(Boolean).join(', ') || '—'}</td><td><span className={`dashboard-status ${String(record.status || '').toLowerCase()}`}>{record.status || '—'}</span></td><td>{formatDate(record.date || record.createdAt)}</td></tr>);
         if (section === 'claims') return records.map((record, index) => <tr key={record._id || index}><td>{record.itemId?.title || 'Item unavailable'}</td><td>{personName(record.claimantId)}</td><td>{record.claimantId?.email || '—'}</td><td>{record.proof?.description || '—'}</td><td><span className={`dashboard-status ${String(record.status || '').toLowerCase()}`}>{record.status || '—'}</span></td><td>{formatDate(record.createdAt)}</td></tr>);
         return records.map((record, index) => <tr key={record._id || index}><td>{record.lostItemId?.title || 'Item unavailable'}</td><td>{record.foundItemId?.title || 'Item unavailable'}</td><td>{record.matchScore ?? '—'}</td><td><span className={`dashboard-status ${String(record.status || '').toLowerCase()}`}>{record.status || '—'}</span></td><td>{formatDate(record.createdAt)}</td></tr>);
     };
 
-    const headers = section === 'users' ? ['Name', 'Email', 'Role', 'Account status', 'Department', 'Registered']
+    const headers = section === 'users' ? isAdmin ? ['Name', 'Email', 'Role', 'Account status', 'Department', 'Registered', 'Actions'] : ['Name', 'Email', 'Department']
         : ['items', 'lost', 'found', 'active', 'returned'].includes(section) ? ['Item', 'Category', 'Type', 'Location', 'Status', 'Date']
             : section === 'claims' ? ['Item', 'Claimant', 'Email', 'Claim details', 'Status', 'Submitted']
                 : ['Lost item', 'Found item', 'Match score', 'Status', 'Created'];
@@ -242,21 +278,34 @@ function Dashboard() {
         </section>
         </> : !error ? <p className="dashboard-loading">No dashboard data available.</p> : null}
         {section && <section className="dashboard-records" aria-labelledby="dashboard-records-title" aria-busy={recordsLoading}>
-            <div className="dashboard-records-heading"><div><p className="dashboard-eyebrow">Management records</p><h2 id="dashboard-records-title">{sectionTitles[section]}</h2><p className="dashboard-record-total">{recordCountLabel}</p></div><button type="button" className="dashboard-back-button" onClick={() => setSection('')}>
+            <div className="dashboard-records-heading"><div><p className="dashboard-eyebrow">Management records</p><h2 id="dashboard-records-title">{currentSectionTitle}</h2><p className="dashboard-record-total">{recordCountLabel}</p></div><button type="button" className="dashboard-back-button" onClick={() => setSection('')}>
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m14 5-7 7 7 7M7 12h14" /></svg>
                 Back to overview
             </button></div>
-            {!(section === 'users' && !isAdmin) && <div className="dashboard-record-filters">
+            {!(section === 'users' && !['admin', 'staff'].includes(user?.role)) && <div className="dashboard-record-filters">
                 <label className="dashboard-search">Search<input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder={section === 'users' ? 'Name or email' : 'Search records'} /></label>
-                {section === 'users' && <><label>Role<select value={role} onChange={(event) => { setRole(event.target.value); setPage(1); }}><option value="">All roles</option><option value="student">Student</option><option value="staff">Staff</option><option value="admin">Admin</option></select></label><label>Account status<select value={accountStatus} onChange={(event) => { setAccountStatus(event.target.value); setPage(1); }}><option value="">All statuses</option><option value="approved">Approved</option><option value="pending">Pending</option><option value="rejected">Rejected</option></select></label></>}
+                {section === 'users' && isAdmin && <><label>Role<select value={role} onChange={(event) => { setRole(event.target.value); setPage(1); }}><option value="">All roles</option><option value="student">Student</option><option value="staff">Staff</option><option value="admin">Admin</option></select></label><label>Account status<select value={accountStatus} onChange={(event) => { setAccountStatus(event.target.value); setPage(1); }}><option value="">All statuses</option><option value="approved">Approved</option><option value="pending">Pending</option><option value="rejected">Rejected</option></select></label></>}
                 {(section === 'claims' || section === 'matches' || ['items', 'lost', 'found'].includes(section)) && <label>Status<select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">All statuses</option>{(section === 'claims' ? ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'] : section === 'matches' ? ['PENDING', 'CONFIRMED', 'REJECTED'] : ['ACTIVE', 'MATCHED', 'CLAIMED', 'UNDER_VERIFICATION', 'VERIFIED', 'RETURNED', 'CLOSED']).map((value) => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select></label>}
             </div>}
-            {section === 'users' && !isAdmin ? <div className="dashboard-error" role="alert">The user directory is available to administrators only.</div> : <>
+            {section === 'users' && !['admin', 'staff'].includes(user?.role) ? <div className="dashboard-error" role="alert">The user directory is available to staff and administrators only.</div> : <>
+                {recordsMessage && <div className="dashboard-success" role="status">{recordsMessage}</div>}
                 {recordsError && <div className="dashboard-error" role="alert">{recordsError}</div>}
-                {recordsLoading ? <p className="dashboard-loading" role="status">Loading records…</p> : recordsError ? null : records.length === 0 ? <div className="dashboard-empty"><span className="dashboard-empty-mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="10.8" cy="10.8" r="6.2" /><path d="m15.5 15.5 4.2 4.2M8.5 10.8h4.6" /></svg></span><h3>No records found</h3><p>Try adjusting your search or filters.</p></div> : <div className="dashboard-table-wrap" role="region" tabIndex={0} aria-label={`${sectionTitles[section]} table. Scroll horizontally to see all columns.`}><table className="dashboard-table"><caption className="dashboard-visually-hidden">{sectionTitles[section]} records</caption><thead><tr>{headers.map((header) => <th key={header} scope="col">{header}</th>)}</tr></thead><tbody>{renderRows()}</tbody></table></div>}
+                {recordsLoading ? <p className="dashboard-loading" role="status">Loading records…</p> : recordsError ? null : records.length === 0 ? <div className="dashboard-empty"><span className="dashboard-empty-mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="10.8" cy="10.8" r="6.2" /><path d="m15.5 15.5 4.2 4.2M8.5 10.8h4.6" /></svg></span><h3>No records found</h3><p>Try adjusting your search or filters.</p></div> : <div className="dashboard-table-wrap" role="region" tabIndex={0} aria-label={`${currentSectionTitle} table. Scroll horizontally to see all columns.`}><table className={`dashboard-table${section === 'users' && isAdmin ? ' admin-user-table' : ''}`}><caption className="dashboard-visually-hidden">{currentSectionTitle} records</caption><thead><tr>{headers.map((header) => <th key={header} scope="col">{header}</th>)}</tr></thead><tbody>{renderRows()}</tbody></table></div>}
                 {!recordsError && <nav className="dashboard-pagination" aria-label="Record pages"><span>Showing {recordStart}–{recordEnd} of {pagination.totalRecords || 0} records <span className="dashboard-page-indicator">Page {pagination.page || page} of {Math.max(1, pagination.totalPages || 1)}</span></span><div><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1 || recordsLoading}>Previous</button><button type="button" onClick={() => setPage((current) => current + 1)} disabled={recordsLoading || page >= (pagination.totalPages || 1)}>Next</button></div></nav>}
             </>}
         </section>}
+        {deleteTarget && <div className="dashboard-dialog-backdrop">
+            <section className="dashboard-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="dashboard-delete-title" aria-describedby="dashboard-delete-description">
+                <p className="dashboard-eyebrow">Admin account management</p>
+                <h2 id="dashboard-delete-title">Delete account?</h2>
+                <p id="dashboard-delete-description">Delete <strong>{deleteTarget.name}</strong> ({deleteTarget.email})? This disables and anonymizes the account. Related items, claims, matches, and notifications will remain in history.</p>
+                {deleteError && <div className="dashboard-error" role="alert">{deleteError}</div>}
+                <div className="dashboard-delete-actions">
+                    <button type="button" className="dashboard-dialog-cancel" onClick={() => { setDeleteTarget(null); setDeleteError(''); }} disabled={deleteLoading}>Cancel</button>
+                    <button type="button" className="dashboard-dialog-confirm" onClick={handleDeleteAccount} disabled={deleteLoading}>{deleteLoading ? 'Deleting…' : 'Delete account'}</button>
+                </div>
+            </section>
+        </div>}
     </main>;
 }
 

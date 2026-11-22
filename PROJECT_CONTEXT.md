@@ -233,9 +233,9 @@ These commits document project history. Their test results apply only where a ve
 
 **Branch:** `main`
 
-**Latest verified commit:** `eeecb20` — `feat: improve registration password validation`.
+**Latest verified commit:** `6c2bf0a` — `fix: resolve dashboard user directory validation`.
 
-The Staff Approval Dashboard Phase 5 corrections and approved graduation-cap logo color treatments are implemented and reviewed. Login and Registration retain the original Dark Brown and Mocha/Gold logo; the in-app header uses its Warm Ivory treatment. Registration password visibility and confirmation improvements are implemented and verified; confirmation is omitted from the existing API payload. The Dashboard user directory omits empty role/status query filters to meet backend validation. Authentication middleware, like login, treats a missing or null account status as approved for legacy accounts; pending and rejected accounts remain blocked.
+The Staff Approval Dashboard Phase 5 corrections and approved graduation-cap logo color treatments are implemented and reviewed. Login and Registration retain the original Dark Brown and Mocha/Gold logo; the in-app header uses its Warm Ivory treatment. Registration password visibility and confirmation improvements are implemented and verified; confirmation is omitted from the existing API payload. The Admin Dashboard directory fix was committed in `6c2bf0a`. Current unreleased work adds a staff-authorized student directory and an approved-student count. Admin account deletion is implemented as a soft delete: student/staff accounts are disabled and identifying profile fields are anonymized while referenced history remains intact. The existing admin-only `GET /api/users` route remains admin-only. Authentication treats a missing or null account status as approved for legacy accounts; pending and rejected accounts remain blocked.
 
 **Roadmap position:** Phase 15 — Final Testing & Deployment closeout.
 
@@ -315,6 +315,10 @@ If information is missing, ask the developer rather than inventing details.
 `GET /api/users/staff` is an authenticated, admin-only paginated staff directory. It accepts `search` (name/email), `accountStatus` (`pending`, `approved`, `rejected`), `page`, and `limit`. The server always applies `role: "staff"` and returns `_id`, name, email, role, account status, department, phone, and `createdAt` when available. The response follows the shared `{ success, message, data, pagination }` format; pagination includes `totalRecords` and `totalPages`. The endpoint uses an explicit field allowlist and does not return password hashes, tokens, or internal fields.
 
 The admin Staff Approvals page provides total/pending/approved/rejected counts using `GET /api/users` pagination totals, a searchable status-filtered paginated staff list, account details, and confirmed approval/rejection actions. Older records without `accountStatus` are treated as approved, matching login behavior. Approval and rejection continue to use the existing admin-only endpoints and business logic.
+
+`GET /api/users/students` is a separate authenticated staff/admin directory endpoint. It scopes records to approved students and, consistent with existing directory behavior, includes legacy records with no status. It supports name/email search and pagination, and selects only name, email, and department. It does not expose IDs, roles, account statuses, phone numbers, credentials, or other account fields. The Dashboard's `totalStudents` metric intentionally uses the stricter exact match `{ role: "student", accountStatus: "approved" }`, excludes missing/null statuses, and counts independently of directory pagination. The general `GET /api/users` endpoint remains admin-only.
+
+Admin deletion of student/staff accounts sets `deletedAt`, rejects future authentication, replaces the name/email/password hash, and clears department and phone. Active user listings and dashboard counts exclude tombstones. Items, claims, matches, and notifications are retained; references continue to point to the anonymized user record. This is account deactivation and profile anonymization, not a hard database erase of historical documents or arbitrary text stored in related records.
 
 ## Last Updated
 

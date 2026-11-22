@@ -9,6 +9,7 @@ const getDashboardStats = async (req, res, next) => {
     try {
         const [
             totalUsers,
+            totalStudents,
             totalItems,
             lostItems,
             foundItems,
@@ -17,7 +18,8 @@ const getDashboardStats = async (req, res, next) => {
             pendingClaims,
             pendingMatches,
         ] = await Promise.all([
-            User.countDocuments(),
+            User.countDocuments({ deletedAt: null }),
+            User.countDocuments({ role: "student", accountStatus: "approved", deletedAt: null }),
             Item.countDocuments(),
             Item.countDocuments({ type: "lost" }),
             Item.countDocuments({ type: "found" }),
@@ -29,6 +31,7 @@ const getDashboardStats = async (req, res, next) => {
 
         return successResponse(res, 200, "Dashboard statistics fetched successfully", {
             totalUsers,
+            totalStudents,
             totalItems,
             lostItems,
             foundItems,

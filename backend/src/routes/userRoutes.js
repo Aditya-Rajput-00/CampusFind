@@ -5,6 +5,8 @@ const {
     getUsers,
     getPendingStaff,
     getStaff,
+    getApprovedStudents,
+    deleteUser,
     approveStaff,
     rejectStaff,
     updateUser,
@@ -171,6 +173,78 @@ router.get(
         filters: { accountStatus: ["pending", "approved", "rejected"] },
     }),
     getStaff
+);
+
+/**
+ * @swagger
+ * /api/users/students:
+ *   get:
+ *     summary: Get the approved student directory
+ *     description: Staff and administrators can search and page through approved student names, emails, and departments only.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema: { type: string, maxLength: 100 }
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *     responses:
+ *       200:
+ *         description: Student directory fetched successfully
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Staff or admin access required
+ */
+router.get(
+    "/students",
+    protect,
+    authorize("staff", "admin"),
+    createListQueryMiddleware(),
+    getApprovedStudents
+);
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   delete:
+ *     summary: Anonymize and disable a student or staff account
+ *     description: Admin-only. Preserves historical records and their user references.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully
+ *       400:
+ *         description: Invalid user ID
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Admin access required
+ *       404:
+ *         description: User not found
+ *       409:
+ *         description: Account cannot be deleted
+ */
+router.delete(
+    "/:id",
+    protect,
+    authorize("admin"),
+    objectIdValidator,
+    validateRequest,
+    deleteUser
 );
 
 /**

@@ -7,6 +7,18 @@ export const getUsers = async (filters = {}) => {
     return response.data;
 };
 
+// Fetch the staff-authorized directory of approved students.
+export const getApprovedStudents = async (filters = {}) => {
+    const response = await api.get('/users/students', { params: filters });
+    return response.data;
+};
+
+// Disable and anonymize a student or staff account (admin authorization is enforced by the API).
+export const deleteUserAccount = async (id) => {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+};
+
 // Fetch all staff registrations waiting for admin approval.
 export const getPendingStaff = async () => {
     const response = await api.get('/users/pending-staff');

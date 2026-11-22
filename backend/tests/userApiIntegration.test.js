@@ -5,6 +5,10 @@ const jwt = require("jsonwebtoken");
 
 const app = require("../src/app");
 const User = require("../src/models/User");
+const Item = require("../src/models/Item");
+const Claim = require("../src/models/Claim");
+const Match = require("../src/models/Match");
+const Notification = require("../src/models/Notification");
 
 const TEST_SECRET = "campusfind-test-secret";
 
@@ -13,6 +17,9 @@ const TEST_USER_IDS = {
     admin: "64b000000000000000000002",
     staff: "64b000000000000000000006",
 };
+
+const DELETE_STUDENT_ID = "64b000000000000000000011";
+const DELETE_STAFF_ID = "64b000000000000000000012";
 
 function createToken(role) {
     process.env.JWT_SECRET = TEST_SECRET;
@@ -84,6 +91,20 @@ function mockAuthenticatedUser(t, role, additionalUsers = {}) {
     });
 }
 
+function makeDeletableUser(id, role) {
+    return {
+        _id: { toString: () => id },
+        name: `Test ${role}`,
+        email: `${role}@example.com`,
+        passwordHash: "existing-password-hash",
+        role,
+        accountStatus: "approved",
+        department: "Campus Services",
+        phone: "555-0100",
+        save: async function save() { this.saved = true; },
+    };
+}
+
 // Test 1: Authentication required
 test("GET /api/users/me rejects requests without authentication", async () => {
     const response = await makeRequest("/api/users/me");
@@ -146,6 +167,233 @@ test("GET /api/users denies an authenticated staff member", async (t) => {
     assert.equal(body.message, "Access denied");
 });
 
+test("GET /api/users/students requires authentication", async () => {
+    const response = await makeRequest("/api/users/students");
+    const body = await response.json();
+
+    assert.equal(response.status, 401);
+    assert.equal(body.message, "Authentication required");
+});
+
+test("GET /api/users/students returns a safe searched and paginated directory to staff", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "staff");
+
+    const originalFind = User.find;
+    const originalCountDocuments = User.countDocuments;
+    const students = [{ name: "Asha Student", email: "asha@example.com", department: "Science" }];
+    let capturedFilter;
+    User.find = (filter) => {
+        capturedFilter = filter;
+        const query = {
+            select: (fields) => {
+                assert.equal(fields, "name email department -_id");
+                return query;
+            },
+            sort: (sort) => {
+                assert.deepEqual(sort, { createdAt: -1, _id: -1 });
+                return query;
+            },
+            skip: (skip) => {
+                assert.equal(skip, 10);
+                return query;
+            },
+            limit: (limit) => {
+                assert.equal(limit, 10);
+                return query;
+            },
+            lean: async () => students,
+        };
+        return query;
+    };
+    User.countDocuments = async (filter) => {
+        assert.deepEqual(filter, capturedFilter);
+        return 21;
+    };
+    t.after(() => {
+        User.find = originalFind;
+        User.countDocuments = originalCountDocuments;
+    });
+
+    const token = createToken("staff");
+    const response = await makeRequest("/api/users/students?search=asha&page=2&limit=10", {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(capturedFilter, {
+        role: "student",
+        deletedAt: null,
+        $and: [
+            { $or: [{ name: /asha/i }, { email: /asha/i }] },
+            { $or: [{ accountStatus: "approved" }, { accountStatus: null }] },
+        ],
+    });
+    assert.deepEqual(body.data, students);
+    assert.deepEqual(body.pagination, { page: 2, limit: 10, totalRecords: 21, totalPages: 3 });
+    assert.equal(JSON.stringify(body).includes("passwordHash"), false);
+    assert.equal(JSON.stringify(body).includes("accountStatus"), false);
+    assert.equal(JSON.stringify(body).includes("phone"), false);
+});
+
+test("GET /api/users/students denies students", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "student");
+    const token = createToken("student");
+    const deniedResponse = await makeRequest("/api/users/students", {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    assert.equal(deniedResponse.status, 403);
+});
+
+test("GET /api/users/students rejects unsupported filters and pagination for staff", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "staff");
+    const staffToken = createToken("staff");
+    const invalidResponse = await makeRequest("/api/users/students?role=admin&page=0", {
+        headers: { Authorization: `Bearer ${staffToken}` },
+    });
+    const body = await invalidResponse.json();
+    assert.equal(invalidResponse.status, 400);
+    assert.deepEqual(body.errors.map(({ path }) => path).sort(), ["page", "role"]);
+});
+
+test("DELETE /api/users/:id requires authentication", async () => {
+    const response = await makeRequest(`/api/users/${DELETE_STUDENT_ID}`, { method: "DELETE" });
+    const body = await response.json();
+
+    assert.equal(response.status, 401);
+    assert.equal(body.message, "Authentication required");
+});
+
+test("DELETE /api/users/:id lets admins anonymize a student and preserves related history", async (t) => {
+    restoreEnvironment(t);
+    const student = makeDeletableUser(DELETE_STUDENT_ID, "student");
+    mockAuthenticatedUser(t, "admin", { [DELETE_STUDENT_ID]: student });
+
+    const relatedHistory = {
+        items: [{ _id: "item1", reportedBy: DELETE_STUDENT_ID }],
+        claims: [{ _id: "claim1", claimantId: DELETE_STUDENT_ID, verification: { verifiedBy: DELETE_STUDENT_ID } }],
+        matches: [{ _id: "match1", lostItemId: "item1", foundItemId: "item2" }],
+        notifications: [{ _id: "notice1", userId: DELETE_STUDENT_ID }],
+    };
+    const originalDeleteMethods = [Item, Claim, Match, Notification].map((Model) => Model.deleteMany);
+    const cascadeCalls = [];
+    [Item, Claim, Match, Notification].forEach((Model) => {
+        Model.deleteMany = async () => cascadeCalls.push(Model.modelName);
+    });
+    t.after(() => {
+        [Item, Claim, Match, Notification].forEach((Model, index) => {
+            Model.deleteMany = originalDeleteMethods[index];
+        });
+    });
+
+    const token = createToken("admin");
+    const response = await makeRequest(`/api/users/${DELETE_STUDENT_ID}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.message, "Account deleted successfully");
+    assert.equal(student.name, "Deleted account");
+    assert.equal(student.email, `deleted-${DELETE_STUDENT_ID}@deleted.invalid`);
+    assert.notEqual(student.passwordHash, "existing-password-hash");
+    assert.equal(student.accountStatus, "rejected");
+    assert.equal(student.department, undefined);
+    assert.equal(student.phone, undefined);
+    assert.ok(student.deletedAt instanceof Date);
+    assert.equal(student.saved, true);
+    assert.equal(relatedHistory.items[0].reportedBy, DELETE_STUDENT_ID);
+    assert.equal(relatedHistory.claims[0].claimantId, DELETE_STUDENT_ID);
+    assert.equal(relatedHistory.claims[0].verification.verifiedBy, DELETE_STUDENT_ID);
+    assert.equal(relatedHistory.matches[0].lostItemId, "item1");
+    assert.equal(relatedHistory.notifications[0].userId, DELETE_STUDENT_ID);
+    assert.deepEqual(cascadeCalls, []);
+});
+
+test("DELETE /api/users/:id lets admins anonymize a staff account", async (t) => {
+    restoreEnvironment(t);
+    const staff = makeDeletableUser(DELETE_STAFF_ID, "staff");
+    mockAuthenticatedUser(t, "admin", { [DELETE_STAFF_ID]: staff });
+    const token = createToken("admin");
+
+    const response = await makeRequest(`/api/users/${DELETE_STAFF_ID}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+
+    assert.equal(response.status, 200);
+    assert.ok(staff.deletedAt instanceof Date);
+    assert.equal(staff.role, "staff");
+});
+
+test("DELETE /api/users/:id rejects staff callers", async (t) => {
+    restoreEnvironment(t);
+    const target = makeDeletableUser(DELETE_STUDENT_ID, "student");
+    mockAuthenticatedUser(t, "staff", { [DELETE_STUDENT_ID]: target });
+    const token = createToken("staff");
+    const response = await makeRequest(`/api/users/${DELETE_STUDENT_ID}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 403);
+    assert.equal(body.message, "Access denied");
+});
+
+test("DELETE /api/users/:id rejects student callers", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "student", { [DELETE_STUDENT_ID]: makeDeletableUser(DELETE_STUDENT_ID, "student") });
+    const token = createToken("student");
+    const response = await makeRequest(`/api/users/${DELETE_STUDENT_ID}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    assert.equal(response.status, 403);
+});
+
+test("DELETE /api/users/:id rejects invalid IDs before lookup", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "admin");
+    const token = createToken("admin");
+    const response = await makeRequest("/api/users/not-an-object-id", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(body.message, "Validation failed");
+    assert.equal(body.errors[0].path, "id");
+});
+
+test("DELETE /api/users/:id blocks self-deletion and protected administrator accounts", async (t) => {
+    restoreEnvironment(t);
+    mockAuthenticatedUser(t, "admin", {
+        [TEST_USER_IDS.admin]: { _id: TEST_USER_IDS.admin, role: "admin" },
+        [DELETE_STAFF_ID]: { _id: DELETE_STAFF_ID, role: "admin" },
+    });
+    const token = createToken("admin");
+
+    const selfResponse = await makeRequest(`/api/users/${TEST_USER_IDS.admin}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    assert.equal(selfResponse.status, 409);
+    assert.equal((await selfResponse.json()).message, "Administrators cannot delete their own account");
+
+    const protectedResponse = await makeRequest(`/api/users/${DELETE_STAFF_ID}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    assert.equal(protectedResponse.status, 409);
+    assert.equal((await protectedResponse.json()).message, "Administrator accounts are protected");
+});
+
 test("GET /api/users returns safe filtered records with pagination for an admin", async (t) => {
     restoreEnvironment(t);
     mockAuthenticatedUser(t, "admin");
@@ -168,7 +416,7 @@ test("GET /api/users returns safe filtered records with pagination for an admin"
             select: (fields) => {
                 assert.equal(
                     fields,
-                    "name email role accountStatus department createdAt -_id"
+                    "_id name email role accountStatus department createdAt"
                 );
                 return query;
             },
@@ -207,6 +455,7 @@ test("GET /api/users returns safe filtered records with pagination for an admin"
 
     assert.equal(response.status, 200);
     assert.deepEqual(capturedFilter, {
+        deletedAt: null,
         $or: [{ name: /Sam/i }, { email: /Sam/i }],
         role: "staff",
         accountStatus: "pending",
@@ -337,6 +586,7 @@ test("GET /api/users/staff returns safe, searched and paginated staff for admins
     assert.equal(response.status, 200);
     assert.deepEqual(capturedFilter, {
         role: "staff",
+        deletedAt: null,
         $or: [{ name: /Sam/i }, { email: /Sam/i }],
         accountStatus: "pending",
     });
@@ -377,6 +627,7 @@ test("GET /api/users/staff includes legacy accounts in approved results", async 
     User.find = (filter) => {
         assert.deepEqual(filter, {
             role: "staff",
+            deletedAt: null,
             $and: [
                 { $or: [{ name: /Legacy/i }, { email: /Legacy/i }] },
                 { $or: [{ accountStatus: "approved" }, { accountStatus: null }] },
@@ -431,6 +682,7 @@ test("GET /api/users counts legacy accounts without a status as approved", async
     const legacyUser = { name: "Legacy Staff", email: "legacy@example.com" };
     User.find = (filter) => {
         assert.deepEqual(filter, {
+            deletedAt: null,
             role: "staff",
             $or: [{ accountStatus: "approved" }, { accountStatus: null }],
         });
@@ -485,6 +737,7 @@ test("GET /api/users/pending-staff allows admin access", async (t) => {
 
     User.find = (filter) => {
         assert.deepEqual(filter, {
+            deletedAt: null,
             role: "staff",
             accountStatus: "pending",
         });

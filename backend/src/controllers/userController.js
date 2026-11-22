@@ -1,5 +1,6 @@
 
 const bcrypt = require("bcryptjs");
+const crypto = require("node:crypto");
 const User = require("../models/User");
 const { successResponse } = require("../utils/apiResponse");
 const { escapeRegex, sendPaginatedResponse } = require("../utils/pagination");
@@ -7,7 +8,7 @@ const { escapeRegex, sendPaginatedResponse } = require("../utils/pagination");
 const getUsers = async (req, res, next) => {
     try {
         const { page, limit, offset, search, role, accountStatus } = req.listQuery;
-        const filter = {};
+        const filter = { deletedAt: null };
 
         const conditions = [];
         if (search) {
@@ -29,7 +30,7 @@ const getUsers = async (req, res, next) => {
 
         const [users, totalRecords] = await Promise.all([
             User.find(filter)
-                .select("name email role accountStatus department createdAt -_id")
+                .select("_id name email role accountStatus department createdAt")
                 .sort({ createdAt: -1, _id: -1 })
                 .skip(offset)
                 .limit(limit)
@@ -61,6 +62,7 @@ const getPendingStaff = async (req, res, next) => {
         const users = await User.find({
             role: "staff",
             accountStatus: "pending",
+            deletedAt: null,
         }).select("-passwordHash");
 
         return successResponse(
@@ -79,7 +81,7 @@ const getPendingStaff = async (req, res, next) => {
 const getStaff = async (req, res, next) => {
     try {
         const { page, limit, offset, search, accountStatus } = req.listQuery;
-        const filter = { role: "staff" };
+        const filter = { role: "staff", deletedAt: null };
 
         const conditions = [];
         if (search) {
@@ -121,6 +123,92 @@ const getStaff = async (req, res, next) => {
         );
     } catch (error) {
         console.error("Get staff error:", error);
+        return next(error);
+    }
+};
+
+// Return only the approved student directory fields visible to staff.
+const getApprovedStudents = async (req, res, next) => {
+    try {
+        const { page, limit, offset, search } = req.listQuery;
+        const approvedFilter = {
+            $or: [{ accountStatus: "approved" }, { accountStatus: null }],
+        };
+        const filter = { role: "student", deletedAt: null };
+
+        if (search) {
+            const expression = new RegExp(escapeRegex(search), "i");
+            filter.$and = [
+                { $or: [{ name: expression }, { email: expression }] },
+                approvedFilter,
+            ];
+        } else {
+            Object.assign(filter, approvedFilter);
+        }
+
+        const [students, totalRecords] = await Promise.all([
+            User.find(filter)
+                .select("name email department -_id")
+                .sort({ createdAt: -1, _id: -1 })
+                .skip(offset)
+                .limit(limit)
+                .lean(),
+            User.countDocuments(filter),
+        ]);
+
+        return sendPaginatedResponse(
+            res,
+            200,
+            "Student directory fetched successfully",
+            students,
+            { page, limit, totalRecords }
+        );
+    } catch (error) {
+        console.error("Get approved students error:", error);
+        return next(error);
+    }
+};
+
+// Retain user references in historical records while disabling and anonymizing the account.
+const deleteUser = async (req, res, next) => {
+    try {
+        if (req.user.userId === req.params.id) {
+            return res.status(409).json({
+                success: false,
+                message: "Administrators cannot delete their own account",
+                errors: [],
+            });
+        }
+
+        const user = await User.findById(req.params.id);
+        if (!user || user.deletedAt) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+                errors: [],
+            });
+        }
+
+        if (!['student', 'staff'].includes(user.role)) {
+            return res.status(409).json({
+                success: false,
+                message: "Administrator accounts are protected",
+                errors: [],
+            });
+        }
+
+        user.name = "Deleted account";
+        user.email = `deleted-${user._id.toString()}@deleted.invalid`;
+        user.passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
+        user.accountStatus = "rejected";
+        user.department = undefined;
+        user.phone = undefined;
+        user.deletedAt = new Date();
+        await user.save();
+
+        return successResponse(res, 200, "Account deleted successfully");
+    } catch (error) {
+        console.error("Delete user error:", error);
         return next(error);
     }
 };
@@ -434,6 +522,8 @@ module.exports = {
     getUsers,
     getPendingStaff,
     getStaff,
+    getApprovedStudents,
+    deleteUser,
     approveStaff,
     rejectStaff,
     updateUser,

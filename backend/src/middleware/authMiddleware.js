@@ -41,7 +41,7 @@ const protect = async (req, res, next) => {
     try {
         const user = await User.findById(decoded.userId);
 
-        if (!user || (user.accountStatus !== undefined && user.accountStatus !== null && user.accountStatus !== "approved")) {
+        if (!user || user.deletedAt || (user.accountStatus !== undefined && user.accountStatus !== null && user.accountStatus !== "approved")) {
             return res.status(401).json({
                 success: false,
                 message: "Invalid or expired token",

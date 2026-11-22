@@ -103,7 +103,7 @@ const login = async (req, res, next) => {
             email: normalizedEmail,
         });
 
-        if (!user) {
+        if (!user || user.deletedAt) {
             return res.status(401).json({
                 success: false,
                 message: "Invalid email or password",

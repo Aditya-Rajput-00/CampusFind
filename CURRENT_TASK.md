@@ -4,9 +4,9 @@
 
 **Branch:** `main`
 
-**Latest verified commit:** `eeecb20` - `feat: improve registration password validation`
+**Latest verified commit:** `6c2bf0a` - `fix: resolve dashboard user directory validation`
 
-**Current work:** Dashboard Total Users directory validation failure is fixed and verified, awaiting review. No commit or push is authorized.
+**Current work:** Implementing admin-only student/staff account deletion with anonymized tombstones and retained history. Existing staff directory and Total Students count work remains uncommitted; no changes have been staged, committed, or pushed.
 
 ## Project and release status
 
@@ -90,8 +90,28 @@ Registration provides independent show/hide controls for Password and Confirm Pa
 
 Verification: Registration-focused tests passed 10/10; the full frontend suite passed 145 tests across 17 files; ESLint, the Vite production build, and `git diff --check` passed. No commit or push was made.
 
-## Active task: Dashboard Total Users directory validation failure
+## Completed task: Admin Dashboard Total Users directory validation failure
 
 Root cause: the Dashboard always sent empty `role` and `accountStatus` query parameters when no filters were selected. The shared list-query middleware permits only `student`, `staff`, or `admin` for `role`, and `pending`, `approved`, or `rejected` for `accountStatus`; empty strings fail those rules and produce HTTP 400 `Validation failed`. The Dashboard now omits unselected filters. Directory errors include backend validation details, and failed loads clear stale rows and totals. The existing admin-only `/api/users` route and safe response field allowlist are unchanged.
 
-Verification: focused Dashboard tests passed 15/15; user API integration tests passed 18/18; full frontend suite passed 149/149 across 17 files; full backend suite passed 196/196; frontend ESLint, production build, and `git diff --check` passed. No commit or push was made.
+Verification: focused Dashboard tests passed 15/15; user API integration tests passed 18/18; full frontend suite passed 149/149 across 17 files; full backend suite passed 196/196; frontend ESLint, production build, and `git diff --check` passed. Committed and pushed as `6c2bf0a` (`fix: resolve dashboard user directory validation`).
+
+## Completed implementation: Staff Dashboard user directory
+
+Root cause: the shared Dashboard deliberately prevented non-admin users from opening the user section, and the existing `GET /api/users` and `GET /api/users/staff` routes are correctly admin-only. No staff-authorized directory endpoint existed. Staff must not use or gain access to `GET /api/users`.
+
+Approved scope: a separate staff/admin endpoint lists only approved students with name, email, and department. It supports name/email search and pagination; role and account-status filters are not exposed because the result scope is fixed. The endpoint selects only those three fields and includes legacy records with missing status as approved, consistent with authentication behavior.
+
+Implementation is complete and awaits review. Verification passed: focused Dashboard tests 18/18; user API integration tests 22/22; full frontend suite 152/152 across 17 files; full backend suite 200/200; frontend ESLint, Vite production build, and `git diff --check` passed. No staging, commit, or push was performed.
+
+## Active task: Dashboard Total Students count
+
+The Dashboard statistics API now adds `totalStudents`, counted with the exact filter `{ role: "student", accountStatus: "approved" }`. The card uses this aggregate instead of the all-user count or paginated directory length. Existing `totalUsers` remains in the API for compatibility. The student directory endpoint and its authorization/search/pagination behavior remain unchanged, including its existing legacy-account inclusion rule.
+
+Verification passed: Dashboard focused tests 18/18; dashboard API integration tests 3/3; full frontend tests 152/152 across 17 files; full backend tests 200/200; frontend ESLint, production build, and `git diff --check` passed. The strict count query excludes all roles other than student and all statuses other than approved. No staging, commit, or push was performed.
+
+## Active task: Admin-only account deletion
+
+The deletion strategy is soft deletion with profile anonymization. It leaves user documents in place so required Item, Claim, Match, and Notification references remain valid. Authentication rejects deleted accounts; directory lists and dashboard totals omit tombstones. Only admins can request deletion, only student/staff accounts are eligible, and self-deletion/admin deletion are rejected.
+
+The confirmation UI, regression coverage, documentation, and final full-suite verification are in progress. No staging, commit, or push is authorized.

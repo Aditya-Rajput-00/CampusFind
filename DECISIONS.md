@@ -323,3 +323,31 @@ The authenticated header pairs the ivory logo with the existing CampusFind wordm
 The list-query middleware rejects empty filter values because its allowlists contain only the supported roles and account statuses. The directory displays backend validation details and clears stale rows and totals after a failed request. The endpoint's safe field selection and authorization remain unchanged.
 
 **Reason:** Omitted optional filters mean “all” while preserving strict backend validation and the existing safe, paginated user-list implementation.
+
+---
+
+## 23. Staff Dashboard Student Directory
+
+**Decision:** Keep `GET /api/users` admin-only. Provide the Staff Dashboard a separate authenticated `/api/users/students` endpoint available to staff and admins, restricted server-side to approved student accounts and the name, email, and department fields. The endpoint supports name/email search and validated pagination; role and status filters are not exposed because the endpoint has a fixed approved-student scope.
+
+The staff directory preserves legacy behavior and includes records with missing/null account status. The Dashboard's separate student count uses an exact `{ role: "student", accountStatus: "approved" }` match, excludes those legacy records, and is independent of pagination. The directory response excludes IDs, account status, phone numbers, password hashes, credentials, and all fields outside the explicit select list.
+
+**Reason:** Staff need a limited student contact directory in the shared dashboard. A dedicated endpoint provides that function without broadening the existing admin-only user listing or exposing other user/account data.
+
+---
+
+## 24. Dashboard Approved Student Count
+
+**Decision:** The Dashboard Total Students card reads a separate `totalStudents` aggregate from dashboard statistics. Count only documents matching both `role: "student"` and `accountStatus: "approved"`; retain the existing `totalUsers` statistic for API compatibility. Calculate the metric with a database count query, independently of the paginated student directory.
+
+**Reason:** The dashboard metric must report approved student accounts only, including exclusions for pending/rejected students and all staff/admin or legacy accounts, without exposing additional user records.
+
+---
+
+## 25. Admin Account Deletion and Referenced History
+
+**Decision:** Admin deletion of student/staff accounts uses a soft-delete tombstone. Set `deletedAt`, reject future authentication, set status to rejected, replace name/email/password hash, and clear department/phone. Preserve the User document and all Items, Claims, Matches, and Notifications that reference it. Exclude tombstones from active user listings and dashboard totals. Reject self-deletion and any administrator target.
+
+**Implications:** Historical references remain valid and related activity is not cascaded away. Populated references resolve to an anonymized account. This disables and anonymizes the CampusFind account but does not hard-delete historical documents or scrub arbitrary personal data that may appear in item descriptions, claim proof, or notification text.
+
+**Reason:** User references are required in the existing schemas, and deleting related records could erase unrelated campus history. A tombstone preserves referential integrity while removing direct access and the account's identifying profile fields.

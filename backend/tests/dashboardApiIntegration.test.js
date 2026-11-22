@@ -150,7 +150,34 @@ test("GET /api/dashboard/stats returns statistics to an authenticated staff memb
         }
     });
 
-    User.countDocuments = async () => 120;
+    const userAccounts = [
+        { role: "student", accountStatus: "approved" },
+        { role: "student", accountStatus: "approved" },
+        { role: "student", accountStatus: "pending" },
+        { role: "student", accountStatus: "rejected" },
+        { role: "student", accountStatus: null },
+        { role: "student" },
+        { role: "admin", accountStatus: "approved" },
+        { role: "staff", accountStatus: "approved" },
+        { role: "student", accountStatus: "approved", deletedAt: new Date() },
+    ];
+    User.countDocuments = async (filter) => {
+        if (filter.role === "student") {
+            assert.deepEqual(filter, {
+                role: "student",
+                accountStatus: "approved",
+                deletedAt: null,
+            });
+            return userAccounts.filter((account) =>
+                account.role === filter.role
+                && account.accountStatus === filter.accountStatus
+                && (account.deletedAt === null || account.deletedAt === undefined)
+            ).length;
+        }
+
+        assert.deepEqual(filter, { deletedAt: null });
+        return 120;
+    };
 
     Item.countDocuments = async (filter = {}) => {
         if (filter.type === "lost") return 40;
@@ -181,6 +208,7 @@ test("GET /api/dashboard/stats returns statistics to an authenticated staff memb
 
     assert.deepEqual(body.data, {
         totalUsers: 120,
+        totalStudents: 2,
         totalItems: 85,
         lostItems: 40,
         foundItems: 45,
