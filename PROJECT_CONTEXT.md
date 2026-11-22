@@ -1,3 +1,4 @@
+
 # CampusFind — Project Context
 
 ## 1. Project Overview
@@ -235,11 +236,29 @@ These commits document project history. Their test results apply only where a ve
 
 **Latest verified commit:** `6c2bf0a` — `fix: resolve dashboard user directory validation`.
 
-The Staff Approval Dashboard Phase 5 corrections and approved graduation-cap logo color treatments are implemented and reviewed. Login and Registration retain the original Dark Brown and Mocha/Gold logo; the in-app header uses its Warm Ivory treatment. Registration password visibility and confirmation improvements are implemented and verified; confirmation is omitted from the existing API payload. The Admin Dashboard directory fix was committed in `6c2bf0a`. Current unreleased work adds a staff-authorized student directory and an approved-student count. Admin account deletion is implemented as a soft delete: student/staff accounts are disabled and identifying profile fields are anonymized while referenced history remains intact. The existing admin-only `GET /api/users` route remains admin-only. Authentication treats a missing or null account status as approved for legacy accounts; pending and rejected accounts remain blocked.
+The Staff Approval Dashboard Phase 5 corrections and approved graduation-cap logo color treatments are implemented and reviewed. Login and Registration retain the original Dark Brown and Mocha/Gold logo; the in-app header uses its Warm Ivory treatment.
+
+Registration password visibility and confirmation improvements are implemented and verified; confirmation is omitted from the existing API payload.
+
+The Admin Dashboard directory validation fix was committed in `6c2bf0a`.
+
+Subsequent unreleased Dashboard work includes:
+
+- A separate staff-authorized approved-student directory.
+- Independent Total Users and Total Students dashboard statistics.
+- Role-based account deletion using soft deletion and profile anonymization.
+- Admin access to the complete user directory and deletion of student/staff accounts.
+- Staff access to the approved student directory and deletion of student accounts only.
+- Protection against administrator-account deletion and self-deletion.
+- Retention of related historical records.
+
+The general `GET /api/users` endpoint remains admin-only. Staff uses the separate `GET /api/users/students` endpoint.
+
+Authentication treats a missing or null account status as approved for legacy accounts; pending and rejected accounts remain blocked. Deleted accounts are rejected.
 
 **Roadmap position:** Phase 15 — Final Testing & Deployment closeout.
 
-Tasks 88 (Production API Configuration), 89 (Final Security Check), and 90 (Final GitHub Release/Version and documentation synchronization) are complete. The release and its documentation remain historical records; later frontend work is unreleased.
+Tasks 88 (Production API Configuration), 89 (Final Security Check), and 90 (Final GitHub Release/Version and documentation synchronization) are complete. The release and its documentation remain historical records; later frontend and account-management improvements are unreleased.
 
 ### Task 89 — Final Security Check
 
@@ -258,9 +277,11 @@ These are historical results from Task 89, not a fresh backend run during the cu
 
 **Status: Complete.** The first stable release, `v1.0.0`, was published on 2026-11-12. Its tag points to `ee447b3b9df0c559f2ae54bd60b5ec3c6a6d84bd`; the release records were synchronized in `80b16ce`. This documentation audit corrects stale status and history records without creating another release.
 
-Subsequent frontend work is recorded under Unreleased in `CHANGELOG.md`. The Dashboard redesign verification passed 123 frontend tests across 17 files, frontend ESLint, production build, and `git diff --check`. The backend pagination work was previously verified by 187 passing backend tests. Browser-based viewport verification for the current redesign was unavailable in this environment.
+Subsequent frontend work is recorded under Unreleased in `CHANGELOG.md`. The Dashboard redesign verification passed 123 frontend tests across 17 files, frontend ESLint, production build, and `git diff --check`. The backend pagination work was previously verified by 187 passing backend tests. Browser-based viewport verification for the Dashboard redesign was unavailable in that environment.
 
-Task 91's Dropdown popup clipping issue was fixed with intelligent upward/downward positioning and pushed in `dec832c`. Commit `3d7802c` contains the Dashboard management foundation, backend list pagination, Claims/Matches frontend pagination, and Dashboard Items metadata fix. The current uncommitted work is the premium Dashboard frontend redesign.
+Task 91's Dropdown popup clipping issue was fixed with intelligent upward/downward positioning and pushed in `dec832c`.
+
+Commit `3d7802c` contains the Dashboard management foundation, backend list pagination, Claims/Matches frontend pagination, and Dashboard Items metadata fix.
 
 ## 11. Development Rules
 
@@ -283,7 +304,7 @@ Follow:
 
 PLAN → INSPECT → IMPLEMENT → TEST → VERIFY → REVIEW → COMMIT
 
-Do not move to the next task until the current task is verified.
+Do not move to the next task until the current work is verified.
 
 ## 13. Documentation Maintenance
 
@@ -316,10 +337,36 @@ If information is missing, ask the developer rather than inventing details.
 
 The admin Staff Approvals page provides total/pending/approved/rejected counts using `GET /api/users` pagination totals, a searchable status-filtered paginated staff list, account details, and confirmed approval/rejection actions. Older records without `accountStatus` are treated as approved, matching login behavior. Approval and rejection continue to use the existing admin-only endpoints and business logic.
 
-`GET /api/users/students` is a separate authenticated staff/admin directory endpoint. It scopes records to approved students and, consistent with existing directory behavior, includes legacy records with no status. It supports name/email search and pagination, and selects only name, email, and department. It does not expose IDs, roles, account statuses, phone numbers, credentials, or other account fields. The Dashboard's `totalStudents` metric intentionally uses the stricter exact match `{ role: "student", accountStatus: "approved" }`, excludes missing/null statuses, and counts independently of directory pagination. The general `GET /api/users` endpoint remains admin-only.
+## Dashboard User Directories and Statistics
 
-Admin deletion of student/staff accounts sets `deletedAt`, rejects future authentication, replaces the name/email/password hash, and clears department and phone. Active user listings and dashboard counts exclude tombstones. Items, claims, matches, and notifications are retained; references continue to point to the anonymized user record. This is account deactivation and profile anonymization, not a hard database erase of historical documents or arbitrary text stored in related records.
+`GET /api/users/students` is a separate authenticated staff/admin directory endpoint. It scopes records to approved students and, consistent with existing directory behavior, includes legacy records with no status. It supports name/email search and pagination, and selects only `_id`, name, email, and department. The `_id` is required by the Dashboard to request account deletion. The endpoint does not expose roles, account statuses, phone numbers, credentials, or other account fields.
+
+The Dashboard's `totalStudents` metric intentionally uses the stricter exact match `{ role: "student", accountStatus: "approved", deletedAt: null }`, excludes missing/null statuses, and counts independently of directory pagination.
+
+The `totalUsers` metric counts all non-deleted user accounts, including students, staff, and administrators, using `{ deletedAt: null }`. The Admin Dashboard displays Total Users, while the Staff Dashboard displays Total Students.
+
+The general `GET /api/users` endpoint remains admin-only. Staff must not use or gain access to the general user directory or Admin-only staff-management endpoints.
+
+## Role-Based Account Deletion
+
+Account deletion uses soft deletion and profile anonymization rather than hard deletion.
+
+Permissions:
+
+- Admin can delete student and staff accounts.
+- Staff can delete student accounts only.
+- Administrator accounts are protected from deletion.
+- Users cannot delete their own accounts.
+- Staff cannot access or manage administrator accounts or Admin-only management endpoints.
+
+The authenticated `DELETE /api/users/:id` endpoint permits Admin and Staff callers, while the backend enforces the target-role restrictions. The backend remains the authoritative security boundary; frontend restrictions are not a replacement for server-side authorization.
+
+Deletion sets `deletedAt`, rejects future authentication, replaces the name, email, and password hash, and clears department and phone. Active user listings and dashboard counts exclude tombstones.
+
+Items, claims, matches, and notifications are retained; references continue to point to the anonymized user record. This is account deactivation and profile anonymization, not a hard database erase of historical documents or arbitrary text stored in related records.
+
+The Dashboard provides role-appropriate deletion actions, confirmation dialogs, success/error feedback, and directory refresh after successful deletion.
 
 ## Last Updated
 
-2026-11-21
+2026-11-22

@@ -17,7 +17,7 @@ const getUsers = async (req, res, next) => {
         }
         if (role) filter.role = role;
         if (accountStatus === "approved") {
-            // Older records without accountStatus are treated as approved at login.
+            // Older records without accountStatus are treated as approved.
             conditions.push({ $or: [{ accountStatus: "approved" }, { accountStatus: null }] });
         } else if (accountStatus) {
             filter.accountStatus = accountStatus;
@@ -56,7 +56,7 @@ const getUsers = async (req, res, next) => {
     }
 };
 
-// Get all staff accounts waiting for admin approval
+// Get all staff accounts waiting for admin approval.
 const getPendingStaff = async (req, res, next) => {
     try {
         const users = await User.find({
@@ -127,7 +127,7 @@ const getStaff = async (req, res, next) => {
     }
 };
 
-// Return only the approved student directory fields visible to staff.
+// Return only approved student directory fields visible to staff.
 const getApprovedStudents = async (req, res, next) => {
     try {
         const { page, limit, offset, search } = req.listQuery;
@@ -148,7 +148,7 @@ const getApprovedStudents = async (req, res, next) => {
 
         const [students, totalRecords] = await Promise.all([
             User.find(filter)
-                .select("name email department -_id")
+                .select("_id name email department")
                 .sort({ createdAt: -1, _id: -1 })
                 .skip(offset)
                 .limit(limit)
@@ -169,18 +169,25 @@ const getApprovedStudents = async (req, res, next) => {
     }
 };
 
-// Retain user references in historical records while disabling and anonymizing the account.
+// Anonymize and disable an account while preserving historical references.
+// Admin: may delete student and staff accounts.
+// Staff: may delete student accounts only.
+// Neither role may delete administrator accounts or their own account.
 const deleteUser = async (req, res, next) => {
     try {
-        if (req.user.userId === req.params.id) {
+        const requesterRole = req.user.role;
+        const requesterId = req.user.userId;
+
+        if (requesterId === req.params.id) {
             return res.status(409).json({
                 success: false,
-                message: "Administrators cannot delete their own account",
+                message: "You cannot delete your own account",
                 errors: [],
             });
         }
 
         const user = await User.findById(req.params.id);
+
         if (!user || user.deletedAt) {
             return res.status(404).json({
                 success: false,
@@ -189,7 +196,7 @@ const deleteUser = async (req, res, next) => {
             });
         }
 
-        if (!['student', 'staff'].includes(user.role)) {
+        if (user.role === "admin") {
             return res.status(409).json({
                 success: false,
                 message: "Administrator accounts are protected",
@@ -197,13 +204,41 @@ const deleteUser = async (req, res, next) => {
             });
         }
 
+        if (!["student", "staff"].includes(user.role)) {
+            return res.status(409).json({
+                success: false,
+                message: "This account cannot be deleted",
+                errors: [],
+            });
+        }
+
+        if (requesterRole === "staff" && user.role !== "student") {
+            return res.status(403).json({
+                success: false,
+                message: "Staff members can delete student accounts only",
+                errors: [],
+            });
+        }
+
+        if (!["admin", "staff"].includes(requesterRole)) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied",
+                errors: [],
+            });
+        }
+
         user.name = "Deleted account";
         user.email = `deleted-${user._id.toString()}@deleted.invalid`;
-        user.passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
+        user.passwordHash = await bcrypt.hash(
+            crypto.randomBytes(32).toString("hex"),
+            10
+        );
         user.accountStatus = "rejected";
         user.department = undefined;
         user.phone = undefined;
         user.deletedAt = new Date();
+
         await user.save();
 
         return successResponse(res, 200, "Account deleted successfully");
@@ -213,7 +248,7 @@ const deleteUser = async (req, res, next) => {
     }
 };
 
-// Approve a pending staff account
+// Approve a pending staff account.
 const approveStaff = async (req, res, next) => {
     try {
         const user = await User.findById(req.params.id);
@@ -262,7 +297,7 @@ const approveStaff = async (req, res, next) => {
     }
 };
 
-// Reject a pending staff account
+// Reject a pending staff account.
 const rejectStaff = async (req, res, next) => {
     try {
         const user = await User.findById(req.params.id);
@@ -314,7 +349,6 @@ const rejectStaff = async (req, res, next) => {
 const updateUser = async (req, res, next) => {
     try {
         const { name, department, phone } = req.body;
-
         const user = await User.findById(req.params.id);
 
         if (!user) {
@@ -325,17 +359,9 @@ const updateUser = async (req, res, next) => {
             });
         }
 
-        if (name !== undefined) {
-            user.name = name;
-        }
-
-        if (department !== undefined) {
-            user.department = department;
-        }
-
-        if (phone !== undefined) {
-            user.phone = phone;
-        }
+        if (name !== undefined) user.name = name;
+        if (department !== undefined) user.department = department;
+        if (phone !== undefined) user.phone = phone;
 
         await user.save();
 
@@ -378,7 +404,6 @@ const updateUserRole = async (req, res, next) => {
         }
 
         user.role = role;
-
         await user.save();
 
         return successResponse(res, 200, "User role updated successfully", {
@@ -419,7 +444,6 @@ const getMyProfile = async (req, res, next) => {
 const updateMyProfile = async (req, res, next) => {
     try {
         const { name, department, phone } = req.body;
-
         const user = await User.findById(req.user.userId);
 
         if (!user) {
@@ -430,17 +454,9 @@ const updateMyProfile = async (req, res, next) => {
             });
         }
 
-        if (name !== undefined) {
-            user.name = name;
-        }
-
-        if (department !== undefined) {
-            user.department = department;
-        }
-
-        if (phone !== undefined) {
-            user.phone = phone;
-        }
+        if (name !== undefined) user.name = name;
+        if (department !== undefined) user.department = department;
+        if (phone !== undefined) user.phone = phone;
 
         await user.save();
 
@@ -504,7 +520,6 @@ const changeMyPassword = async (req, res, next) => {
         }
 
         user.passwordHash = await bcrypt.hash(newPassword, 10);
-
         await user.save();
 
         return successResponse(

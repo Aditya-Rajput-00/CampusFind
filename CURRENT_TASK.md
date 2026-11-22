@@ -1,12 +1,12 @@
 # CampusFind — Current Development Status
 
-**Last synchronized:** 2026-11-21
+**Last synchronized:** 2026-11-22
 
 **Branch:** `main`
 
 **Latest verified commit:** `6c2bf0a` - `fix: resolve dashboard user directory validation`
 
-**Current work:** Implementing admin-only student/staff account deletion with anonymized tombstones and retained history. Existing staff directory and Total Students count work remains uncommitted; no changes have been staged, committed, or pushed.
+**Current work:** Reviewing and synchronizing documentation for the completed role-based account deletion, Dashboard statistics, and Staff directory implementation. Changes remain uncommitted; no files have been staged, committed, or pushed.
 
 ## Project and release status
 
@@ -96,22 +96,55 @@ Root cause: the Dashboard always sent empty `role` and `accountStatus` query par
 
 Verification: focused Dashboard tests passed 15/15; user API integration tests passed 18/18; full frontend suite passed 149/149 across 17 files; full backend suite passed 196/196; frontend ESLint, production build, and `git diff --check` passed. Committed and pushed as `6c2bf0a` (`fix: resolve dashboard user directory validation`).
 
+
 ## Completed implementation: Staff Dashboard user directory
 
-Root cause: the shared Dashboard deliberately prevented non-admin users from opening the user section, and the existing `GET /api/users` and `GET /api/users/staff` routes are correctly admin-only. No staff-authorized directory endpoint existed. Staff must not use or gain access to `GET /api/users`.
+The Dashboard now provides a separate student directory for Staff and Admin users. The authenticated `GET /api/users/students` endpoint is authorized for Staff and Admin, scopes results to approved students, supports name/email search and pagination, and returns `_id`, name, email, and department. The `_id` is required by the frontend to request account deletion. Legacy records without an explicit account status follow the existing approved-account directory behavior.
 
-Approved scope: a separate staff/admin endpoint lists only approved students with name, email, and department. It supports name/email search and pagination; role and account-status filters are not exposed because the result scope is fixed. The endpoint selects only those three fields and includes legacy records with missing status as approved, consistent with authentication behavior.
+The general `GET /api/users` endpoint remains Admin-only. Staff cannot access the general user directory, staff-management endpoints, or administrator settings.
 
-Implementation is complete and awaits review. Verification passed: focused Dashboard tests 18/18; user API integration tests 22/22; full frontend suite 152/152 across 17 files; full backend suite 200/200; frontend ESLint, Vite production build, and `git diff --check` passed. No staging, commit, or push was performed.
+Verification at implementation time: focused Dashboard tests 18/18; user API integration tests 22/22; full frontend suite 152/152 across 17 files; full backend suite 200/200; frontend ESLint, Vite production build, and `git diff --check` passed.
 
-## Active task: Dashboard Total Students count
+## Completed implementation: Dashboard statistics
 
-The Dashboard statistics API now adds `totalStudents`, counted with the exact filter `{ role: "student", accountStatus: "approved" }`. The card uses this aggregate instead of the all-user count or paginated directory length. Existing `totalUsers` remains in the API for compatibility. The student directory endpoint and its authorization/search/pagination behavior remain unchanged, including its existing legacy-account inclusion rule.
+The Dashboard statistics API provides two independent account metrics:
 
-Verification passed: Dashboard focused tests 18/18; dashboard API integration tests 3/3; full frontend tests 152/152 across 17 files; full backend tests 200/200; frontend ESLint, production build, and `git diff --check` passed. The strict count query excludes all roles other than student and all statuses other than approved. No staging, commit, or push was performed.
+- `totalUsers`: all non-deleted user accounts, including students, staff, and administrators.
+- `totalStudents`: approved, non-deleted student accounts, using the exact filter `{ role: "student", accountStatus: "approved", deletedAt: null }`.
 
-## Active task: Admin-only account deletion
+The Admin Dashboard displays Total Users. The Staff Dashboard displays Total Students. These statistics are calculated independently of directory pagination. The student directory retains its separate legacy-account inclusion behavior.
 
-The deletion strategy is soft deletion with profile anonymization. It leaves user documents in place so required Item, Claim, Match, and Notification references remain valid. Authentication rejects deleted accounts; directory lists and dashboard totals omit tombstones. Only admins can request deletion, only student/staff accounts are eligible, and self-deletion/admin deletion are rejected.
+## Completed implementation: Role-based account deletion
 
-The confirmation UI, regression coverage, documentation, and final full-suite verification are in progress. No staging, commit, or push is authorized.
+Account deletion uses soft deletion and profile anonymization. User documents are retained so existing Item, Claim, Match, and Notification references remain valid.
+
+Permissions:
+
+- Admin can delete student and staff accounts.
+- Staff can delete student accounts only.
+- Administrator accounts are protected from deletion.
+- Users cannot delete their own accounts.
+- Staff cannot access or manage administrator accounts or Admin-only management endpoints.
+
+Deletion marks the account with `deletedAt`, anonymizes identifying profile and credential fields, clears department and phone information, and prevents future authentication. Active user listings and dashboard totals exclude deleted accounts. Related historical records are retained.
+
+The Dashboard provides role-appropriate deletion actions, confirmation dialogs, success/error feedback, and directory refresh after successful deletion. The backend remains authoritative for authorization and deletion restrictions.
+
+### Verification
+
+- User API integration tests: 29/29 passed.
+- Full backend test suite: 208/208 passed.
+- Focused Dashboard tests: 21/21 passed.
+- Full frontend test suite: 156/156 passed across 17 files.
+- Frontend Vite production build: passed.
+- Frontend ESLint and `git diff --check` have not yet been freshly verified for this task.
+
+No staging, commit, or push has been performed for this task.
+
+## Next recommended work
+
+Review the documentation updates, inspect the final Git diff and working-tree status, and obtain explicit approval before staging or committing any changes.
+
+## Last Updated
+
+2026-11-22

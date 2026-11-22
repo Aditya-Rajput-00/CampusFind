@@ -33,10 +33,21 @@ describe('Dashboard management view', () => {
 
     it('renders all eight statistics as accessible controls', async () => {
         render(<Dashboard />);
-        for (const label of ['Total Students', 'Total Items', 'Lost Items', 'Found Items', 'Active Items', 'Returned Items', 'Pending Claims', 'Pending Matches']) {
+
+        for (const label of [
+            'Total Users',
+            'Total Items',
+            'Lost Items',
+            'Found Items',
+            'Active Items',
+            'Returned Items',
+            'Pending Claims',
+            'Pending Matches',
+        ]) {
             expect(await screen.findByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
         }
-        expect(screen.getByRole('button', { name: /Total Students/ })).toHaveTextContent('42');
+
+        expect(screen.getByRole('button', { name: /Total Users/ })).toHaveTextContent('18');
         expect(screen.getByRole('heading', { name: 'Campus activity' })).toBeInTheDocument();
     });
 
@@ -82,22 +93,39 @@ describe('Dashboard management view', () => {
         await waitFor(() => expect(getMatches).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 10, status: 'PENDING' })));
     });
 
-    it('opens Total Students and lists safe directory records without empty filters', async () => {
-        getUsers.mockResolvedValue(paged([{ _id: 'staff-1', name: 'Asha Rao', email: 'asha@example.test', role: 'staff', accountStatus: 'approved', department: 'Library', createdAt: '2026-01-10' }]));
+    it('opens Total Users and lists all account types without empty filters', async () => {
+        getUsers.mockResolvedValue(paged([
+            {
+                _id: 'staff-1',
+                name: 'Asha Rao',
+                email: 'asha@example.test',
+                role: 'staff',
+                accountStatus: 'approved',
+                department: 'Library',
+                createdAt: '2026-01-10',
+            },
+        ]));
+
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+
+        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
+
         expect(await screen.findByText('asha@example.test')).toBeInTheDocument();
         expect(screen.getByText('Library')).toBeInTheDocument();
         expect(screen.getByText('1 record')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Total Students/ })).toHaveTextContent('42');
+        expect(screen.getByRole('button', { name: /Total Users/ })).toHaveTextContent('18');
+
         expect(getUsers).toHaveBeenCalledWith({ page: 1, limit: 10, search: '' });
     });
 
     it('searches user records by name or email', async () => {
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
 
-        fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'asha' } });
+        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
+
+        fireEvent.change(screen.getByLabelText('Search'), {
+            target: { value: 'asha' },
+        });
 
         await waitFor(() => expect(getUsers).toHaveBeenLastCalledWith({
             page: 1,
@@ -105,11 +133,15 @@ describe('Dashboard management view', () => {
             search: 'asha',
         }));
     });
-
     it('applies role and account-status filters only when selected', async () => {
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
-        fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'staff' } });
+
+        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
+
+        fireEvent.change(screen.getByLabelText('Role'), {
+            target: { value: 'staff' },
+        });
+
         await waitFor(() => expect(getUsers).toHaveBeenLastCalledWith({
             page: 1,
             limit: 10,
@@ -117,7 +149,10 @@ describe('Dashboard management view', () => {
             role: 'staff',
         }));
 
-        fireEvent.change(screen.getByLabelText('Account status'), { target: { value: 'approved' } });
+        fireEvent.change(screen.getByLabelText('Account status'), {
+            target: { value: 'approved' },
+        });
+
         await waitFor(() => expect(getUsers).toHaveBeenLastCalledWith({
             page: 1,
             limit: 10,
@@ -126,14 +161,16 @@ describe('Dashboard management view', () => {
             accountStatus: 'approved',
         }));
     });
-
     it('paginates the user directory with the server page metadata', async () => {
         getUsers.mockImplementation(({ page }) => Promise.resolve(paged(
             [{ name: `User ${page}`, email: `user${page}@example.test`, role: 'student', accountStatus: 'approved' }],
             { page, totalRecords: 21, totalPages: 3 },
         )));
+
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+
+        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
+
         expect(await screen.findByText('User 1')).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -155,7 +192,7 @@ describe('Dashboard management view', () => {
             },
         });
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
 
         expect(await screen.findByRole('alert'))
             .toHaveTextContent('Validation failed: role: role has an unsupported value');
@@ -164,26 +201,44 @@ describe('Dashboard management view', () => {
         expect(screen.getByText('Record count unavailable')).toBeInTheDocument();
     });
 
-    it('confirms admin deletion, refreshes the directory and refreshes the student total', async () => {
-        const student = { _id: 'student-1', name: 'Asha Rao', email: 'asha@example.test', role: 'student', accountStatus: 'approved', department: 'Science', createdAt: '2026-01-10' };
+    it('confirms admin deletion, refreshes the directory and refreshes dashboard totals', async () => {
+        const student = {
+            _id: 'student-1',
+            name: 'Asha Rao',
+            email: 'asha@example.test',
+            role: 'student',
+            accountStatus: 'approved',
+            department: 'Science',
+            createdAt: '2026-01-10',
+        };
+
         getStats
             .mockResolvedValueOnce({ success: true, data: stats })
-            .mockResolvedValueOnce({ success: true, data: { ...stats, totalStudents: 41, totalUsers: 17 } });
+            .mockResolvedValueOnce({
+                success: true,
+                data: { ...stats, totalStudents: 41, totalUsers: 17 },
+            });
+
         getUsers
             .mockResolvedValueOnce(paged([student]))
             .mockResolvedValueOnce(paged([]));
+
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+
+        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
         fireEvent.click(await screen.findByRole('button', { name: 'Delete Asha Rao' }));
 
         const dialog = screen.getByRole('dialog', { name: 'Delete account?' });
+
         expect(dialog).toHaveTextContent('Asha Rao');
         expect(dialog).toHaveTextContent('asha@example.test');
+
         fireEvent.click(screen.getByRole('button', { name: 'Delete account' }));
 
         await waitFor(() => expect(deleteUserAccount).toHaveBeenCalledWith('student-1'));
+
         expect(await screen.findByText('Asha Rao was deleted. Account history has been retained.')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Total Students/ })).toHaveTextContent('41');
+        expect(screen.getByRole('button', { name: /Total Users/ })).toHaveTextContent('17');
         expect(await screen.findByRole('heading', { name: 'No records found' })).toBeInTheDocument();
         expect(getUsers).toHaveBeenCalledTimes(2);
         expect(getStats).toHaveBeenCalledTimes(2);
@@ -194,7 +249,7 @@ describe('Dashboard management view', () => {
         deleteUserAccount.mockReturnValueOnce(new Promise((resolve) => { resolveDeletion = resolve; }));
         getUsers.mockResolvedValue(paged([{ _id: 'staff-1', name: 'Sam Staff', email: 'sam@example.test', role: 'staff', accountStatus: 'approved' }]));
         render(<Dashboard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+        fireEvent.click(await screen.findByRole('button', { name: /Total Users/ }));
         fireEvent.click(await screen.findByRole('button', { name: 'Delete Sam Staff' }));
         const confirmButton = screen.getByRole('button', { name: 'Delete account' });
 
@@ -208,18 +263,67 @@ describe('Dashboard management view', () => {
         expect(screen.getByRole('dialog', { name: 'Delete account?' })).toBeInTheDocument();
     });
 
-    it('loads the approved student directory for staff with only safe fields', async () => {
+    it('loads the approved student directory for staff with delete access', async () => {
         useAuth.mockReturnValue({ user: { role: 'staff' } });
-        getApprovedStudents.mockResolvedValue(paged([{ name: 'Asha Rao', email: 'asha@example.test', department: 'Library' }]));
+
+        getApprovedStudents.mockResolvedValue(paged([{
+            _id: 'student-1',
+            name: 'Asha Rao',
+            email: 'asha@example.test',
+            department: 'Library',
+        }]));
+
         render(<Dashboard />);
+
         fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+
         expect(await screen.findByRole('heading', { name: 'Student directory' })).toBeInTheDocument();
         expect(await screen.findByText('asha@example.test')).toBeInTheDocument();
         expect(screen.getByText('Library')).toBeInTheDocument();
+
         expect(screen.queryByRole('columnheader', { name: 'Role' })).not.toBeInTheDocument();
         expect(screen.queryByLabelText('Role')).not.toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /Delete/ })).not.toBeInTheDocument();
+
+        expect(screen.getByRole('button', { name: 'Delete Asha Rao' })).toBeInTheDocument();
+
         expect(getApprovedStudents).toHaveBeenCalledWith({ page: 1, limit: 10, search: '' });
+        expect(getUsers).not.toHaveBeenCalled();
+    });
+
+    it('allows staff to delete a student account and refreshes the directory', async () => {
+        useAuth.mockReturnValue({ user: { role: 'staff' } });
+
+        const student = {
+            _id: 'student-1',
+            name: 'Asha Rao',
+            email: 'asha@example.test',
+            department: 'Library',
+        };
+
+        getApprovedStudents
+            .mockResolvedValueOnce(paged([student]))
+            .mockResolvedValueOnce(paged([]));
+
+        render(<Dashboard />);
+
+        fireEvent.click(await screen.findByRole('button', { name: /Total Students/ }));
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Delete Asha Rao' }));
+
+        const dialog = screen.getByRole('dialog', { name: 'Delete account?' });
+
+        expect(dialog).toHaveTextContent('Asha Rao');
+        expect(dialog).toHaveTextContent('asha@example.test');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Delete account' }));
+
+        await waitFor(() => {
+            expect(deleteUserAccount).toHaveBeenCalledWith('student-1');
+        });
+
+        expect(await screen.findByText('Asha Rao was deleted. Account history has been retained.')).toBeInTheDocument();
+        expect(await screen.findByRole('heading', { name: 'No records found' })).toBeInTheDocument();
+        expect(getApprovedStudents).toHaveBeenCalledTimes(2);
         expect(getUsers).not.toHaveBeenCalled();
     });
 

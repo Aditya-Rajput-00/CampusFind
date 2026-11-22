@@ -187,7 +187,7 @@ test("GET /api/users/students returns a safe searched and paginated directory to
         capturedFilter = filter;
         const query = {
             select: (fields) => {
-                assert.equal(fields, "name email department -_id");
+                assert.equal(fields, "_id name email department");
                 return query;
             },
             sort: (sort) => {
@@ -330,19 +330,30 @@ test("DELETE /api/users/:id lets admins anonymize a staff account", async (t) =>
     assert.equal(staff.role, "staff");
 });
 
-test("DELETE /api/users/:id rejects staff callers", async (t) => {
+test("DELETE /api/users/:id lets staff anonymize a student account", async (t) => {
     restoreEnvironment(t);
-    const target = makeDeletableUser(DELETE_STUDENT_ID, "student");
-    mockAuthenticatedUser(t, "staff", { [DELETE_STUDENT_ID]: target });
+
+    const student = makeDeletableUser(DELETE_STUDENT_ID, "student");
+
+    mockAuthenticatedUser(t, "staff", {
+        [DELETE_STUDENT_ID]: student,
+    });
+
     const token = createToken("staff");
+
     const response = await makeRequest(`/api/users/${DELETE_STUDENT_ID}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
     });
+
     const body = await response.json();
 
-    assert.equal(response.status, 403);
-    assert.equal(body.message, "Access denied");
+    assert.equal(response.status, 200);
+    assert.equal(body.message, "Account deleted successfully");
+    assert.equal(student.name, "Deleted account");
+    assert.equal(student.email, `deleted-${DELETE_STUDENT_ID}@deleted.invalid`);
+    assert.ok(student.deletedAt instanceof Date);
+    assert.equal(student.saved, true);
 });
 
 test("DELETE /api/users/:id rejects student callers", async (t) => {
@@ -384,7 +395,7 @@ test("DELETE /api/users/:id blocks self-deletion and protected administrator acc
         headers: { Authorization: `Bearer ${token}` },
     });
     assert.equal(selfResponse.status, 409);
-    assert.equal((await selfResponse.json()).message, "Administrators cannot delete their own account");
+    assert.equal((await selfResponse.json()).message, "You cannot delete your own account");
 
     const protectedResponse = await makeRequest(`/api/users/${DELETE_STAFF_ID}`, {
         method: "DELETE",

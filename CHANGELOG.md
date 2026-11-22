@@ -1,3 +1,4 @@
+
 # CampusFind Changelog
 
 Notable project changes are recorded here. The project has one published release, `v1.0.0`; later work remains under **Unreleased** until a subsequent release is actually created.
@@ -6,10 +7,12 @@ Notable project changes are recorded here. The project has one published release
 
 ### Backend
 
-- Added admin-only `DELETE /api/users/:id` for student/staff account soft deletion, ID validation, self/admin protection, credential/profile anonymization, and authentication/list exclusion while retaining related history.
-- Added `GET /api/users/students`, a staff/admin-authorized, paginated directory limited to approved students and the name, email, and department fields; the existing admin-only `GET /api/users` authorization is unchanged.
-- Added the aggregate `totalStudents` dashboard statistic, matching only `{ role: "student", accountStatus: "approved" }` regardless of directory pagination.
-- Authentication middleware now treats missing or null account status as approved for legacy users, consistent with login; pending and rejected users remain blocked.
+- Added role-based `DELETE /api/users/:id` for student/staff account soft deletion. Admin can delete student and staff accounts; Staff can delete student accounts only. Administrator accounts and self-deletion are protected.
+- Account deletion validates IDs, anonymizes credentials and profile information, excludes deleted accounts from authentication and active listings, and retains related historical records.
+- Added `GET /api/users/students`, a staff/admin-authorized, paginated directory limited to approved students and the `_id`, name, email, and department fields. The endpoint supports legacy records with missing status; the existing admin-only `GET /api/users` authorization is unchanged.
+- Added the aggregate `totalStudents` dashboard statistic, matching `{ role: "student", accountStatus: "approved", deletedAt: null }` independently of directory pagination.
+- Added the aggregate `totalUsers` dashboard statistic, counting all non-deleted user accounts, including students, staff, and administrators, using `{ deletedAt: null }`.
+- Authentication middleware treats missing or null account status as approved for legacy users, consistent with login; pending and rejected users remain blocked.
 - Added an admin-only `GET /api/users/staff` endpoint with server-side staff scoping, safe profile fields, name/email search, status filtering, and pagination metadata.
 - Staff statistics include legacy accounts without an explicit status under Approved, matching existing login behavior.
 - Added an operator-run first-admin bootstrap CLI with hidden password entry, bcrypt hashing, and a unique MongoDB guard against concurrent initial administrator creation.
@@ -18,8 +21,9 @@ Notable project changes are recorded here. The project has one published release
 
 ### Frontend
 
-- Added an admin-only Dashboard Delete action with target-specific confirmation, duplicate-submit protection, success/error feedback, and directory/statistics refresh.
-- Renamed the dashboard card to Total Students and show the independent approved-student count; the staff directory retains its search and pagination behavior.
+- Added role-based Dashboard account deletion actions with target-specific confirmation, duplicate-submit protection, success/error feedback, and directory/statistics refresh. Admin can delete student/staff accounts; Staff can delete student accounts only.
+- Admin Dashboard displays Total Users and the all-account directory. Staff Dashboard displays Total Students and the approved-student directory without Admin-only role or account-status controls.
+- Added administrator-account protection and role-appropriate account actions in the Dashboard interface; backend authorization remains authoritative.
 - Integrated the approved graduation-cap logo in Login and Registration using its original colors and in the responsive application header using a Warm Ivory recolor; replaced the Vite favicon and default page title with CampusFind branding.
 - Added independent show/hide controls for Registration Password and Confirm Password fields, blocks mismatched passwords with a clear error, and keeps confirmation out of the existing API payload.
 - Fixed the Dashboard Total Users directory by omitting empty role and account-status filters rejected by backend list-query validation; surfaced validation details in errors and reset stale record totals after failed requests.
@@ -39,7 +43,9 @@ Notable project changes are recorded here. The project has one published release
 
 ### Verification
 
-- Account deletion tests cover student/staff deletion, staff/student and unauthenticated denial, invalid IDs, self/admin protection, retained related records, list/count refresh, and existing directory behavior. Full suite/lint/build results will be recorded after verification.
+- Latest role-based account deletion and Dashboard directory verification passed 29/29 backend user API integration tests, 208/208 full backend tests, 21/21 focused Dashboard frontend tests, and 156/156 full frontend tests across 17 files. The frontend Vite production build passed.
+- Account deletion tests cover Admin deletion of student/staff accounts, Staff deletion of student accounts, denial of Staff deletion of other roles, unauthenticated denial, invalid IDs, self-deletion protection, administrator-account protection, retained related records, and directory/count behavior.
+- Dashboard regression tests cover Admin Total Users, Staff Total Students, role-appropriate directories and delete actions, confirmation, successful deletion feedback, and directory/statistics refresh.
 - Staff Dashboard student directory verification passed 152 frontend tests across 17 files and 200 backend tests, including staff listing, fixed approved-student scope, safe fields, search, pagination, validation errors, staff authorization, unauthenticated access, and continued protection of the admin-only user endpoint. Frontend ESLint and Vite production build passed.
 - Dashboard Total Students verification passed the full 152-test frontend suite across 17 files and 200 backend tests. Regression checks verify exact role/status matching excludes pending, rejected, null/missing statuses, admin, and staff accounts; card totals are independent of paginated directory results. Frontend ESLint, Vite production build, and `git diff --check` passed.
 - Dashboard user-directory fix passed 149 frontend tests across 17 files and 196 backend tests, including filter omission, search, role/status filtering, pagination, validation details, safe user fields, and authorization. Frontend ESLint, Vite production build, and `git diff --check` passed.

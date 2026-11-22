@@ -15,12 +15,15 @@ const {
     updateMyProfile,
     changeMyPassword,
 } = require("../controllers/userController");
+
 const createListQueryMiddleware = require("../middleware/listQueryMiddleware");
 
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
+
 const { objectIdValidator } = require("../validators/objectIdValidator");
 const { validationResult } = require("express-validator");
+
 const {
     changePasswordValidator,
 } = require("../validators/passwordValidator");
@@ -69,27 +72,41 @@ router.get("/me", protect, getMyProfile);
  * /api/users:
  *   get:
  *     summary: Get all users
- *     description: Admin-only paginated user directory. Only approved user profile fields are returned.
+ *     description: Admin-only paginated user directory.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: page
- *         schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 1000000
+ *           default: 1
  *       - in: query
  *         name: limit
- *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
  *       - in: query
  *         name: search
- *         description: Case-insensitive search in name and email (up to 100 characters).
- *         schema: { type: string, maxLength: 100 }
+ *         description: Case-insensitive search in name and email.
+ *         schema:
+ *           type: string
+ *           maxLength: 100
  *       - in: query
  *         name: role
- *         schema: { type: string, enum: [student, staff, admin] }
+ *         schema:
+ *           type: string
+ *           enum: [student, staff, admin]
  *       - in: query
  *         name: accountStatus
- *         schema: { type: string, enum: [pending, approved, rejected] }
+ *         schema:
+ *           type: string
+ *           enum: [pending, approved, rejected]
  *     responses:
  *       200:
  *         description: Users fetched successfully
@@ -140,23 +157,35 @@ router.get(
  * /api/users/staff:
  *   get:
  *     summary: Get staff accounts
- *     description: Admin-only searchable and paginated staff directory with safe profile fields.
+ *     description: Admin-only searchable and paginated staff directory.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: search
- *         schema: { type: string, maxLength: 100 }
+ *         schema:
+ *           type: string
+ *           maxLength: 100
  *       - in: query
  *         name: accountStatus
- *         schema: { type: string, enum: [pending, approved, rejected] }
+ *         schema:
+ *           type: string
+ *           enum: [pending, approved, rejected]
  *       - in: query
  *         name: page
- *         schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 1000000
+ *           default: 1
  *       - in: query
  *         name: limit
- *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
  *     responses:
  *       200:
  *         description: Staff accounts fetched successfully
@@ -170,7 +199,9 @@ router.get(
     protect,
     authorize("admin"),
     createListQueryMiddleware({
-        filters: { accountStatus: ["pending", "approved", "rejected"] },
+        filters: {
+            accountStatus: ["pending", "approved", "rejected"],
+        },
     }),
     getStaff
 );
@@ -180,20 +211,30 @@ router.get(
  * /api/users/students:
  *   get:
  *     summary: Get the approved student directory
- *     description: Staff and administrators can search and page through approved student names, emails, and departments only.
+ *     description: Staff and administrators can search and page through approved student names, emails, and departments.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: search
- *         schema: { type: string, maxLength: 100 }
+ *         schema:
+ *           type: string
+ *           maxLength: 100
  *       - in: query
  *         name: page
- *         schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 }
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 1000000
+ *           default: 1
  *       - in: query
  *         name: limit
- *         schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
  *     responses:
  *       200:
  *         description: Student directory fetched successfully
@@ -215,7 +256,7 @@ router.get(
  * /api/users/{id}:
  *   delete:
  *     summary: Anonymize and disable a student or staff account
- *     description: Admin-only. Preserves historical records and their user references.
+ *     description: Admins can delete student and staff accounts. Staff can delete student accounts only. Administrator accounts are protected.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -223,7 +264,8 @@ router.get(
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: string }
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Account deleted successfully
@@ -232,7 +274,7 @@ router.get(
  *       401:
  *         description: Authentication required
  *       403:
- *         description: Admin access required
+ *         description: Access denied
  *       404:
  *         description: User not found
  *       409:
@@ -241,7 +283,7 @@ router.get(
 router.delete(
     "/:id",
     protect,
-    authorize("admin"),
+    authorize("admin", "staff"),
     objectIdValidator,
     validateRequest,
     deleteUser
@@ -262,7 +304,6 @@ router.delete(
  *         required: true
  *         schema:
  *           type: string
- *         description: Staff user's MongoDB ObjectId
  *     responses:
  *       200:
  *         description: Staff account approved successfully
@@ -301,7 +342,6 @@ router.patch(
  *         required: true
  *         schema:
  *           type: string
- *         description: Staff user's MongoDB ObjectId
  *     responses:
  *       200:
  *         description: Staff account rejected successfully
@@ -340,7 +380,6 @@ router.patch(
  *         required: true
  *         schema:
  *           type: string
- *         description: User's MongoDB ObjectId
  *     responses:
  *       200:
  *         description: User updated successfully
@@ -377,7 +416,6 @@ router.patch(
  *         required: true
  *         schema:
  *           type: string
- *         description: User's MongoDB ObjectId
  *     responses:
  *       200:
  *         description: User role updated successfully
