@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 const app = require("../src/app");
 const Item = require("../src/models/Item");
 const User = require("../src/models/User");
-
+const matchingService = require("../src/services/matchingService");
 const TEST_USER_ID = "64b000000000000000000001";
 
 async function makeRequest() {
@@ -56,7 +56,10 @@ test("POST /api/items normalizes and forwards a custom multipart location", asyn
     const originalSecret = process.env.JWT_SECRET;
     const originalFindById = User.findById;
     const originalCreate = Item.create;
+    const originalMatching = matchingService.findAndCreateMatches;
     let savedItem;
+
+    matchingService.findAndCreateMatches = async () => [];
 
     process.env.JWT_SECRET = "campusfind-test-secret";
     User.findById = async (id) => ({
@@ -72,6 +75,7 @@ test("POST /api/items normalizes and forwards a custom multipart location", asyn
     t.after(() => {
         User.findById = originalFindById;
         Item.create = originalCreate;
+        matchingService.findAndCreateMatches = originalMatching;
 
         if (originalSecret === undefined) {
             delete process.env.JWT_SECRET;

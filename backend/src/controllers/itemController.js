@@ -1,4 +1,5 @@
 
+const matchingService = require("../services/matchingService");
 const Item = require("../models/Item");
 const { successResponse } = require("../utils/apiResponse");
 const Notification = require("../models/Notification");
@@ -149,6 +150,15 @@ const createItem = async (req, res, next) => {
             reportedBy: req.user.userId,
             images: imageUrls,
         });
+
+        try {
+            await matchingService.findAndCreateMatches(item);
+        } catch (matchingError) {
+            console.error(
+                "Automatic matching failed for created item:",
+                matchingError
+            );
+        }
 
         return successResponse(res, 201, "Item created successfully", {
             item,

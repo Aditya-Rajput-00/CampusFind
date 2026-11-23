@@ -417,3 +417,47 @@ Populated references resolve to an anonymized account. This operation disables a
 The Dashboard provides role-appropriate deletion actions, confirmation dialogs, success/error feedback, and directory/statistics refresh after successful deletion.
 
 **Reason:** User references are required in the existing schemas, and deleting related records could erase unrelated campus history. A tombstone preserves referential integrity while removing direct access and the account's identifying profile fields. Role-based restrictions prevent Staff from managing unauthorized account types and protect administrator accounts.
+
+---
+
+## 26. Automatic Lost & Found Matching
+
+**Decision:** Automatically compare newly created Lost and Found reports against existing reports of the opposite type. Only reports with `ACTIVE` status are eligible for matching.
+
+### Matching criteria and scoring
+
+Use a configurable weighted scoring system with a maximum score of 100:
+
+| Matching criterion | Weight |
+|---|---:|
+| Title similarity | 35 points |
+| Exact category match | 25 points |
+| Description similarity | 25 points |
+| Location similarity | 15 points |
+| **Total** | **100 points** |
+
+The minimum score required to create a match is 60/100.
+
+Location similarity considers:
+- Building: 7 points
+- Area: 5 points
+- Floor: 3 points
+
+The matching configuration and scoring implementation are maintained in `backend/src/services/matchingService.js`.
+
+### Duplicate prevention
+
+A compound unique MongoDB index on `lostItemId` and `foundItemId` prevents duplicate match pairs.
+
+### Notifications and existing workflows
+
+- Both reporters receive a MATCH notification when an automatic match is created.
+- Existing manual match creation remains supported.
+- Existing match confirmation and rejection workflows remain unchanged.
+- Automatic matching does not change Lost or Found item statuses. Existing confirmation workflows remain responsible for status changes.
+
+### Failure handling
+
+Automatic matching runs after the item has been successfully created. A matching failure is logged and must not roll back or invalidate the successful item creation.
+
+**Reason:** Automatic comparison helps students discover potentially related Lost and Found reports without requiring manual searching. Opposite-type and ACTIVE-only filtering avoids comparing irrelevant reports. Weighted scoring allows multiple item details to contribute to match quality, while the threshold limits low-confidence matches. Duplicate protection and failure isolation improve reliability without disrupting existing item creation or match-management workflows.

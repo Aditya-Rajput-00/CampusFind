@@ -18,6 +18,10 @@ Notable project changes are recorded here. The project has one published release
 - Added an operator-run first-admin bootstrap CLI with hidden password entry, bcrypt hashing, and a unique MongoDB guard against concurrent initial administrator creation.
 - Successfully created the initial administrator and verified admin login and access to an admin-protected API endpoint.
 - Verified the deployed staff API workflow end to end: registration as pending, pending-login denial, admin listing and approval, and successful staff login after approval.
+- Added automatic Lost & Found matching after successful item creation. The matching service compares only opposite-type ACTIVE reports using title similarity (35 points), exact category match (25 points), description similarity (25 points), and location similarity (15 points). The configurable minimum threshold is 60/100.
+- Added duplicate-pair protection through a compound unique index on `lostItemId` and `foundItemId`.
+- Automatically created matches generate MATCH notifications for both reporters. Existing manual matching and confirmation/rejection workflows remain supported; item statuses are not automatically changed.
+- Isolated automatic matching failures so they do not roll back successful item creation; failures are logged.
 
 ### Frontend
 
@@ -43,6 +47,7 @@ Notable project changes are recorded here. The project has one published release
 
 ### Verification
 
+- Automatic Lost & Found Matching verification (November 23, 2026): matching service tests 16/16, item controller tests 24/24, item API integration tests 3/3, and full backend suite 225/225 passed. Full frontend suite passed 156/156 tests across 17 files; frontend ESLint and Vite production build passed. Total automated tests: 381/381 passed.
 - Latest role-based account deletion and Dashboard directory verification passed 29/29 backend user API integration tests, 208/208 full backend tests, 21/21 focused Dashboard frontend tests, and 156/156 full frontend tests across 17 files. The frontend Vite production build passed.
 - Account deletion tests cover Admin deletion of student/staff accounts, Staff deletion of student accounts, denial of Staff deletion of other roles, unauthenticated denial, invalid IDs, self-deletion protection, administrator-account protection, retained related records, and directory/count behavior.
 - Dashboard regression tests cover Admin Total Users, Staff Total Students, role-appropriate directories and delete actions, confirmation, successful deletion feedback, and directory/statistics refresh.

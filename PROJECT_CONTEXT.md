@@ -367,6 +367,55 @@ Items, claims, matches, and notifications are retained; references continue to p
 
 The Dashboard provides role-appropriate deletion actions, confirmation dialogs, success/error feedback, and directory refresh after successful deletion.
 
+
+## Automatic Lost & Found Matching
+
+Automatic matching runs after a Lost or Found item is successfully created.
+
+### Matching Rules
+
+- Only Lost and Found reports are compared against each other.
+- Only reports with `ACTIVE` status are considered.
+- A Lost report is compared with Found reports, and a Found report is compared with Lost reports.
+- Matching considers title, category, description, and location.
+
+### Similarity Scoring
+
+| Matching field | Weight |
+|---|---:|
+| Title similarity | 35 points |
+| Exact category match | 25 points |
+| Description similarity | 25 points |
+| Location similarity | 15 points |
+| **Total** | **100 points** |
+
+The minimum matching threshold is 60/100. Matching weights and the threshold are configurable in the matching service.
+
+Location scoring considers building, area, and floor.
+
+### Match Creation and Notifications
+
+- The matching service is implemented in `backend/src/services/matchingService.js`.
+- Automatic matching is triggered by `createItem` in `backend/src/controllers/itemController.js`.
+- Match pairs are protected against duplicate creation by a compound unique index on `lostItemId` and `foundItemId`.
+- Both reporters receive MATCH notifications when a match is created.
+- Existing manual match creation and match confirmation/rejection workflows remain supported.
+- Automatic matching does not change item statuses.
+- If automatic matching fails, the successfully created item is not rolled back. The failure is logged.
+
+### Verification
+
+- Matching service tests: 16 tests passed.
+- Item controller tests: 24 tests passed.
+- Item API integration tests: 3 tests passed.
+- Full backend test suite: 225/225 passed.
+- Full frontend test suite: 156/156 passed across 17 files.
+- Frontend ESLint: passed.
+- Frontend Vite production build: passed.
+
+These results are from the November 23, 2026 verification run.
+
+
 ## Last Updated
 
-2026-11-22
+2026-11-23

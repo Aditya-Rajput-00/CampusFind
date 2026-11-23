@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const matchSchema = new mongoose.Schema(
@@ -29,6 +30,17 @@ const matchSchema = new mongoose.Schema(
     },
     {
         timestamps: true,
+    }
+);
+
+// Prevent duplicate Lost and Found item pairs
+matchSchema.index(
+    {
+        lostItemId: 1,
+        foundItemId: 1,
+    },
+    {
+        unique: true,
     }
 );
 

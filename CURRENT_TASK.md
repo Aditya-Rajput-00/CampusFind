@@ -1,12 +1,12 @@
 # CampusFind — Current Development Status
 
-**Last synchronized:** 2026-11-22
+**Last synchronized:** 2026-11-23
 
 **Branch:** `main`
 
 **Latest verified commit:** `6c2bf0a` - `fix: resolve dashboard user directory validation`
 
-**Current work:** Reviewing and synchronizing documentation for the completed role-based account deletion, Dashboard statistics, and Staff directory implementation. Changes remain uncommitted; no files have been staged, committed, or pushed.
+**Current work:** Automatic Lost & Found Matching has been implemented and verified. Project documentation is being synchronized before final Git diff review. Changes remain uncommitted; no files have been staged, committed, or pushed.
 
 ## Project and release status
 
@@ -141,10 +141,57 @@ The Dashboard provides role-appropriate deletion actions, confirmation dialogs, 
 
 No staging, commit, or push has been performed for this task.
 
+## Completed implementation: Automatic Lost & Found Matching
+
+Automatic matching is triggered after a Lost or Found item is successfully created.
+
+### Matching rules
+
+- Only opposite item types are compared: Lost against Found and Found against Lost.
+- Only reports with `ACTIVE` status are considered.
+- Matching evaluates title, category, description, and location.
+- The minimum match score is 60/100.
+
+### Scoring configuration
+
+| Matching field | Weight |
+|---|---:|
+| Title similarity | 35 points |
+| Exact category match | 25 points |
+| Description similarity | 25 points |
+| Location similarity | 15 points |
+| **Total** | **100 points** |
+
+The matching threshold and weights are configurable in `backend/src/services/matchingService.js`. Location scoring considers building, area, and floor.
+
+### Match creation and notifications
+
+- Automatic matching is implemented in `backend/src/services/matchingService.js`.
+- The `createItem` controller triggers the matching service after successful item creation.
+- A compound unique index on `lostItemId` and `foundItemId` prevents duplicate match pairs.
+- Both reporters receive MATCH notifications when a match is created.
+- Existing manual match creation and confirmation/rejection workflows remain supported.
+- Automatic matching does not change item statuses.
+- If matching fails, the item remains successfully created and the failure is logged.
+
+### Verification — November 23, 2026
+
+- Matching service tests: 16 passed.
+- Item controller tests: 24 passed.
+- Item API integration tests: 3 passed.
+- Full backend test suite: 225/225 passed.
+- Full frontend test suite: 156/156 passed across 17 files.
+- Frontend ESLint: passed.
+- Frontend Vite production build: passed.
+
+**Total automated tests: 381 passed, 0 failed.**
+
+No staging, commit, or push has been performed for this implementation.
+
 ## Next recommended work
 
-Review the documentation updates, inspect the final Git diff and working-tree status, and obtain explicit approval before staging or committing any changes.
+Complete the final review of the automatic Lost & Found matching implementation, inspect all intended backend changes and tests, verify the working tree, and obtain explicit approval before staging or committing.
 
 ## Last Updated
 
-2026-11-22
+2026-11-23

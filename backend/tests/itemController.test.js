@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const Item = require("../src/models/Item");
 const Notification = require("../src/models/Notification");
 const cloudinary = require("../src/config/cloudinary");
-
+const matchingService = require("../src/services/matchingService");
 const {
     getItems,
     createItem,
@@ -210,8 +210,12 @@ test("createItem rejects missing required fields", async () => {
 test("createItem creates an item with a Cloudinary image URL", async () => {
     const originalCreate = Item.create;
     const originalUploadStream = cloudinary.uploader.upload_stream;
+    const originalFindAndCreateMatches =
+        matchingService.findAndCreateMatches;
 
     try {
+        matchingService.findAndCreateMatches = async () => [];
+
         let savedData;
         let uploadedBuffer;
         let uploadOptions;
@@ -283,13 +287,22 @@ test("createItem creates an item with a Cloudinary image URL", async () => {
             "upload_stream",
             originalUploadStream
         );
+        restoreMethod(
+            matchingService,
+            "findAndCreateMatches",
+            originalFindAndCreateMatches
+        );
     }
 });
 
 test("createItem creates an item without an image", async () => {
     const originalCreate = Item.create;
+    const originalFindAndCreateMatches =
+        matchingService.findAndCreateMatches;
 
     try {
+        matchingService.findAndCreateMatches = async () => [];
+
         let savedData;
 
         Item.create = async (data) => {
@@ -320,6 +333,68 @@ test("createItem creates an item without an image", async () => {
         assert.equal(savedData.reportedBy, "user-123");
     } finally {
         restoreMethod(Item, "create", originalCreate);
+        restoreMethod(
+            matchingService,
+            "findAndCreateMatches",
+            originalFindAndCreateMatches
+        );
+    }
+});
+
+test("createItem succeeds even when automatic matching fails", async () => {
+    const originalCreate = Item.create;
+    const originalFindAndCreateMatches =
+        matchingService.findAndCreateMatches;
+    const originalConsoleError = console.error;
+
+    try {
+        const matchingError = new Error("Matching service unavailable");
+
+        Item.create = async (data) => ({
+            _id: "item-matching-failure",
+            ...data,
+        });
+
+        matchingService.findAndCreateMatches = async () => {
+            throw matchingError;
+        };
+
+        console.error = () => { };
+
+        const req = {
+            body: {
+                title: "Lost Wallet",
+                description: "Black leather wallet",
+                category: "Accessories",
+                type: "lost",
+                location: { building: "Library" },
+                date: "2026-10-16",
+            },
+            user: { userId: "user-123" },
+        };
+
+        const res = createResponse();
+        const { next, state } = createNext();
+
+        await createItem(req, res, next);
+
+        assert.equal(state.called, false);
+        assert.equal(res.statusCode, 201);
+        assert.equal(res.body.success, true);
+        assert.equal(
+            res.body.data.item._id,
+            "item-matching-failure"
+        );
+    } finally {
+        restoreMethod(Item, "create", originalCreate);
+
+        restoreMethod(
+            matchingService,
+            "findAndCreateMatches",
+            originalFindAndCreateMatches
+        );
+
+        restoreMethod(console, "error", originalConsoleError);
     }
 });
 
