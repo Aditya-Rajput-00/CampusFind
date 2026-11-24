@@ -1,8 +1,6 @@
-![CampusFind logo](https://raw.githubusercontent.com/Aditya-Rajput-00/CampusFind/main/frontend/src/assets/brand/campusfind-logo-512.png)
+<img width="1400" height="300" alt="campusfind-readme-banner-preview" src="https://github.com/user-attachments/assets/7f1771fa-8378-45c5-b803-122650951be2" />
 
-# CampusFind
 
-**A smarter Lost & Found experience for campus communities.**
 
 Report lost belongings, discover found items, submit claims, and review potential matches — all in one place.
 
