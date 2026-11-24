@@ -32,19 +32,11 @@ CampusFind has evolved beyond its first stable release into a more complete seco
 
 ## Product demo
 
-The CampusFind V2 walkthrough is approximately **1 minute 11 seconds** long. GitHub supports inline MP4 playback in repository Markdown. To add the player, open `README.md` on GitHub, choose **Edit**, and drag `CampusFind-V2-Demo-Optimized.mp4` into the editor at the blank line below. Keep the GitHub-generated media URL on its own line, then commit the README change.
+Watch this short walkthrough of CampusFind V2 and explore the application in action.
 
-<!-- VIDEO UPLOAD POSITION: Drag CampusFind-V2-Demo-Optimized.mp4 here in the GitHub README editor. The file is intentionally not stored in the Git repository. -->
 
-## Application screenshots
+https://github.com/user-attachments/assets/cb3701c6-8915-4749-8cd8-27add50b858f
 
-These screenshots are captured from the supplied CampusFind demo recording.
-
-![CampusFind registration page](docs/screenshots/registration-page.jpg)
-
-![CampusFind Lost and Found items page](docs/screenshots/items-overview.jpg)
-
-![CampusFind automatic matching results](docs/screenshots/matching-results.jpg)
 
 ## Live environments
 
