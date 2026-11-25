@@ -38,16 +38,25 @@ Watch this short walkthrough of CampusFind V2 and explore the application in act
 https://github.com/user-attachments/assets/cb3701c6-8915-4749-8cd8-27add50b858f
 
 
-## Live environments
+## Available Versions
 
-| Environment | Frontend | Backend |
-| --- | --- | --- |
-| **Production** | [Open CampusFind](https://campus-find-adiii9.vercel.app/) | [Backend health](https://campusfind-backend-k16o.onrender.com/) |
-| **Staging** | [Open staging app](https://campus-find-qx9y.vercel.app/) | [Staging backend health](https://campusfind-backend-staging.onrender.com/) |
+### CampusFind V2 — Latest Version (Recommended)
 
-**API reference:** [Production Swagger UI](https://campusfind-backend-k16o.onrender.com/api-docs)
+The latest second-generation CampusFind application, with improved dashboards, automatic matching, account management, and enhanced user experience.
 
-> Production and staging use separate MongoDB database names. Live service availability can change; these links point to the configured deployments.
+🌐 [Open CampusFind V2](https://campus-find-qx9y.vercel.app/)
+
+API: [V2 API Documentation](https://campusfind-backend-staging.onrender.com/api-docs)
+
+### CampusFind V1 — Original Version (Legacy)
+
+The original CampusFind deployment, retained for reference and comparison. The Matches section has a known issue in this version.
+
+🌐 [Open CampusFind V1](https://campus-find-adiii9.vercel.app/)
+
+API: [V1 API Documentation](https://campusfind-backend-k16o.onrender.com/api-docs)
+
+> **Version note:** V2 is the latest development version. The formal v2.0.0 GitHub release has not yet been published.
 
 ## Features
 
